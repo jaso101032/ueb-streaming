@@ -44,6 +44,7 @@ class EventoController extends Controller
             'categoria_id' => 'required|exists:categorias,id',
             'facultad_id' => 'nullable|exists:facultades,id',
             'carrera_id' => 'nullable|exists:carreras,id',
+            'video_url' => 'nullable|url|max:2048',
         ]);
 
         // Usamos una transacción para asegurar que se cree el evento y su transmisión juntos
@@ -62,13 +63,19 @@ class EventoController extends Controller
                 'carrera_id' => $request->carrera_id,
                 'categoria_id' => $request->categoria_id,
                 'estado' => 'programado',
+                'video_url' => $request->video_url,
             ]);
 
             // 2. Generar automáticamente la clave única para OBS
+            $streamKey = 'ueb_' . Str::random(30);
+
+            $host = request()->getHost();
+
             Transmision::create([
                 'evento_id' => $evento->id,
-                'stream_key' => 'ueb_' . Str::random(30), // Genera formato tipo ueb_SJgrksUjzPcL...
-                'rtmp_server' => 'rtmp://192.168.100.7/live', // Ajusta tu IP o servidor si es necesario
+                'stream_key' => $streamKey,
+                'rtmp_server' => 'rtmp://' . $host . ':1935/live',
+                'hls_url' => 'http://' . $host . '/hls/' . $streamKey . '.m3u8',
                 'activo' => false,
             ]);
         });
@@ -104,6 +111,7 @@ class EventoController extends Controller
             'tipo_evento' => 'required|string',
             'fecha_inicio' => 'required|date',
             'categoria_id' => 'required|exists:categorias,id',
+            'video_url' => 'nullable|url|max:2048',
         ]);
 
         $evento->update([
@@ -118,6 +126,7 @@ class EventoController extends Controller
             'carrera_id' => $request->carrera_id,
             'categoria_id' => $request->categoria_id,
             'estado' => $request->estado ?? $evento->estado,
+            'video_url' => $request->video_url,
         ]);
 
         return redirect()->route('eventos.index')->with('success', '¡Evento actualizado correctamente!');

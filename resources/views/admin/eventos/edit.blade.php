@@ -74,6 +74,12 @@
                             <label class="block font-medium text-sm text-gray-700">Descripción</label>
                             <textarea name="descripcion" rows="4" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">{{ old('descripcion', $evento->descripcion) }}</textarea>
                         </div>
+
+                        <div class="md:col-span-2">
+                            <label class="block font-medium text-sm text-gray-700">Video grabado</label>
+                            <input type="url" name="video_url" value="{{ old('video_url', $evento->video_url) }}" placeholder="https://.../video.mp4 o enlace del repositorio" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            <small class="text-gray-500">Opcional. Enlace al video archivado para la biblioteca UEBTV.</small>
+                        </div>
                     </div>
 
                     <div class="flex items-center justify-end mt-4">

@@ -1,98 +1,78 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ $evento->titulo }}
-        </h2>
-    </x-slot>
+    @php
+        $streamKey = $evento->transmision->stream_key ?? null;
+        $streamUrl = $streamKey ? 'http://' . request()->getHost() . '/hls/' . $streamKey . '.m3u8' : '';
+        $videoUrl = $evento->video_url;
+        $isLive = $evento->estado === 'en_vivo';
+    @endphp
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                
-                <!-- Reproductor Principal con URL Forzada por IP y Menor Retraso -->
-                <div class="lg:col-span-2 space-y-4">
-                    <div class="bg-black overflow-hidden shadow-sm sm:rounded-lg aspect-video flex items-center justify-center relative">
-                        @php
-                            // URL apuntando directamente a la IP correcta y al archivo HLS de prueba de OBS
-                            $streamUrl = 'http://10.219.229.14/hls/ueb_test_123.m3u8';
-                        @endphp
-
-                        @if($streamUrl)
-                            <video id="uebVideoPlayer" class="w-full h-full object-contain" controls autoplay muted></video>
-
+    <main class="uebtv-watch-page">
+        <div class="uebtv-watch-container">
+            <div class="uebtv-watch-breadcrumb"><a href="{{ route('eventos.index') }}">UEBTV</a><span>/</span><span>{{ $evento->categoria->nombre ?? 'Institucional' }}</span></div>
+            <div class="uebtv-watch-layout">
+                <section class="uebtv-watch-main">
+                    <div class="uebtv-watch-player">
+                        <div class="uebtv-watch-player__topline"><span class="uebtv-watch-live-dot"></span><span>{{ $isLive ? 'Transmisión en directo' : 'Sala UEBTV' }}</span><span class="uebtv-watch-quality">HD</span></div>
+                        @if($isLive && $evento->transmision && $streamKey)
+                            <div id="liveBadge" class="uebtv-watch-badge"><span class="uebtv-watch-live-dot"></span> EN VIVO <span class="uebtv-watch-viewers"><span aria-hidden="true">◉</span> <span id="viewerCount">{{ $evento->transmision->espectadores_activos ?: 1 }}</span></span></div>
+                            <video id="uebVideoPlayer" class="uebtv-video" controls autoplay muted playsinline></video>
+                            <div id="playerMessage" class="uebtv-player-message" hidden>La señal está preparando su emisión...</div>
                             <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
                             <script>
                                 document.addEventListener('DOMContentLoaded', function () {
-                                    var video = document.getElementById('uebVideoPlayer');
-                                    var videoSrc = "{{ $streamUrl }}";
-
+                                    const video = document.getElementById('uebVideoPlayer');
+                                    const badge = document.getElementById('liveBadge');
+                                    const message = document.getElementById('playerMessage');
+                                    const videoSrc = @json($streamUrl);
+                                    const setMessage = (visible) => { message.hidden = !visible; };
+                                    video.addEventListener('playing', () => { badge.classList.add('is-visible'); setMessage(false); });
+                                    video.addEventListener('waiting', () => setMessage(true));
+                                    video.addEventListener('ended', () => badge.classList.remove('is-visible'));
                                     if (Hls.isSupported()) {
-                                        var hls = new Hls({
-                                            liveSyncDurationCount: 1.5, // Reduce la distancia al borde en vivo
-                                            maxLiveSyncPlaybackRate: 1.2, // Acelera ligeramente si se acumula retraso para atrapar el directo
-                                            enableWorker: true
-                                        });
-
+                                        const hls = new Hls({ liveSyncDurationCount: 1.5, maxLiveSyncPlaybackRate: 1.2, enableWorker: true });
                                         hls.loadSource(videoSrc);
                                         hls.attachMedia(video);
-                                        hls.on(Hls.Events.MANIFEST_PARSED, function() {
-                                            video.play().catch(function(e) {
-                                                console.log("Play interactivo requerido.");
-                                            });
-                                        });
+                                        hls.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(() => setMessage(true)));
+                                        hls.on(Hls.Events.ERROR, (event, data) => { if (data.fatal) { badge.classList.remove('is-visible'); setMessage(true); } });
                                     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
                                         video.src = videoSrc;
-                                        video.addEventListener('loadedmetadata', function() {
-                                            video.play();
-                                        });
+                                        video.addEventListener('loadedmetadata', () => video.play().catch(() => setMessage(true)));
                                     }
                                 });
                             </script>
+                        @elseif($videoUrl)
+                            <video class="uebtv-video" controls playsinline preload="metadata" @if($evento->miniatura) poster="{{ asset('storage/' . $evento->miniatura) }}" @endif><source src="{{ $videoUrl }}" type="video/mp4">Tu navegador no puede reproducir este video.</video>
                         @else
-                            <div class="text-center p-8 text-white">
-                                <p class="text-lg font-medium">Transmisión no disponible temporalmente</p>
-                            </div>
+                            <div class="uebtv-player-empty"><span class="uebtv-player-empty__icon">▶</span><h2>Video próximamente</h2><p>Esta sala se habilitará cuando comience la transmisión.</p></div>
                         @endif
                     </div>
-
-                    <!-- Detalles del Evento -->
-                    <div class="bg-white p-6 rounded-lg shadow-sm">
-                        <div class="flex items-center justify-between mb-4">
-                            <span class="px-3 py-1 text-xs font-semibold rounded-full bg-indigo-100 text-indigo-800">
-                                {{ $evento->categoria->nombre ?? 'Institucional' }}
-                            </span>
-                            <span class="text-sm text-gray-500">
-                                Facultad: {{ $evento->facultad->nombre ?? 'General UEB' }}
-                            </span>
-                        </div>
-                        <h1 class="text-2xl font-bold text-gray-900 mb-2">{{ $evento->titulo }}</h1>
-                        <p class="text-gray-700 leading-relaxed">{{ $evento->descripcion }}</p>
+                    <div class="uebtv-watch-title-block">
+                        <div class="uebtv-watch-title-row"><div><span class="uebtv-watch-category">{{ $evento->categoria->nombre ?? 'Institucional' }}</span><h1>{{ $evento->titulo }}</h1></div><span class="uebtv-watch-state {{ $isLive ? 'is-live' : '' }}"><i></i>{{ $isLive ? 'En vivo' : ($videoUrl ? 'Disponible' : str_replace('_', ' ', ucfirst($evento->estado))) }}</span></div>
+                        <div class="uebtv-watch-meta"><span>{{ $evento->facultad->nombre ?? 'Universidad Estatal de Bolívar' }}</span><span>·</span><span>Organiza {{ $evento->organizador->name ?? 'UEB' }}</span><span>·</span><span>{{ $evento->fecha_inicio?->format('d M Y') }}</span></div>
+                        <p class="uebtv-watch-description">{{ $evento->descripcion ?: 'Una transmisión oficial de la Universidad Estatal de Bolívar para toda nuestra comunidad.' }}</p>
+                        <div class="uebtv-watch-actions"><button type="button" id="shareEvent"><span aria-hidden="true">↗</span> Compartir</button><button type="button" id="copyEventLink"><span aria-hidden="true">▣</span> Copiar enlace</button><a href="{{ route('eventos.index') }}"><span aria-hidden="true">←</span> Catálogo</a><span id="copyFeedback" class="uebtv-copy-feedback" role="status"></span></div>
                     </div>
-                </div>
-
-                <!-- Panel Lateral -->
-                <div class="space-y-6">
-                    <div class="bg-white p-6 rounded-lg shadow-sm">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Información de la Sesión</h3>
-                        <ul class="space-y-3 text-sm text-gray-600">
-                            <li class="flex justify-between">
-                                <span class="font-medium">Estado:</span>
-                                <span class="uppercase font-bold text-indigo-600">{{ $evento->estado }}</span>
-                            </li>
-                            <li class="flex justify-between">
-                                <span class="font-medium">Organizador:</span>
-                                <span>{{ $evento->organizador->name ?? 'Universidad Estatal de Bolívar' }}</span>
-                            </li>
-                        </ul>
-                        <div class="mt-6 pt-6 border-t border-gray-100">
-                            <a href="{{ route('eventos.index') }}" class="w-full block text-center bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded transition text-sm">
-                                ← Volver al Catálogo de Eventos
-                            </a>
-                        </div>
-                    </div>
-                </div>
-
+                </section>
+                <aside class="uebtv-watch-aside">
+                    <div class="uebtv-watch-aside__header"><p class="uebtv-kicker uebtv-kicker--navy"><span></span> En esta sala</p><span class="uebtv-watch-aside__signal"><i /> UEBTV</span></div>
+                    <div class="uebtv-watch-aside__cover"><span>UEB</span><small>TV</small></div><h2>La señal de nuestra comunidad</h2><p>Disfruta contenidos académicos, institucionales y culturales en un solo lugar.</p><div class="uebtv-watch-aside__rule"></div><a class="uebtv-watch-aside__back" href="{{ route('eventos.index') }}">Explorar toda la programación <span>↗</span></a>
+                </aside>
             </div>
+            <section class="uebtv-library"><div class="uebtv-library__heading"><div><p class="uebtv-kicker uebtv-kicker--navy"><span></span> Biblioteca UEBTV</p><h2>Más para ver</h2><p class="uebtv-library__subheading">Transmisiones anteriores y contenidos destacados de la Universidad.</p></div><a href="{{ route('eventos.index', ['filtro' => 'anteriores']) }}">Ver anteriores <span>↗</span></a></div><div class="uebtv-video-grid">
+                @forelse($eventosRelacionados as $relacionado)
+                    <a class="uebtv-video-card" href="{{ route('eventos.show', $relacionado) }}"><div class="uebtv-video-card__thumb" @if($relacionado->miniatura) style="background-image: url('{{ asset('storage/' . $relacionado->miniatura) }}')" @endif><span class="uebtv-video-card__play">▶</span><span class="uebtv-video-card__tag">{{ $relacionado->estado === 'en_vivo' ? 'EN VIVO' : 'UEBTV' }}</span></div><div class="uebtv-video-card__body"><h3>{{ $relacionado->titulo }}</h3><p>{{ $relacionado->facultad->siglas ?? 'Universidad Estatal de Bolívar' }}</p></div></a>
+                @empty
+                    <div class="uebtv-library-empty"><span>＋</span><div><h3>Tu biblioteca está por comenzar</h3><p>Los videos grabados de la comunidad UEB aparecerán aquí cuando se registre su enlace en el evento.</p><a href="{{ route('eventos.index', ['filtro' => 'anteriores']) }}">Explorar transmisiones anteriores <span>↗</span></a></div></div>
+                @endforelse
+            </div></section>
         </div>
-    </div>
+    </main>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const feedback = document.getElementById('copyFeedback');
+            const copyLink = async () => { await navigator.clipboard.writeText(window.location.href); feedback.textContent = 'Enlace copiado'; setTimeout(() => feedback.textContent = '', 2200); };
+            document.getElementById('copyEventLink')?.addEventListener('click', copyLink);
+            document.getElementById('shareEvent')?.addEventListener('click', async () => { if (navigator.share) { await navigator.share({ title: @json($evento->titulo), url: window.location.href }); } else { await copyLink(); } });
+        });
+    </script>
 </x-app-layout>

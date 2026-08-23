@@ -5,25 +5,25 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>{{ config('app.name', 'Plataforma de Streaming') }}</title>
+        <title>{{ config('app.name', 'UEBTV') }}</title>
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
         <!-- Scripts y Estilos (Tailwind CSS / Vite) -->
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
+        @vite(['resources/css/app.css', 'resources/js/app.js'], 'uebtv-build')
     </head>
     <body class="font-sans antialiased bg-gray-50 text-gray-900">
         <div class="min-h-screen flex flex-col">
             
             <!-- Navbar Superior Institucional -->
-            <header class="bg-blue-900 text-white shadow-md sticky top-0 z-50">
+            <header class="uebtv-header">
                 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
                     <div class="flex items-center space-x-3">
-                        <span class="bg-blue-800 text-blue-200 text-xs font-bold px-2.5 py-1 rounded-md uppercase tracking-wider">UEB Oficial</span>
+                        <span class="uebtv-mark">UEB</span>
                         <a href="{{ route('dashboard') }}" class="font-bold text-lg tracking-tight hover:text-blue-100 transition">
-                            Plataforma de Streaming
+                            UEBTV
                         </a>
                     </div>
 
@@ -49,9 +49,9 @@
             </main>
 
             <!-- Footer Institucional -->
-            <footer class="bg-white border-t border-gray-100 py-6 text-center text-xs text-gray-500">
+            <footer class="uebtv-footer">
                 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    &copy; {{ date('Y') }} Sistema de Streaming Institucional &bull; Todos los derechos reservados.
+                    &copy; {{ date('Y') }} UEBTV · Universidad Estatal de Bolívar
                 </div>
             </footer>
 

@@ -12,11 +12,23 @@ class EventoPublicoController extends Controller
      */
     public function index()
     {
-        $eventos = Evento::with(['facultad', 'categoria', 'transmision'])
-            ->orderBy('fecha_inicio', 'desc')
-            ->paginate(12);
+        $filter = request('filtro', 'todos');
+        $query = Evento::with(['facultad', 'categoria', 'transmision'])
+            ->where('estado', '!=', 'cancelado');
 
-        return view('eventos.index', compact('eventos'));
+        if ($filter === 'en_vivo') {
+            $query->where('estado', 'en_vivo');
+        } elseif ($filter === 'anteriores') {
+            $query->where(function ($eventos) {
+                $eventos->where('estado', 'finalizado')->orWhereNotNull('video_url');
+            });
+        }
+
+        $eventos = $query->orderBy('fecha_inicio', 'desc')
+            ->paginate(12);
+        $eventos->withQueryString();
+
+        return view('eventos.index', compact('eventos', 'filter'));
     }
 
     /**
@@ -25,7 +37,13 @@ class EventoPublicoController extends Controller
     public function show(Evento $evento)
     {
         $evento->load(['facultad', 'categoria', 'transmision', 'organizador']);
+        $eventosRelacionados = Evento::with(['facultad', 'categoria', 'transmision'])
+            ->whereKeyNot($evento->id)
+            ->where('estado', '!=', 'cancelado')
+            ->latest('fecha_inicio')
+            ->take(4)
+            ->get();
 
-        return view('eventos.show', compact('evento'));
+        return view('eventos.show', compact('evento', 'eventosRelacionados'));
     }
 }

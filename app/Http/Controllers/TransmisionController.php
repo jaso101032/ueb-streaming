@@ -28,8 +28,9 @@ class TransmisionController extends Controller
     {
         // Generar una clave única y segura para RTMP
         $streamKey = 'ueb_' . Str::random(32);
-        $rtmpServer = env('RTMP_SERVER_URL', 'rtmp://localhost/live');
-        $hlsUrl = env('HLS_SERVER_URL', 'http://localhost/hls/') . $streamKey . '/index.m3u8';
+        $host = $request->getHost();
+        $rtmpServer = 'rtmp://' . $host . ':1935/live';
+        $hlsUrl = 'http://' . $host . '/hls/' . $streamKey . '.m3u8';
 
         // Actualizar o crear la transmisión asociada al evento
         Transmision::updateOrCreate(

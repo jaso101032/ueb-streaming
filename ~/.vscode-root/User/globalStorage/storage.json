@@ -1,0 +1,102 @@
+{
+    "telemetry.sqmId": "",
+    "telemetry.machineId": "bcc3b41b5397eec75bfd33271fd2b707eef607ca165f24b99c48359b43902460",
+    "telemetry.devDeviceId": "e2b24a65-00be-4ce0-8074-06846ecbd066",
+    "backupWorkspaces": {
+        "workspaces": [],
+        "folders": [
+            {
+                "folderUri": "file:///var/www/ecommerce"
+            }
+        ],
+        "emptyWindows": []
+    },
+    "windowControlHeight": 35,
+    "profileAssociations": {
+        "workspaces": {
+            "file:///var/www/ecommerce": "__default__profile__"
+        },
+        "emptyWindows": {}
+    },
+    "theme": "vs-dark",
+    "themeBackground": "#121314",
+    "windowSplash": {
+        "zoomLevel": 0,
+        "baseTheme": "vs-dark",
+        "colorInfo": {
+            "foreground": "#bfbfbf",
+            "background": "#121314",
+            "editorBackground": "#121314",
+            "titleBarBackground": "#191a1b",
+            "titleBarBorder": "#2a2b2c",
+            "activityBarBackground": "#191a1b",
+            "activityBarBorder": "#2a2b2c",
+            "sideBarBackground": "#191a1b",
+            "sideBarBorder": "#2a2b2c",
+            "panelBackground": "#191a1b",
+            "editorGroupBorder": "rgba(255, 255, 255, 0.09)",
+            "agentsPanelBackground": "#191a1b",
+            "agentsPanelBorder": "#2a2b2c",
+            "statusBarBackground": "#191a1b",
+            "statusBarBorder": "#2a2b2c",
+            "statusBarNoFolderBackground": "#191a1b"
+        },
+        "layoutInfo": {
+            "sideBarSide": "left",
+            "editorPartMinWidth": 220,
+            "titleBarHeight": 35,
+            "activityBarWidth": 44,
+            "sideBarWidth": 300,
+            "auxiliaryBarWidth": 304,
+            "statusBarHeight": 32,
+            "windowBorder": false,
+            "modernUI": true,
+            "partBounds": {
+                "sideBar": {
+                    "top": 65,
+                    "left": 48,
+                    "width": 294,
+                    "height": 799
+                },
+                "auxiliaryBar": {
+                    "top": 65,
+                    "left": 1140,
+                    "width": 292,
+                    "height": 799
+                },
+                "editor": {
+                    "top": 65,
+                    "left": 348,
+                    "width": 786,
+                    "height": 799
+                }
+            }
+        }
+    },
+    "windowSplashWorkspaceOverride": {
+        "layoutInfo": {
+            "sideBarWidth": 300,
+            "auxiliaryBarWidth": 304,
+            "workspaces": {
+                "7a3ad7c6ec887a7c0957c44df9f8b4ac": {
+                    "sideBarVisible": true,
+                    "auxiliaryBarVisible": true
+                }
+            }
+        }
+    },
+    "windowsState": {
+        "lastActiveWindow": {
+            "folder": "file:///var/www/ecommerce",
+            "backupPath": "/home/javier/ueb-streaming/~/.vscode-root/Backups/87439c2288cb1ab3ac5bbb2d53060c5b",
+            "uiState": {
+                "mode": 1,
+                "x": 240,
+                "y": 90,
+                "width": 1440,
+                "height": 900
+            }
+        },
+        "openedWindows": []
+    }
+}

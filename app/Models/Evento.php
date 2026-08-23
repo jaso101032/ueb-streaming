@@ -29,6 +29,7 @@ class Evento extends Model
         'miniatura',
         'estado',
         'url_transmision',
+        'video_url',
         'duracion_minutos',
         'responsable_streaming_id',
     ];

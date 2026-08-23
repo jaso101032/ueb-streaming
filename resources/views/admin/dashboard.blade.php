@@ -1,103 +1,26 @@
 <x-app-layout>
-    <x-slot name="header">
-        Panel de Administración General
-    </x-slot>
+    <div class="uebtv-admin-page">
+        <section class="uebtv-admin-intro">
+            <div><p class="uebtv-kicker uebtv-kicker--navy"><span></span> Centro de operaciones</p><h1>Vista general</h1><p>Monitorea la programación y la señal institucional desde un solo lugar.</p></div>
+            <a href="{{ route('streaming.control') }}" class="uebtv-admin-primary">Abrir control de streaming <span>↗</span></a>
+        </section>
 
-    <div class="space-y-6">
-        
-        <!-- Tarjetas de Estadísticas Principales -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            
-            <!-- Usuarios -->
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
-                <div>
-                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Usuarios</p>
-                    <h3 class="text-2xl font-extrabold text-blue-900 mt-1">{{ $totalUsuarios }}</h3>
-                </div>
-                <div class="w-12 h-12 bg-blue-50 text-blue-900 rounded-xl flex items-center justify-center font-bold">
-                    👥
-                </div>
-            </div>
+        <section class="uebtv-admin-metrics">
+            <article><span class="uebtv-metric-label">Comunidad</span><strong>{{ $totalUsuarios }}</strong><small>usuarios registrados</small></article>
+            <article><span class="uebtv-metric-label">Programación</span><strong>{{ $totalEventos }}</strong><small>eventos registrados</small></article>
+            <article class="uebtv-metric-live"><span class="uebtv-metric-label">En directo</span><strong>{{ $eventosEnVivo }}</strong><small>eventos transmitiendo</small><i /></article>
+            <article><span class="uebtv-metric-label">Señales</span><strong>{{ $transmisionesActivas }}</strong><small>streams configurados</small></article>
+        </section>
 
-            <!-- Eventos -->
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
-                <div>
-                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Eventos Registrados</p>
-                    <h3 class="text-2xl font-extrabold text-blue-900 mt-1">{{ $totalEventos }}</h3>
-                </div>
-                <div class="w-12 h-12 bg-blue-50 text-blue-900 rounded-xl flex items-center justify-center font-bold">
-                    📅
-                </div>
-            </div>
-
-            <!-- En Vivo -->
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
-                <div>
-                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Eventos En Vivo</p>
-                    <h3 class="text-2xl font-extrabold text-red-600 mt-1">{{ $eventosEnVivo }}</h3>
-                </div>
-                <div class="w-12 h-12 bg-red-50 text-red-600 rounded-xl flex items-center justify-center font-bold animate-pulse">
-                    🔴
-                </div>
-            </div>
-
-            <!-- Servidor OBS -->
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
-                <div>
-                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Streams Activos</p>
-                    <h3 class="text-2xl font-extrabold text-blue-900 mt-1">{{ $transmisionesActivas }}</h3>
-                </div>
-                <div class="w-12 h-12 bg-blue-50 text-blue-900 rounded-xl flex items-center justify-center font-bold">
-                    📡
-                </div>
-            </div>
-
-        </div>
-
-        <!-- Tabla Reciente de Eventos Institucionales -->
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <div class="p-6 border-b border-gray-100 flex items-center justify-between">
-                <h3 class="font-bold text-gray-900 text-lg">Últimos Eventos Registrados</h3>
-                <a href="{{ route('streaming.control') }}" class="text-xs font-semibold bg-blue-900 text-white px-4 py-2 rounded-xl hover:bg-blue-800 transition">
-                    Ir al Panel de Streaming
-                </a>
-            </div>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse text-sm">
-                    <thead>
-                        <tr class="bg-gray-50 text-gray-600 uppercase text-xs tracking-wider border-b border-gray-100">
-                            <th class="py-3 px-6">Título del Evento</th>
-                            <th class="py-3 px-6">Facultad</th>
-                            <th class="py-3 px-6">Estado</th>
-                            <th class="py-3 px-6">Organizador</th>
-                            <th class="py-3 px-6 text-right">Acción</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-100 text-gray-700">
-                        @forelse($eventosRecientes as $evento)
-                            <tr class="hover:bg-blue-50/50 transition">
-                                <td class="py-4 px-6 font-semibold text-gray-900">{{ $evento->titulo }}</td>
-                                <td class="py-4 px-6">{{ $evento->facultad->siglas ?? 'UEB' }}</td>
-                                <td class="py-4 px-6">
-                                    <span class="px-2.5 py-1 text-xs font-bold rounded-full 
-                                        {{ $evento->estado === 'en_vivo' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-800' }}">
-                                        {{ ucfirst($evento->estado) }}
-                                    </span>
-                                </td>
-                                <td class="py-4 px-6">{{ $evento->organizador->name ?? 'N/D' }}</td>
-                                <td class="py-4 px-6 text-right">
-                                    <a href="{{ url('/eventos/' . $evento->id) }}" class="text-blue-600 hover:text-blue-900 font-semibold">Ver</a>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="5" class="py-6 text-center text-gray-500">No hay eventos registrados en el sistema.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
+        <section class="uebtv-admin-table">
+            <div class="uebtv-admin-table__head"><div><p class="uebtv-kicker uebtv-kicker--navy"><span></span> Actividad reciente</p><h2>Últimos eventos</h2></div><a href="{{ route('admin.eventos.index') }}">Gestionar eventos <span>↗</span></a></div>
+            <div class="overflow-x-auto"><table><thead><tr><th>Evento</th><th>Facultad</th><th>Estado</th><th>Organizador</th><th></th></tr></thead><tbody>
+                @forelse($eventosRecientes as $evento)
+                    <tr><td><strong>{{ $evento->titulo }}</strong><small>{{ $evento->categoria->nombre ?? 'Programación institucional' }}</small></td><td>{{ $evento->facultad->siglas ?? 'UEB' }}</td><td><span class="uebtv-status {{ $evento->estado === 'en_vivo' ? 'uebtv-status--live' : '' }}"><i />{{ str_replace('_', ' ', ucfirst($evento->estado)) }}</span></td><td>{{ $evento->organizador->name ?? 'N/D' }}</td><td><a href="{{ route('eventos.show', $evento) }}">Ver detalle <span>↗</span></a></td></tr>
+                @empty
+                    <tr><td colspan="5" class="uebtv-empty">No hay eventos registrados en el sistema.</td></tr>
+                @endforelse
+            </tbody></table></div>
+        </section>
     </div>
 </x-app-layout>
