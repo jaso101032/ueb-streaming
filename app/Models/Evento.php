@@ -69,6 +69,11 @@ class Evento extends Model
         return $this->hasOne(Transmision::class);
     }
 
+    public function chatMessages()
+    {
+        return $this->hasMany(ChatMessage::class);
+    }
+
     // Scopes útiles para filtros rápidos
     public function scopeEnVivo($query)
     {

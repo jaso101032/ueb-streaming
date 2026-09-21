@@ -16,3 +16,5 @@ if (dashboard) {
 		JSON.parse(dashboard.dataset.props),
 	));
 }
+
+import "./chat";

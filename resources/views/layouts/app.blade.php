@@ -12,7 +12,7 @@
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
         <!-- Scripts y Estilos (Tailwind CSS / Vite) -->
-        @vite(['resources/css/app.css', 'resources/js/app.js'], 'uebtv-build')
+        @vite(['resources/css/app.css', 'resources/js/app.js'], 'uebtv-build-v2')
     </head>
     <body class="font-sans antialiased bg-gray-50 text-gray-900">
         <div class="min-h-screen flex flex-col">
@@ -38,10 +38,23 @@
                                     </button>
                                 </form>
                             </div>
+                        @else
+                            <div class="uebtv-public-nav-actions">
+                                <a href="{{ route('login') }}" class="uebtv-login-nav-link">Iniciar sesión <span aria-hidden="true">↗</span></a>
+                                @if (Route::has('register'))
+                                    <a href="{{ route('register') }}" class="uebtv-register-nav-link">Registrarse</a>
+                                @endif
+                            </div>
                         @endauth
                     </div>
                 </div>
             </header>
+
+            @isset($header)
+                <div class="bg-white border-b border-gray-200">
+                    <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">{{ $header }}</div>
+                </div>
+            @endisset
 
             <!-- Contenido Principal -->
             <main class="flex-grow">

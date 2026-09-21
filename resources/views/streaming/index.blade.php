@@ -19,6 +19,8 @@
                 </div>
             </div>
 
+            @if (session('success'))<div role="status" class="rounded-xl bg-green-100 p-4 text-green-800">{{ session('success') }}</div>@endif
+            @if ($errors->any())<div role="alert" class="rounded-xl bg-red-50 p-4 text-red-800">{{ $errors->first() }}</div>@endif
             <!-- Tabla de Eventos Estilizada -->
             <div class="bg-white rounded-2xl shadow-xl shadow-gray-100 border border-gray-100 overflow-hidden">
                 <div class="p-6 border-b border-gray-100 flex justify-between items-center">
@@ -42,7 +44,7 @@
                         </thead>
                         <tbody class="divide-y divide-gray-100 text-sm">
                             @forelse($eventos as $evento)
-                                <tr class="hover:bg-indigo-50/30 transition-colors group">
+                                <tr class="hover:bg-indigo-50/30 transition-colors group" data-status-url="{{ route('streaming.estado', $evento) }}">
                                     
                                     <!-- Título y Categoría -->
                                     <td class="px-6 py-4">
@@ -70,12 +72,15 @@
                                             <div class="space-y-1.5 text-xs bg-gray-50 p-3.5 rounded-xl border border-gray-200/80 shadow-inner font-mono">
                                                 <div>
                                                     <span class="font-sans font-semibold text-gray-500">Servidor:</span> 
-                                                    <span id="obsServerAddress" class="text-indigo-600 font-bold select-all">rtmp://{{ request()->getHost() }}:1935/live</span>
+                                                    <span data-server-address class="text-indigo-600 font-bold select-all">rtmp://{{ request()->getHost() }}:1935/live</span>
+                                                    <button type="button" data-copy-target="server" class="ml-2 text-gray-400 hover:text-indigo-600" title="Copiar servidor">▣</button>
                                                 </div>
                                                 <div>
                                                     <span class="font-sans font-semibold text-gray-500">Clave:</span> 
-                                                    <span class="text-purple-600 font-bold select-all">{{ $evento->transmision->stream_key }}</span>
+                                                    <span data-stream-key class="text-purple-600 font-bold select-all">{{ $evento->transmision->stream_key }}</span>
+                                                    <button type="button" data-copy-target="key" class="ml-2 text-gray-400 hover:text-purple-600" title="Copiar clave">▣</button>
                                                 </div>
+                                                <div class="pt-1"><span data-stream-status class="uebtv-stream-status is-checking">Comprobando señal...</span></div>
                                             </div>
                                         @else
                                             <span class="text-xs font-medium text-amber-600 bg-amber-50 px-3 py-1 rounded-full border border-amber-200">
@@ -86,6 +91,7 @@
 
                                     <!-- Acciones -->
                                     <td class="px-6 py-4 text-center whitespace-nowrap">
+                                        @if (!in_array($evento->estado, ['finalizado', 'cancelado']) && !$evento->transmision?->iniciado_en)
                                         <form action="{{ route('streaming.generar.clave', $evento->id) }}" method="POST">
                                             @csrf
                                             <button type="submit" class="inline-flex items-center space-x-2 bg-indigo-50 hover:bg-indigo-600 text-indigo-700 hover:text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all duration-200 border border-indigo-100 shadow-sm hover:shadow">
@@ -94,7 +100,11 @@
                                                 </svg>
                                                 <span>{{ $evento->transmision ? 'Regenerar Clave' : 'Generar Clave OBS' }}</span>
                                             </button>
+                                            <a href="{{ route('eventos.show', $evento) }}" class="ml-2 inline-flex items-center bg-gray-50 hover:bg-gray-100 text-gray-600 text-xs font-bold px-3 py-2.5 rounded-xl border border-gray-200" title="Abrir sala pública">Ver sala</a>
                                         </form>
+                                        @endif
+                                        @include('streaming.finish-button')
+                                        <a class="block mt-3 text-xs text-blue-700 underline" href="{{ route('admin.eventos.show', $evento) }}">Ver evento y grabación</a>
                                     </td>
 
                                 </tr>
@@ -116,9 +126,31 @@
 </x-app-layout>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        const serverAddress = document.getElementById('obsServerAddress');
-        if (serverAddress) {
-            serverAddress.textContent = `rtmp://${window.location.hostname}:1935/live`;
-        }
+        const server = `rtmp://${window.location.hostname}:1935/live`;
+        document.querySelectorAll('[data-server-address]').forEach((element) => element.textContent = server);
+        document.querySelectorAll('[data-copy-target]').forEach((button) => button.addEventListener('click', async () => {
+            const row = button.closest('tr');
+            const value = button.dataset.copyTarget === 'server' ? server : row.querySelector('[data-stream-key]').textContent.trim();
+            await navigator.clipboard.writeText(value);
+            button.textContent = '✓';
+            setTimeout(() => button.textContent = '▣', 1500);
+        }));
+
+        document.querySelectorAll('[data-stream-status]').forEach((status) => {
+            const row = status.closest('tr');
+            const endpoint = row.dataset.statusUrl;
+            const refresh = async () => {
+                if (!endpoint) return;
+                try {
+                    const response = await fetch(endpoint, { headers: { Accept: 'application/json' } });
+                    const data = await response.json();
+                    status.textContent = data.finalizado ? 'Transmisión finalizada' : (data.en_vivo ? '● Señal recibida' : '○ Esperando señal de OBS');
+                    status.classList.toggle('is-live', data.en_vivo);
+                    status.classList.remove('is-checking');
+                } catch { status.textContent = 'Sin conexión con el monitor'; }
+            };
+            refresh();
+            setInterval(refresh, 10000);
+        });
     });
 </script>

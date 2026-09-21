@@ -2,39 +2,73 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Categoria;
 use App\Models\Evento;
+use App\Models\Facultad;
+use App\Services\ChatFeed;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class EventoPublicoController extends Controller
 {
     /**
      * Muestra la lista de eventos activos y pasados para la comunidad estudiantil.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $filter = request('filtro', 'todos');
-        $query = Evento::with(['facultad', 'categoria', 'transmision'])
+        $filters = $request->validate([
+            'q' => ['nullable', 'string', 'max:120'],
+            'filtro' => ['nullable', Rule::in(['todos', 'en_vivo', 'anteriores', 'proximos'])],
+            'facultad_id' => ['nullable', 'integer', 'exists:facultades,id'],
+            'categoria_id' => ['nullable', 'integer', 'exists:categorias,id'],
+        ], [
+            'q.string' => 'Ingresa un título válido para buscar.',
+            'q.max' => 'La búsqueda no puede superar 120 caracteres.',
+            'filtro.in' => 'Selecciona un estado válido.',
+            'facultad_id.integer' => 'Selecciona una facultad válida.',
+            'facultad_id.exists' => 'La facultad seleccionada no está disponible.',
+            'categoria_id.integer' => 'Selecciona una categoría válida.',
+            'categoria_id.exists' => 'La categoría seleccionada no está disponible.',
+        ]);
+        $filter = $filters['filtro'] ?? 'todos';
+        $query = Evento::with(['facultad', 'categoria'])
             ->where('estado', '!=', 'cancelado');
+
+        $search = trim($filters['q'] ?? '');
+        if ($search !== '') {
+            // Escapar comodines para buscar el título escrito literalmente.
+            $search = str_replace(['!', '%', '_'], ['!!', '!%', '!_'], mb_strtolower($search));
+            $query->whereRaw("LOWER(titulo) LIKE ? ESCAPE '!'", ['%'.$search.'%']);
+        }
+        foreach (['facultad_id', 'categoria_id'] as $field) {
+            if (! empty($filters[$field])) {
+                $query->where($field, $filters[$field]);
+            }
+        }
+
+        $proximos = (clone $query)->where('estado', 'programado')
+            ->where('fecha_inicio', '>=', now())->orderBy('fecha_inicio')->orderBy('id')->limit(4)->get();
 
         if ($filter === 'en_vivo') {
             $query->where('estado', 'en_vivo');
         } elseif ($filter === 'anteriores') {
-            $query->where(function ($eventos) {
-                $eventos->where('estado', 'finalizado')->orWhereNotNull('video_url');
-            });
+            $query->where(fn ($events) => $events->where('estado', 'finalizado')->orWhereNotNull('video_url'));
+        } elseif ($filter === 'proximos') {
+            $query->where('estado', 'programado')->where('fecha_inicio', '>=', now());
         }
 
-        $eventos = $query->orderBy('fecha_inicio', 'desc')
-            ->paginate(12);
-        $eventos->withQueryString();
+        $eventos = $query->orderBy('fecha_inicio', $filter === 'proximos' ? 'asc' : 'desc')
+            ->orderBy('id')->paginate(12)->withQueryString();
+        $categorias = Categoria::orderBy('nombre')->get(['id', 'nombre']);
+        $facultades = Facultad::orderBy('nombre')->get(['id', 'nombre']);
 
-        return view('eventos.index', compact('eventos', 'filter'));
+        return view('eventos.index', compact('eventos', 'filter', 'filters', 'proximos', 'categorias', 'facultades'));
     }
 
     /**
      * Muestra la sala de reproducción en vivo o diferido de un evento específico.
      */
-    public function show(Evento $evento)
+    public function show(Evento $evento, ChatFeed $feed)
     {
         $evento->load(['facultad', 'categoria', 'transmision', 'organizador']);
         $eventosRelacionados = Evento::with(['facultad', 'categoria', 'transmision'])
@@ -44,6 +78,9 @@ class EventoPublicoController extends Controller
             ->take(4)
             ->get();
 
-        return view('eventos.show', compact('evento', 'eventosRelacionados'));
+        $chatMessages = $feed->messages($evento);
+        $canModerate = in_array(auth()->user()?->role, ['admin', 'operador'], true);
+
+        return view('eventos.show', compact('evento', 'eventosRelacionados', 'chatMessages', 'canModerate'));
     }
 }

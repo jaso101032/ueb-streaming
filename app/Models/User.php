@@ -45,6 +45,6 @@ class User extends Authenticatable
 
     public function isUsuario(): bool
     {
-        return $this->role === 'usuario';
+        return in_array(strtolower(trim((string) $this->role)), ['usuario', 'user', ''], true);
     }
 }

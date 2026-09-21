@@ -1,0 +1,88 @@
+/* Event editor: scoped to the create and edit screens. */
+.uebtv-event-editor.uebtv-form-page { background: radial-gradient(ellipse at 95% 0%, #e4eefc 0, transparent 42%), #f4f7fb; padding: 40px 28px 64px; }
+.uebtv-event-editor .uebtv-form-container { max-width: 1200px; }
+.uebtv-event-editor .uebtv-form-back { display: inline-flex; gap: 8px; margin-bottom: 28px; color: #526b8d; }
+.uebtv-event-editor .uebtv-form-heading { margin-bottom: 26px; }
+.uebtv-event-editor .uebtv-form-heading h1 { font-size: clamp(32px, 4vw, 46px); letter-spacing: -1.8px; margin: 12px 0; }
+.uebtv-event-editor .uebtv-form-heading p { line-height: 1.7; }
+.event-editor-steps { display: flex; align-items: center; gap: 20px; margin: 0 0 30px; color: #526b8d; font-size: 12px; }
+.event-editor-steps span { display: flex; align-items: center; gap: 9px; }
+.event-editor-steps b { display: grid; place-items: center; width: 29px; height: 29px; border: 1px solid #cbdcef; border-radius: 50%; color: #1554a6; background: white; font-size: 11px; }
+.event-editor-steps i { width: 44px; height: 1px; background: #cbdcef; }
+.uebtv-event-editor .uebtv-event-form { grid-template-columns: minmax(0, 1fr) 310px; gap: 26px; align-items: start; }
+.uebtv-event-editor .uebtv-form-main { min-width: 0; display: grid; gap: 24px; }
+.uebtv-event-editor .uebtv-form-section { margin: 0; padding: 30px; border: 1px solid #dce6f2; border-radius: 20px; box-shadow: 0 8px 30px #071a3505; overflow: hidden; }
+.uebtv-event-editor .uebtv-form-section__title { align-items: center; gap: 15px; padding-bottom: 23px; margin-bottom: 26px; }
+.uebtv-event-editor .uebtv-form-section__title > span { display: grid; place-items: center; flex: 0 0 44px; height: 44px; border-radius: 13px; background: #eaf2fc; color: #1554a6; font-size: 14px; font-weight: 700; }
+.uebtv-event-editor .uebtv-form-section__title h2 { font-size: 21px; letter-spacing: -.5px; }
+.uebtv-event-editor .uebtv-form-fields { gap: 24px 20px; }
+.uebtv-event-editor .uebtv-form-field { min-width: 0; }
+.uebtv-event-editor .uebtv-form-field label { font-size: 12px; color: #223b5d; margin-bottom: 9px; }
+.uebtv-event-editor .uebtv-form-field input,
+.uebtv-event-editor .uebtv-form-field select,
+.uebtv-event-editor .uebtv-form-field textarea { min-width: 0; width: 100%; border-radius: 10px; padding: 13px 14px; background-color: #f8fafd; border-color: #d7e2ef; font-size: 13px; transition: border-color .18s, box-shadow .18s, background-color .18s; }
+.uebtv-event-editor .uebtv-form-field select { padding-right: 34px; }
+.uebtv-event-editor .uebtv-form-field textarea { min-height: 130px; resize: vertical; }
+.uebtv-event-editor .uebtv-form-field input:hover,
+.uebtv-event-editor .uebtv-form-field select:hover,
+.uebtv-event-editor .uebtv-form-field textarea:hover { border-color: #9cb9dd; }
+.uebtv-event-editor .uebtv-form-field input:focus,
+.uebtv-event-editor .uebtv-form-field select:focus,
+.uebtv-event-editor .uebtv-form-field textarea:focus { outline: 0; border-color: #1554a6; background-color: white; box-shadow: 0 0 0 4px #1554a612; }
+.uebtv-event-editor .uebtv-form-field small,
+.uebtv-event-editor .uebtv-form-field small:not(:last-child) { color: #647b99; font-size: 11px; line-height: 1.7; }
+.uebtv-event-editor input[type=file] { padding: 20px; border-style: dashed; background: #f4f8fe; }
+.uebtv-event-editor input::file-selector-button { border: 0; border-radius: 7px; background: #e1ecfa; color: #1554a6; padding: 10px 12px; font-weight: 600; margin-right: 12px; cursor: pointer; }
+.event-editor-sidebar { position: sticky; top: 100px; min-width: 0; }
+.event-preview { border: 1px solid #d7e2ef; border-radius: 19px; overflow: hidden; background: white; box-shadow: 0 14px 36px #071a350a; }
+.event-preview-cover { position: relative; aspect-ratio: 16 / 10; overflow: hidden; color: white; background: radial-gradient(circle at 80% 110%, #234e80 0, #102d51 45%, #071a35 80%); }
+.event-preview-cover::before { content: ''; position: absolute; width: 240px; height: 240px; border: 1px solid #91b8e63b; border-radius: 50%; right: -60px; bottom: -145px; box-shadow: 0 0 0 24px #91b8e60a, 0 0 0 48px #91b8e609; }
+.event-preview-brand { position: absolute; left: 22px; top: 21px; font-weight: 700; letter-spacing: -1px; font-size: 20px; }
+.event-preview-brand span { color: #93beee; }
+.event-preview-play { position: absolute; inset: 0; display: grid; place-items: center; font-size: 52px; color: #a9c9ef; }
+.event-preview-cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.event-preview-label { position: absolute; left: 18px; bottom: 16px; padding: 6px 9px; border-radius: 5px; background: #071a35d9; color: #dbeaff; font-size: 9px; font-weight: 700; letter-spacing: 1.4px; }
+.event-preview-body { padding: 24px; }
+.event-preview-category { display: inline-block; padding: 5px 9px; background: #eaf2fc; color: #1554a6; border-radius: 6px; font-size: 10px; font-weight: 700; overflow-wrap: anywhere; }
+.event-preview-body h2 { font-family: 'Space Grotesk', sans-serif; font-size: 23px; line-height: 1.25; letter-spacing: -.6px; margin: 15px 0 12px; color: #071a35; overflow-wrap: anywhere; }
+.event-preview-body p { font-size: 12px; color: #647b99; }
+.event-preview-faculty { display: flex; gap: 10px; border-top: 1px solid #e2eaf4; margin-top: 22px; padding-top: 18px; font-size: 11px; line-height: 1.6; color: #526b8d; }
+.event-preview-faculty > span:first-child { color: #1554a6; font-size: 18px; }
+.event-preview-caption { margin: 12px 0 24px; text-align: center; font-size: 11px; color: #647b99; }
+.event-editor-note { padding: 25px; background: #071a35; border-radius: 16px; color: white; }
+.event-editor-note-icon { display: grid; place-items: center; width: 34px; height: 34px; border: 1px solid #91b8e653; border-radius: 10px; color: #93beee; margin-bottom: 17px; }
+.event-editor-note h2 { font-size: 18px; line-height: 1.3; font-family: 'Space Grotesk', sans-serif; }
+.event-editor-note p { font-size: 12px; line-height: 1.8; color: #bbcee5; margin-top: 12px; }
+.event-editor-note-footer { display: block; padding-top: 18px; margin-top: 20px; border-top: 1px solid #ffffff20; color: #93beee; font-size: 10px; }
+.uebtv-event-editor .uebtv-form-actions { padding: 20px 0 0; border-top: 1px solid #d7e2ef; gap: 25px; }
+.uebtv-event-editor .uebtv-form-actions button { border-radius: 10px; box-shadow: 0 8px 18px #071a3514; padding: 17px 24px; transition: background .18s, transform .18s; }
+.uebtv-event-editor .uebtv-form-actions button:hover { background: #1554a6; transform: translateY(-1px); }
+.uebtv-event-editor .uebtv-form-actions button:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+.uebtv-event-editor a:focus-visible, .uebtv-event-editor button:focus-visible { outline: 3px solid #1554a6; outline-offset: 4px; }
+.uebtv-event-editor .uebtv-form-errors { border-radius: 12px; }
+@media (max-width: 960px) {
+    .uebtv-event-editor .uebtv-event-form { grid-template-columns: minmax(0, 1fr) 270px; gap: 18px; }
+    .uebtv-event-editor .uebtv-form-section { padding: 22px; }
+}
+@media (max-width: 800px) {
+    .uebtv-event-editor .uebtv-event-form { grid-template-columns: minmax(0, 1fr); }
+    .event-editor-sidebar { position: static; display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    .event-preview-caption { display: none; }
+    .event-editor-note { align-self: start; }
+    .event-editor-steps { gap: 12px; flex-wrap: wrap; }
+    .event-editor-steps i { width: 20px; }
+}
+@media (max-width: 540px) {
+    .uebtv-event-editor.uebtv-form-page { padding: 25px 16px 40px; }
+    .uebtv-event-editor .uebtv-form-fields { grid-template-columns: minmax(0, 1fr); }
+    .uebtv-event-editor .uebtv-form-section { padding: 20px; border-radius: 15px; }
+    .event-editor-steps { font-size: 10px; gap: 10px; }
+    .event-editor-steps i { display: none; }
+    .event-editor-steps span:last-child { display: none; }
+    .event-editor-sidebar { grid-template-columns: minmax(0, 1fr); }
+    .uebtv-event-editor .uebtv-form-actions { flex-direction: column-reverse; align-items: stretch; text-align: center; }
+    .uebtv-event-editor .uebtv-form-actions button { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .uebtv-event-editor *, .uebtv-event-editor *::before { transition: none !important; }
+}

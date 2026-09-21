@@ -7,7 +7,7 @@ export default defineConfig({
         react(),
         laravel({
             input: ['resources/css/app.css', 'resources/js/app.js'],
-            buildDirectory: 'uebtv-build',
+            buildDirectory: 'uebtv-build-v2',
             refresh: true,
         }),
     ],
