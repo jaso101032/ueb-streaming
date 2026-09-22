@@ -8,46 +8,46 @@
         <title>{{ config('app.name', 'UEBTV') }}</title>
 
         <!-- Fonts -->
-        <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
         <!-- Scripts y Estilos (Tailwind CSS / Vite) -->
+        @viteReactRefresh
         @vite(['resources/css/app.css', 'resources/js/app.js'], 'uebtv-build-v2')
     </head>
     <body class="font-sans antialiased bg-gray-50 text-gray-900">
         <div class="min-h-screen flex flex-col">
             
-            <!-- Navbar Superior Institucional -->
-            <header class="uebtv-header">
-                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-                    <div class="flex items-center space-x-3">
-                        <span class="uebtv-mark">UEB</span>
-                        <a href="{{ route('dashboard') }}" class="font-bold text-lg tracking-tight hover:text-blue-100 transition">
-                            UEBTV
-                        </a>
-                    </div>
-
-                    <div class="flex items-center space-x-4">
+            @php
+                $operator = auth()->check() && in_array(strtolower(trim((string) auth()->user()->role)), ['admin', 'operador']);
+                $links = [['label' => 'Explorar', 'url' => route('eventos.index'), 'active' => request()->routeIs('eventos.*')]];
+                if ($operator) {
+                    $links = array_merge([
+                        ['label' => 'Vista general', 'url' => route('admin.dashboard'), 'active' => request()->routeIs('admin.dashboard')],
+                        ['label' => 'Eventos', 'url' => route('admin.eventos.index'), 'active' => request()->routeIs('admin.eventos.*')],
+                        ['label' => 'Streaming', 'url' => route('streaming.control'), 'active' => request()->routeIs('streaming.*')],
+                    ], $links);
+                }
+            @endphp
+            <a class="studio-skip" href="#contenido">Saltar al contenido</a>
+            <header class="studio-header" x-data="{ menu: false }" @keydown.escape.window="menu = false">
+                <div class="studio-header-inner">
+                    <a class="studio-brand" href="{{ $operator ? route('admin.dashboard') : route('eventos.index') }}" aria-label="UEBTV · Inicio"><img class="brand-mascot" src="{{ asset('images/mascota-ueb-login.png') }}" alt="Mascota de la UEB" width="48" height="64"><span>UEB<span class="studio-brand-tv">TV</span><small>UNIVERSIDAD ESTATAL DE BOLÍVAR</small></span></a>
+                    <nav class="studio-desktop-nav" aria-label="Navegación principal">
+                        @foreach($links as $link)<a href="{{ $link['url'] }}" @if($link['active']) aria-current="page" @endif>{{ $link['label'] }}</a>@endforeach
+                    </nav>
+                    <div class="studio-account">
                         @auth
-                            <div class="flex items-center space-x-3">
-                                <span class="text-sm font-medium text-blue-100 hidden sm:inline">{{ Auth::user()->name }}</span>
-                                <form method="POST" action="{{ route('logout') }}">
-                                    @csrf
-                                    <button type="submit" class="bg-blue-800 hover:bg-blue-700 text-xs text-white px-3 py-2 rounded-lg font-medium transition shadow-sm">
-                                        Cerrar Sesión
-                                    </button>
-                                </form>
-                            </div>
+                            <a class="studio-avatar" href="{{ route('profile.edit') }}" aria-label="Editar mi perfil">{{ mb_strtoupper(mb_substr(auth()->user()->name, 0, 1)) }}</a>
+                            <form method="POST" action="{{ route('logout') }}">@csrf<button class="studio-signout" type="submit"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4H4v16h5M13 8l4 4-4 4M8 12h13"/></svg><span>Cerrar sesión</span></button></form>
                         @else
-                            <div class="uebtv-public-nav-actions">
-                                <a href="{{ route('login') }}" class="uebtv-login-nav-link">Iniciar sesión <span aria-hidden="true">↗</span></a>
-                                @if (Route::has('register'))
-                                    <a href="{{ route('register') }}" class="uebtv-register-nav-link">Registrarse</a>
-                                @endif
-                            </div>
+                            <a class="studio-signout" href="{{ route('login') }}">Ingresar</a>
                         @endauth
+                        <button class="studio-menu-toggle" type="button" @click="menu = !menu" :aria-expanded="menu.toString()" aria-controls="studio-mobile-nav" aria-label="Abrir o cerrar menú">☰</button>
                     </div>
                 </div>
+                <nav id="studio-mobile-nav" class="studio-mobile-nav" x-cloak x-show="menu" aria-label="Navegación móvil">
+                    @foreach($links as $link)<a href="{{ $link['url'] }}" @if($link['active']) aria-current="page" @endif>{{ $link['label'] }} <span aria-hidden="true">↗</span></a>@endforeach
+                    @guest<a href="{{ route('register') }}">Crear cuenta <span aria-hidden="true">↗</span></a>@endguest
+                </nav>
             </header>
 
             @isset($header)
@@ -57,7 +57,7 @@
             @endisset
 
             <!-- Contenido Principal -->
-            <main class="flex-grow">
+            <main id="contenido" class="flex-grow" tabindex="-1">
                 {{ $slot }}
             </main>
 

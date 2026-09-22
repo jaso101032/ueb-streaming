@@ -6,6 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="theme-color" content="#071a35">
     <title>Acceso a UEBTV</title>
+    @viteReactRefresh
     @vite(['resources/css/app.css', 'resources/js/app.js'], 'uebtv-build-v2')
 </head>
 <body class="access-page">
@@ -14,12 +15,9 @@
         <section class="access-brand" aria-labelledby="access-brand-title">
             <div class="access-orbit" aria-hidden="true"></div>
             <a class="access-logo" href="{{ route('eventos.index') }}" aria-label="UEBTV, ir al catálogo">
-                <span class="access-logo__mark">UEB</span>
+                <img class="brand-mascot brand-mascot-access" src="{{ asset('images/mascota-ueb-login.png') }}" alt="Mascota de la UEB" width="64" height="88">
                 <span class="access-logo__text">UEB<span>TV</span><small>Universidad Estatal de Bolívar</small></span>
             </a>
-            <figure class="access-mascot">
-                <img src="{{ asset('images/mascota-ueb-login.png') }}" alt="Mascota de la UEB con su vestimenta institucional" width="1024" height="1536" fetchpriority="high">
-            </figure>
             <div class="access-story">
                 <p class="access-eyebrow"><span></span> TU UNIVERSIDAD. TU SEÑAL.</p>
                 <h1 id="access-brand-title">La Universidad<br><em>en vivo.</em></h1>

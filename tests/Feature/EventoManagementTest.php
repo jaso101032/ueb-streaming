@@ -68,7 +68,7 @@ class EventoManagementTest extends TestCase
 
     public function test_forms_show_catalogs_and_admin_navigation(): void
     {
-        $this->get(route('admin.eventos.index'))->assertOk()->assertSee('Nuevo Evento');
+        $this->get(route('admin.eventos.index'))->assertOk()->assertSee('Crear evento')->assertSee(route('admin.eventos.create'), false);
         $this->get(route('admin.eventos.create'))->assertOk()->assertSee('Académico')->assertSee('Ingeniería')->assertSee('Software')->assertSee('multipart/form-data', false);
         $evento = $this->evento();
         $this->get(route('admin.eventos.edit', $evento))->assertOk()->assertSee('2026-10-01T12:00');

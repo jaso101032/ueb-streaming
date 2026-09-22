@@ -1,5 +1,5 @@
 /* Acceso UEBTV: estilos aislados de registro, recuperación y demás pantallas. */
-.access-page { margin: 0; background: #f5f8fc; color: #071a35; font-family: 'DM Sans', sans-serif; }
+.access-page { margin: 0; background: #f5f8fc; color: #071a35; font-family: 'Inter Variable', system-ui, sans-serif; }
 .access-page *, .access-page *::before, .access-page *::after { box-sizing: border-box; }
 .access-page [x-cloak] { display: none !important; }
 .access-page a { text-decoration: none; }
@@ -11,7 +11,7 @@
 .access-brand::before { content: ''; position: absolute; z-index: -2; inset: 0; background-image: linear-gradient(rgba(145,192,243,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(145,192,243,.04) 1px, transparent 1px); background-size: 76px 76px; mask-image: linear-gradient(145deg, black, transparent 65%); }
 .access-orbit { position: absolute; z-index: -1; width: 760px; aspect-ratio: 1; right: -470px; bottom: -360px; border: 1px solid rgba(145,192,243,.22); border-radius: 50%; box-shadow: 0 0 0 64px rgba(145,192,243,.035), 0 0 0 128px rgba(145,192,243,.025), 0 0 0 192px rgba(145,192,243,.015); }
 .access-logo { display: inline-flex; align-items: center; gap: 14px; width: fit-content; color: white; }
-.access-logo__mark { display: grid; place-items: center; width: 48px; height: 51px; border: 1px solid rgba(145,192,243,.5); border-radius: 10px 10px 10px 2px; background: rgba(145,192,243,.06); font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: -.05em; }
+.access-logo__mark { display: grid; place-items: center; width: 48px; height: 51px; border: 1px solid rgba(145,192,243,.5); border-radius: 10px 10px 10px 2px; background: rgba(145,192,243,.06); font-family: 'Inter Variable', system-ui, sans-serif; font-size: 14px; font-weight: 700; letter-spacing: -.05em; }
 .access-logo__text { font-size: 22px; line-height: 1.1; font-weight: 700; letter-spacing: -.055em; }
 .access-logo__text > span { color: #91c0f3; }
 .access-logo__text small { display: block; margin-top: 7px; color: #a9c1dd; font-size: 9px; font-weight: 400; letter-spacing: .02em; }
@@ -20,7 +20,7 @@
 .access-story { position: relative; flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 150px 0 100px; animation: access-enter .65s ease-out both; }
 .access-eyebrow { display: flex; align-items: center; gap: 12px; margin: 0 0 26px; color: #a9c1dd; font-size: 10px; font-weight: 600; letter-spacing: .2em; }
 .access-eyebrow > span { display: block; width: 28px; height: 1px; background: #91c0f3; }
-.access-story h1 { margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: clamp(42px, 4.9vw, 88px); font-weight: 500; line-height: 1.06; letter-spacing: -.065em; }
+.access-story h1 { margin: 0; font-family: 'Inter Variable', system-ui, sans-serif; font-size: clamp(42px, 4.9vw, 88px); font-weight: 500; line-height: 1.06; letter-spacing: -.065em; }
 .access-story h1 em { color: #91c0f3; font-style: normal; }
 .access-story__copy { margin: 28px 0 0; color: #b8cbe2; font-size: clamp(14px, 1.1vw, 17px); line-height: 1.9; }
 .access-explore { display: flex; align-items: center; gap: 14px; width: fit-content; max-width: 100%; margin-top: 42px; color: white; font-size: 12px; }
@@ -45,7 +45,7 @@
 .access-card-top { display: flex; align-items: center; gap: 12px; color: #52637b; font-size: 8px; font-weight: 600; letter-spacing: .13em; }
 .access-card-icon { display: grid; place-items: center; width: 41px; height: 41px; flex-shrink: 0; background: #eaf2fc; border: 1px solid #dce5ef; border-radius: 12px; color: #1554a6; }
 .access-card-icon svg { width: 22px; height: 22px; }
-.access-heading h2 { margin: 25px 0 14px; font-family: 'Space Grotesk', sans-serif; font-size: clamp(34px, 2.75vw, 46px); line-height: 1.07; letter-spacing: -.055em; font-weight: 500; }
+.access-heading h2 { margin: 25px 0 14px; font-family: 'Inter Variable', system-ui, sans-serif; font-size: clamp(34px, 2.75vw, 46px); line-height: 1.07; letter-spacing: -.055em; font-weight: 500; }
 .access-heading h2 > span { color: #1554a6; }
 .access-heading p { margin: 0; color: #718097; font-size: 13px; line-height: 1.7; }
 .access-form { margin-top: 30px; }

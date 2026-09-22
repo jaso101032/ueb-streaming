@@ -1,0 +1,111 @@
+/* A single visual scale for sign-in, registration and account recovery. */
+.access-page, .uebtv-login-body { background:#edf2f9; padding:28px; font-family:'Inter Variable',system-ui,sans-serif; }
+.access-layout, .uebtv-login-shell { display:grid; grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr); max-width:1200px; min-height:740px; margin:0 auto; border:1px solid #dce5f1; border-radius:24px; overflow:hidden; box-shadow:0 20px 70px #071a3510; }
+.access-brand, .uebtv-login-brand { padding:32px 36px; display:flex; flex-direction:column; justify-content:flex-start; min-height:0; }
+.access-logo, .uebtv-login-brand__top { display:flex; align-items:center; gap:4px; flex-shrink:0; }
+.access-logo .brand-mascot, .uebtv-login-brand__top .brand-mascot { width:84px; height:116px; margin-left:-10px; object-fit:contain; }
+.access-logo__text, .uebtv-login-brand__name { font-size:27px; }
+.access-logo__text small { font-size:11px; line-height:1.5; margin-top:6px; }
+.access-story, .uebtv-login-brand__message { flex:0 0 auto; padding:0; margin:54px 0 32px; max-width:420px; }
+.access-story h1, .uebtv-login-brand__message h1 { font-size:clamp(36px,3.5vw,48px); font-weight:650; line-height:1.12; letter-spacing:-.035em; margin:18px 0; }
+.access-eyebrow { margin-bottom:18px; font-size:10px; letter-spacing:.12em; }
+.access-story__copy, .uebtv-login-brand__message > p:last-child { font-size:15px; line-height:1.8; max-width:370px; }
+.access-explore { margin-top:24px; }
+.access-brand-footer, .uebtv-login-signal { margin-top:auto; padding-top:24px; }
+.access-entry, .uebtv-login-form-panel { padding:30px 34px; background:#f7f9fd; display:flex; flex-direction:column; justify-content:center; align-items:stretch; gap:20px; border:0; min-height:0; }
+.access-entry-nav { width:100%; max-width:500px; margin:0 auto; }
+.access-card, .uebtv-login-form-wrap { width:100%; max-width:500px; margin:0 auto; padding:30px 32px; border:1px solid #dce5f1; border-radius:20px; box-shadow:0 8px 28px #071a3508; background:white; }
+.access-card-top { margin-bottom:20px; }
+.access-heading h2, .uebtv-login-heading h2 { font-size:32px; font-weight:700; line-height:1.18; letter-spacing:-.035em; margin:10px 0; }
+.access-heading p, .uebtv-login-heading p { font-size:14px; line-height:1.65; color:#526780; }
+.uebtv-recovery-back { margin-bottom:20px; }
+.uebtv-recovery-back a { font-size:13px; min-height:30px; }
+.uebtv-login-index { font-size:11px; letter-spacing:.1em; }
+.uebtv-login-divider { margin:20px 0; }
+.uebtv-login-divider span { font-size:11px; color:#536780; }
+.access-form, .uebtv-login-form, .uebtv-recovery-shell .uebtv-login-form { margin-top:24px; }
+.access-field + .access-field, .uebtv-field + .uebtv-field { margin-top:18px; }
+.access-field label, .access-label-row label, .uebtv-field label, .uebtv-label-row label { font-size:14px; line-height:1.5; font-weight:600; }
+.access-input, .uebtv-input-wrap { border-radius:11px; margin-top:8px; min-height:50px; border:1px solid #c9d8eb; background:#fbfdff; }
+.access-input input, .uebtv-input-wrap input { font-family:'Inter Variable',system-ui,sans-serif; font-size:16px; line-height:1.5; padding:12px 0; box-shadow:none; border-radius:0; }
+.access-input input::placeholder, .uebtv-input-wrap input::placeholder { color:#6d7e96; opacity:1; }
+.access-submit, .uebtv-login-button { margin-top:22px; min-height:50px; padding:13px 18px; border-radius:11px; background:#1554a6; font-size:15px; font-weight:650; box-shadow:0 5px 14px #1554a624; }
+.access-submit:hover, .uebtv-login-button:hover { background:#103e7b; }
+.uebtv-login-footnote, .uebtv-recovery-shell .uebtv-login-footnote { margin-top:22px; font-size:12px; color:#61728a; line-height:1.6; }
+.uebtv-register-shell .uebtv-password-requirements { margin:10px 0 0; padding:12px 14px; list-style:none; font-size:12px; line-height:1.8; color:#4c607c; background:#f3f6fc; border-radius:10px; }
+.uebtv-password-requirements li { display:flex; align-items:baseline; gap:7px; }
+.uebtv-password-dot { flex:0 0 7px; margin-right:0; }
+.uebtv-login-error { font-size:13px; line-height:1.5; }
+.access-entry-footer { margin:0; font-size:12px; }
+@media(min-width:1500px) { .access-page, .uebtv-login-body { padding-top:40px; } }
+@media(max-width:900px) { .access-page, .uebtv-login-body { padding:16px; }.access-brand,.uebtv-login-brand { padding:26px 24px; }.access-entry,.uebtv-login-form-panel { padding:24px 20px; }.access-card,.uebtv-login-form-wrap { padding:26px 22px; }.access-story h1,.uebtv-login-brand__message h1 { font-size:36px; }.access-logo__text,.uebtv-login-brand__name { font-size:24px; } }
+@media(max-width:700px) { .access-page,.uebtv-login-body { padding:12px; }.access-layout,.uebtv-login-shell { display:block; min-height:0; border-radius:18px; }.access-brand,.uebtv-login-brand { padding:16px 24px 22px; }.access-logo .brand-mascot,.uebtv-login-brand__top .brand-mascot { width:64px; height:86px; }.access-story,.uebtv-login-brand__message { margin:12px 0 0; }.access-story h1,.uebtv-login-brand__message h1 { font-size:28px; margin:10px 0 0; }.access-story h1 br,.uebtv-login-brand__message h1 br { display:none; }.access-story h1 em::before,.uebtv-login-brand__message h1 em::before { content:' '; }.access-eyebrow,.uebtv-login-brand__message .uebtv-kicker { display:none; }.access-story__copy,.access-explore,.access-brand-footer,.uebtv-login-signal,.uebtv-login-brand__message > p:last-child { display:none; }.access-entry,.uebtv-login-form-panel { padding:20px 14px; }.access-card,.uebtv-login-form-wrap { padding:24px 20px; border-radius:16px; }.access-heading h2,.uebtv-login-heading h2 { font-size:29px; }.access-logo__text small { max-width:none; font-size:10px; }.access-logo__text,.uebtv-login-brand__name { font-size:25px; } }
+
+/* Full-viewport access pages, with a shared readable form scale. */
+.access-page, .uebtv-login-body { padding:0; }
+.access-layout, .uebtv-login-shell { max-width:none; width:100%; min-height:100vh; min-height:100svh; margin:0; border:0; border-radius:0; box-shadow:none; grid-template-columns:minmax(0,1fr) minmax(0,1fr); }
+.access-brand, .uebtv-login-brand { padding:32px clamp(28px,5vw,90px); }
+.access-entry, .uebtv-login-form-panel { padding:28px clamp(24px,4vw,76px); }
+.access-card, .uebtv-login-form-wrap, .access-entry-nav { max-width:560px; }
+.access-card, .uebtv-login-form-wrap { padding:30px 36px; }
+.access-story, .uebtv-login-brand__message { margin-top:clamp(32px,7vh,72px); }
+.access-entry-nav > a, .uebtv-recovery-back a { display:inline-flex; align-items:center; gap:9px; width:fit-content; min-height:44px; padding:10px 15px; border:1px solid #bed1e9; border-radius:10px; background:#e9f1fc; color:#164d8c; font-size:14px; font-weight:650; transition:background .18s,box-shadow .18s; }
+.access-entry-nav > a:hover, .uebtv-recovery-back a:hover { background:#dce9fa; box-shadow:0 3px 10px #1554a615; }
+.access-entry-nav > span { display:none; }
+.access-register a, .access-register-link, .access-card a[href$="/register"], .uebtv-register-prompt a { display:inline-flex; align-items:center; gap:6px; min-height:44px; padding:8px 12px; border-radius:9px; background:#e9f1fc; color:#164d8c; font-size:14px; font-weight:650; }
+.access-field-label label, .uebtv-field label { font-size:14px; font-weight:600; }
+.access-field-label a { font-size:13px; text-decoration:underline; text-underline-offset:3px; }
+.access-remember { font-size:13px; }
+.access-heading h2, .uebtv-login-heading h2 { font-size:34px; }
+.password-guide { margin-top:10px; border:1px solid #dce5f1; border-radius:10px; background:#f4f7fc; overflow:hidden; }
+.password-guide summary { padding:11px 14px; cursor:pointer; color:#315575; font-size:13px; font-weight:600; min-height:44px; }
+.password-guide summary:hover { background:#eaf1fb; }
+.password-guide summary:focus-visible { outline:2px solid #1554a6; outline-offset:-3px; }
+.uebtv-register-shell .password-guide .uebtv-password-requirements { margin:0; padding:2px 14px 12px; background:transparent; }
+.password-reveal, .access-input .access-reveal { display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; gap:5px; width:auto; min-width:64px; min-height:40px; padding:7px 9px; border:0; border-radius:8px; background:#e9f1fc; color:#164d8c; font-size:12px; font-weight:650; cursor:pointer; }
+.password-reveal:hover, .access-input .access-reveal:hover { background:#d5e5fa; }
+.access-input .access-reveal svg { display:none; }
+.uebtv-input-wrap { padding-right:7px; gap:8px; }
+@media(max-width:900px) { .access-brand,.uebtv-login-brand { padding:28px; }.access-entry,.uebtv-login-form-panel { padding:24px; }.access-card,.uebtv-login-form-wrap { padding:26px; } }
+@media(max-width:700px) { .access-layout,.uebtv-login-shell { display:block; }.access-brand,.uebtv-login-brand { padding:14px 24px 22px; }.access-story,.uebtv-login-brand__message { margin:12px 0 0; }.access-entry,.uebtv-login-form-panel { padding:20px 16px; }.access-card,.uebtv-login-form-wrap { padding:24px 20px; }.access-heading h2,.uebtv-login-heading h2 { font-size:29px; } }
+
+/* Icon-only visibility controls and aligned secondary actions. */
+.password-reveal, .access-input .access-reveal { width:40px; min-width:40px; height:40px; padding:9px; }
+.password-reveal svg, .access-input .access-reveal svg { display:block; width:20px; height:20px; flex-shrink:0; }
+.password-eye-slash { display:none; }
+.password-reveal[aria-pressed=true] .password-eye-slash { display:block; }
+.access-register { display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:10px; padding-top:20px; margin-top:24px; }
+.access-register > span { font-size:14px; line-height:1.5; }
+.access-register a { margin:0; vertical-align:middle; }
+.access-entry-footer { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; padding:0; line-height:1.5; text-align:center; }
+.uebtv-catalog-search > a { display:inline-flex; align-items:center; justify-content:center; min-height:46px; padding:11px 18px; border:1px solid #bfd1e9; border-radius:9px; background:#edf3fc; color:#164d8c; font-size:14px; font-weight:600; text-decoration:none; transition:background .18s,box-shadow .18s; }
+.uebtv-catalog-search > a:hover { background:#dce9fa; box-shadow:0 3px 10px #1554a615; }
+
+.password-guide-contextual[hidden] { display:none; }
+.password-guide-contextual { margin-top:8px; border:1px solid #dbe6f5; background:#f5f8fd; border-radius:12px; }
+.uebtv-register-shell .password-guide-contextual .uebtv-password-requirements { padding:12px 14px; display:grid; gap:5px; font-size:12px; line-height:1.5; }
+.password-guide-contextual .uebtv-password-requirements li { align-items:center; gap:9px; color:#586c85; }
+.password-guide-contextual .uebtv-password-dot { display:grid; place-items:center; width:8px; height:8px; flex:0 0 8px; margin:0; background:#dc2626; color:#dc2626; }
+.password-guide-contextual .uebtv-password-dot::after { content:none; }
+.password-guide-contextual .uebtv-password-requirements li[data-met=true] { color:#236449; }
+.password-guide-contextual .uebtv-password-requirements li[data-met=true] .uebtv-password-dot { background:#15803d; color:#15803d; }
+.password-guide-contextual li[data-met=true] .uebtv-password-dot::after { content:none; }
+
+/* One brand lockup: bring the existing mascot close to the wordmark without altering it. */
+:root { --uebtv-brand-sky:#91c0f3; }
+.studio-brand, .access-logo, .uebtv-login-brand__top { gap:0; isolation:isolate; }
+.studio-brand > span, .access-logo__text, .uebtv-login-brand__name { position:relative; z-index:3; color:#fff; }
+.studio-brand-tv, .access-logo__text > span { color:var(--uebtv-brand-sky); }
+.studio-brand .brand-mascot { width:58px; height:76px; margin:0 -8px 0 -5px; position:relative; z-index:2; }
+.studio-brand { font-size:27px; }
+.access-logo .brand-mascot, .uebtv-login-brand__top .brand-mascot { width:96px; height:130px; margin:0 -12px 0 -12px; position:relative; z-index:2; }
+.access-logo__text, .uebtv-login-brand__name { font-size:32px; line-height:1.1; font-weight:700; letter-spacing:-.04em; }
+.access-logo__text small, .uebtv-login-brand__name small { display:block; margin-top:7px; color:#b9cde6; font-size:11px; font-weight:400; letter-spacing:.02em; line-height:1.5; }
+.guest-brand { background:#071a35; padding:4px 20px 4px 12px; border-radius:16px; }
+@media(max-width:700px) {
+ .access-logo .brand-mascot, .uebtv-login-brand__top .brand-mascot { width:76px; height:100px; margin-right:-9px; margin-left:-9px; }
+ .access-logo__text, .uebtv-login-brand__name { font-size:28px; }
+ .access-logo__text small, .uebtv-login-brand__name small { font-size:10px; }
+ .studio-brand { font-size:21px; }
+ .studio-brand .brand-mascot { width:40px; height:54px; margin-right:-6px; margin-left:-4px; }
+}
