@@ -17,7 +17,7 @@ class EventoController extends Controller
 {
     public function index()
     {
-        $eventos = Evento::with(['facultad', 'carrera', 'categoria', 'organizador', 'transmision'])
+        $eventos = Evento::with(['facultad', 'carrera', 'categoria', 'organizador', 'transmision', 'scheduledVideo'])
             ->latest()->paginate(10);
 
         return view('admin.eventos.index', compact('eventos'));
@@ -125,6 +125,7 @@ class EventoController extends Controller
 
     public function destroy(Evento $evento)
     {
+        \Illuminate\Support\Facades\Gate::authorize('delete-event');
         $evento->delete();
 
         return redirect()->route('admin.eventos.index')->with('success', 'Evento eliminado correctamente.');

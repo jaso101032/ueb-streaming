@@ -1,0 +1,70 @@
+/* Presentation scoped to the public viewing room. */
+.watch-experience {
+    background:radial-gradient(ellipse at 50% 0%,#e4eefb 0,transparent 55%),#f4f7fb;
+    padding-top:28px;
+}
+.watch-experience .uebtv-watch-breadcrumb { margin-bottom:24px; font-size:11px; align-items:center; }
+.watch-experience .uebtv-watch-breadcrumb a { padding:6px 10px; border:1px solid #d9e5f5; border-radius:7px; background:#fff9; }
+.watch-experience .uebtv-watch-player { border:1px solid #213851; border-radius:20px; box-shadow:0 20px 45px -15px #071a3540; isolation:isolate; }
+.watch-experience .uebtv-watch-player__topline { padding:18px 20px 35px; letter-spacing:.025em; pointer-events:none; }
+.watch-experience .uebtv-watch-quality { border-color:#ffffff30; border-radius:5px; padding:5px 8px; letter-spacing:.1em; background:#ffffff0a; }
+.watch-experience .uebtv-watch-badge { border-radius:6px; }
+.watch-experience .uebtv-watch-aside--left { border:1px solid #d9e5f5; background:linear-gradient(160deg,#fff 65%,#edf4fd); box-shadow:0 12px 32px -20px #17457440; }
+.watch-experience .uebtv-watch-aside--left .uebtv-watch-aside__cover { height:220px; min-height:110px; gap:12px; background:radial-gradient(ellipse at 0% 0%,#1d518b,transparent 70%),#071a35; box-shadow:0 10px 22px -12px #071a3560; }
+.watch-experience .uebtv-watch-aside__cover > span:not(.watch-brand-caption) { font-size:38px; line-height:1; z-index:1; }
+.watch-brand-waves { display:flex; align-items:center; gap:4px; height:27px; }
+.watch-brand-waves i { width:3px; height:12px; border-radius:3px; background:#93bff0; }
+.watch-brand-waves i:nth-child(2),.watch-brand-waves i:nth-child(4) { height:20px; }
+.watch-brand-waves i:nth-child(3) { height:27px; }
+.watch-experience .watch-brand-caption { max-width:135px; font-size:7px; text-align:center; line-height:1.8; letter-spacing:.18em; color:#9fb8d9; font-weight:500; }
+.watch-experience .uebtv-watch-aside--left h2 { font-weight:600; letter-spacing:-.04em; font-size:22px; }
+.watch-community-signature { display:flex; gap:9px; align-items:center; margin-top:24px; color:#526981; font-size:10px; line-height:1.5; }
+.watch-community-signature > span { display:grid; place-items:center; width:30px; height:34px; flex-shrink:0; border:1px solid #c8d9ef; border-radius:8px; color:#1856a1; font-weight:700; }
+.watch-community-signature small { display:block; margin-top:3px; font-size:8px; color:#7288a3; }
+.watch-experience .uebtv-watch-aside__back { min-height:44px; background:linear-gradient(110deg,#071a35,#173e6a); }
+.watch-experience .uebtv-watch-title-block { margin-top:20px; padding:26px; border:1px solid #dde7f3; border-radius:18px; background:#fff; box-shadow:0 10px 24px -20px #071a3540; }
+.watch-experience .uebtv-watch-category { padding:5px 9px; border-radius:5px; background:#eff5fd; font-size:9px; }
+.watch-experience .uebtv-watch-title-row h1 { font-weight:600; line-height:1.18; font-size:clamp(24px,2.2vw,34px); }
+.watch-experience .uebtv-watch-meta { font-size:11px; line-height:1.7; }
+.watch-experience .uebtv-watch-description { font-size:13px; line-height:1.8; color:#536984; }
+.watch-experience .uebtv-watch-actions { margin-top:22px; padding-top:18px; border-top:1px solid #edf2f8; gap:8px; }
+.watch-experience .uebtv-watch-actions :is(button,a) { min-height:39px; border:1px solid #dde7f3; background:#f8faff; transition:background .18s,border-color .18s; }
+.watch-experience .uebtv-watch-actions :is(button,a):hover { background:#eaf2fd; border-color:#a9c6ea; }
+.watch-experience .uebtv-live-chat { border-radius:20px; border-color:#d9e5f5; box-shadow:0 12px 32px -20px #17457440; }
+.watch-experience .uebtv-live-chat__header { position:relative; padding:22px 20px 19px; background:linear-gradient(125deg,#071a35,#163c67); border-bottom:0; }
+.watch-experience .uebtv-live-chat__header::after { content:""; position:absolute; width:44px; height:3px; bottom:0; left:20px; background:#91bff4; border-radius:3px 3px 0 0; }
+.watch-experience .uebtv-live-chat__header .uebtv-kicker { color:#a9c6ec; }
+.watch-experience .uebtv-live-chat__header h2 { color:white; font-size:23px; margin-top:12px; }
+.watch-chat-subtitle { margin-top:7px; font-size:10px; color:#b7cbe4; line-height:1.5; }
+.watch-experience .uebtv-live-chat__messages { padding:18px 14px; gap:14px; background:#f6f9fe; }
+.watch-experience .uebtv-chat-message { border:0; border-radius:12px; box-shadow:0 2px 5px #13395f06; padding:13px 11px; column-gap:9px; }
+.watch-experience .uebtv-chat-avatar { background:linear-gradient(145deg,#e1eeff,#f0f6ff); border:1px solid #d7e7fb; font-size:10px; }
+.watch-experience .uebtv-chat-message strong { color:#143251; font-weight:600; }
+.watch-experience .uebtv-chat-remove { font-size:9px; text-decoration:none; border:1px solid #f2dbe0; border-radius:5px; color:#a0394b; background:#fffafb; }
+.watch-experience .uebtv-live-chat__form { padding:14px; background:white; border-top:1px solid #e1eaf6; }
+.watch-experience .uebtv-live-chat__form input { font-size:12px; background:#f5f8fd; border-color:#e0e9f5; }
+.watch-experience .uebtv-live-chat__form button { display:grid; place-items:center; background:linear-gradient(135deg,#1d5db0,#12417c); box-shadow:0 3px 8px #174c8625; }
+.watch-experience .uebtv-live-chat__note { background:#fff; font-size:9px; }
+.watch-experience .uebtv-live-chat__login { background:#fff; }
+.watch-experience .uebtv-chat-feedback.is-error { margin:0 12px 8px; padding:9px; border-radius:7px; background:#fff0f1; }
+.watch-experience .uebtv-video-card { border-radius:14px; }
+.watch-experience .uebtv-video-card__thumb { height:160px; }
+.watch-experience .uebtv-library-empty { border-radius:16px; background:#ffffffa6; }
+.watch-experience .uebtv-library__heading h2 { font-weight:600; }
+@media(min-width:1251px) and (max-width:1450px) {
+    .watch-community-signature { display:none; }
+    .watch-experience .uebtv-watch-aside--left .uebtv-watch-aside__cover { height:140px; }
+    .watch-experience .watch-brand-caption { display:none; }
+}
+@media(max-width:1250px) {
+    .watch-experience .uebtv-watch-aside--left .uebtv-watch-aside__cover { height:180px; }
+    .watch-community-signature { margin-bottom:20px; }
+}
+@media(max-width:640px) {
+    .watch-experience .uebtv-watch-title-block { padding:20px 16px; }
+    .watch-experience .uebtv-watch-actions { flex-wrap:wrap; }
+    .watch-experience .uebtv-watch-player__topline { padding:12px 14px 26px; font-size:10px; }
+}
+@media(prefers-reduced-motion:reduce) {
+    .watch-experience .uebtv-watch-actions :is(button,a) { transition:none; }
+}

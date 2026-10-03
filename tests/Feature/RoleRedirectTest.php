@@ -22,7 +22,7 @@ class RoleRedirectTest extends TestCase
             ->assertRedirectToRoute('admin.dashboard');
     }
 
-    public function test_operator_is_sent_to_streaming_control(): void
+    public function test_operator_is_sent_to_public_catalog(): void
     {
         $user = User::factory()->create([
             'role' => 'operador',
@@ -31,7 +31,7 @@ class RoleRedirectTest extends TestCase
 
         $this->actingAs($user)
             ->get('/dashboard')
-            ->assertRedirectToRoute('streaming.control');
+            ->assertRedirectToRoute('eventos.index');
     }
 
     public function test_regular_user_is_sent_to_the_public_catalog(): void

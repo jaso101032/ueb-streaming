@@ -10,8 +10,21 @@ import subprocess
 import sys
 import time
 
+
+def system_executable(name):
+    # Non-login root shells can omit /usr/sbin from PATH.
+    search_path = os.pathsep.join(['/usr/sbin', '/usr/bin', '/sbin', '/bin'])
+    executable = shutil.which(name, path=search_path)
+    if executable is None:
+        sys.exit(f'No se encontró {name} en las rutas del sistema. Comprueba que esté instalado; no se modificó la configuración.')
+    return executable
+
+
 if os.geteuid() != 0:
     sys.exit('Ejecuta este instalador como root.')
+# Resolve dependencies before creating directories or changing configuration.
+nginx_executable = system_executable('nginx')
+systemctl_executable = system_executable('systemctl')
 config = json.loads(pathlib.Path(sys.argv[1]).read_text())
 project = pathlib.Path(config['project'])
 root = pathlib.Path(config['root'])
@@ -113,12 +126,12 @@ backup.chmod(0o600)
 try:
     nginx.write_text(updated)
     nginx.chmod(0o600)
-    subprocess.run(['nginx', '-t'], check=True)
+    subprocess.run([nginx_executable, '-t'], check=True)
     service.write_text(service_content)
     timer.write_text(timer_content)
-    subprocess.run(['systemctl', 'daemon-reload'], check=True)
-    subprocess.run(['systemctl', 'enable', '--now', 'uebtv-recordings.timer'], check=True)
-    subprocess.run(['systemctl', 'reload', 'nginx'], check=True)
+    subprocess.run([systemctl_executable, 'daemon-reload'], check=True)
+    subprocess.run([systemctl_executable, 'enable', '--now', 'uebtv-recordings.timer'], check=True)
+    subprocess.run([systemctl_executable, 'reload', 'nginx'], check=True)
 except Exception:
     nginx.write_text(original)
     print('No se completó la activación. Se restauró nginx.conf; revisa el servicio uebtv-recordings.', file=sys.stderr)

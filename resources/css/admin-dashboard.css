@@ -1,0 +1,343 @@
+/* Dashboard-only refinements. The existing admin layout stays in place. */
+.studio-dashboard .studio-heading {
+    margin-bottom: 26px;
+}
+
+.studio-dashboard .studio-heading h1 {
+    letter-spacing: -0.055em;
+}
+
+.studio-dashboard .studio-feature {
+    isolation: isolate;
+    border: 1px solid #ffffff12;
+    box-shadow: 0 18px 42px #0b234319;
+}
+
+.studio-dashboard .studio-feature::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background: linear-gradient(110deg, #ffffff05, transparent 50%, #75b4ff08);
+}
+
+.studio-dashboard .studio-feature h2 {
+    text-wrap: balance;
+}
+
+.studio-dashboard .studio-art-screen {
+    transition:
+        transform 300ms ease,
+        box-shadow 300ms ease;
+}
+
+.studio-dashboard .studio-feature:hover .studio-art-screen {
+    transform: rotate(-5deg) translateY(-3px);
+    box-shadow: 0 30px 60px #00000030;
+}
+
+.studio-dashboard .studio-metric {
+    position: relative;
+    min-width: 0;
+    transition:
+        transform 180ms ease,
+        box-shadow 180ms ease,
+        border-color 180ms ease;
+}
+
+.studio-dashboard .studio-metric:hover {
+    transform: translateY(-2px);
+    border-color: #c6d9f2;
+    box-shadow: 0 12px 26px #16376012;
+}
+
+.studio-dashboard .studio-metric > div > span {
+    line-height: 1.45;
+}
+
+.studio-dashboard .studio-metric > div > svg {
+    box-sizing: content-box;
+    width: 19px;
+    height: 19px;
+    padding: 8px;
+    border-radius: 11px;
+    background: #eef4fd;
+}
+
+.studio-dashboard .studio-metric-live > div > svg {
+    background: #fff;
+}
+
+.studio-dashboard .studio-metric strong {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.045em;
+}
+
+.studio-dashboard .studio-panel {
+    box-shadow: 0 8px 26px #17396008;
+}
+
+.studio-dashboard .studio-panel-heading {
+    padding-bottom: 18px;
+}
+
+.studio-dashboard .studio-filter-group button {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+}
+
+.studio-dashboard .studio-filter-count {
+    display: inline-grid;
+    place-items: center;
+    min-width: 21px;
+    height: 21px;
+    padding: 0 5px;
+    border-radius: 7px;
+    background: #e8eef7;
+    color: #526b8d;
+    font-size: 10px;
+    font-variant-numeric: tabular-nums;
+}
+
+.studio-dashboard
+    .studio-filter-group
+    button[aria-pressed="true"]
+    .studio-filter-count {
+    background: #ffffff25;
+    color: #fff;
+}
+
+.studio-dashboard .studio-event-row {
+    position: relative;
+}
+
+.studio-dashboard .studio-event-row::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 3px;
+    background: #397bcb;
+    transform: scaleY(0);
+    transition: transform 160ms ease;
+}
+
+.studio-dashboard .studio-event-row:hover::before,
+.studio-dashboard .studio-event-row:focus-visible::before {
+    transform: scaleY(1);
+}
+
+.studio-dashboard .studio-event-row:focus-visible {
+    z-index: 1;
+    outline-offset: -3px;
+}
+
+.studio-dashboard .studio-status {
+    flex-shrink: 0;
+}
+
+.studio-dashboard .studio-shortcuts > a {
+    border-radius: 11px;
+    padding-right: 9px;
+    padding-left: 9px;
+}
+
+.studio-dashboard .studio-shortcuts > a:hover .studio-shortcut-icon {
+    background: #e1edfc;
+    color: #164f95;
+}
+
+.studio-dashboard .studio-shortcut-icon {
+    transition:
+        background 160ms ease,
+        color 160ms ease;
+}
+
+.studio-dashboard .studio-note {
+    box-shadow: 0 8px 22px #17396008;
+}
+
+/* Give the management home a distinct broadcast identity without changing its layout. */
+.studio-dashboard {
+    position: relative;
+    isolation: isolate;
+}
+
+.studio-dashboard::before {
+    position: absolute;
+    z-index: -1;
+    top: 0;
+    right: 3%;
+    width: min(60vw, 760px);
+    height: 430px;
+    border-radius: 50%;
+    background: radial-gradient(ellipse, #dceaff8c 0%, #edf4ff45 42%, transparent 72%);
+    content: "";
+    pointer-events: none;
+}
+
+.studio-dashboard .studio-heading h1 {
+    text-shadow: 0 2px 0 #ffffff;
+}
+
+.studio-dashboard .studio-feature {
+    background:
+        radial-gradient(ellipse at 87% 0%, #4d8ad33b 0%, transparent 44%),
+        radial-gradient(ellipse at 4% 100%, #2d72bd24 0%, transparent 42%),
+        linear-gradient(112deg, #071a35 0%, #0b2343 54%, #153e6e 100%);
+    box-shadow: 0 24px 54px #0b234324, inset 0 1px #ffffff1c;
+}
+
+.studio-dashboard .studio-feature::before {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background-image: radial-gradient(#c9e1ff38 0.7px, transparent 0.7px);
+    background-position: right 34px top 28px;
+    background-size: 18px 18px;
+    content: "";
+    opacity: 0.2;
+    pointer-events: none;
+    mask-image: linear-gradient(90deg, transparent 35%, #000 100%);
+}
+
+.studio-dashboard .studio-feature-copy,
+.studio-dashboard .studio-broadcast-art {
+    z-index: 1;
+}
+
+.studio-dashboard .studio-pill {
+    background: #ffffff08;
+    box-shadow: inset 0 1px #ffffff12;
+    backdrop-filter: blur(8px);
+}
+
+.studio-dashboard .studio-art-screen {
+    border-color: #c2ddff55;
+    background: linear-gradient(145deg, #ffffff18, #092040a8 78%);
+    box-shadow: 0 28px 65px #020d1e55, inset 0 1px #ffffff30;
+    backdrop-filter: blur(10px);
+}
+
+.studio-dashboard .studio-art-screen::after {
+    position: absolute;
+    inset: 9px;
+    border: 1px solid #d5e8ff12;
+    border-radius: 10px;
+    content: "";
+    pointer-events: none;
+}
+
+.studio-dashboard .studio-orbit {
+    border-color: #a9d1ff25;
+    box-shadow: 0 0 50px #75b4ff0a;
+}
+
+.studio-dashboard .studio-art-tag {
+    border-color: #c6ddff55;
+    background: linear-gradient(135deg, #204a79, #17375f);
+    box-shadow: 0 14px 34px #020d1e40, inset 0 1px #ffffff1b;
+}
+
+.studio-dashboard .studio-metric {
+    overflow: hidden;
+    border-color: #dce6f3;
+    background: linear-gradient(145deg, #ffffff 0%, #fbfdff 100%);
+    box-shadow: 0 8px 24px #15385d08, inset 0 1px #ffffff;
+}
+
+.studio-dashboard .studio-metric::before {
+    position: absolute;
+    inset: 0 20px auto;
+    height: 2px;
+    border-radius: 0 0 3px 3px;
+    background: linear-gradient(90deg, #78aef0, #d7e8ff 72%, transparent);
+    content: "";
+    opacity: 0.75;
+}
+
+.studio-dashboard .studio-metric-live {
+    border-color: #cbdfff;
+    background: linear-gradient(145deg, #f1f6ff, #e8f1ff);
+}
+
+.studio-dashboard .studio-metric-live::before {
+    background: linear-gradient(90deg, #2e73c8, #8cbaf2 72%, transparent);
+}
+
+.studio-dashboard .studio-panel,
+.studio-dashboard .studio-note {
+    box-shadow: 0 14px 38px #15385d0b, inset 0 1px #ffffff;
+}
+
+.studio-dashboard .studio-panel-heading {
+    background: linear-gradient(180deg, #ffffff, #fcfdff);
+}
+
+.studio-dashboard .studio-event-row {
+    transition: background 180ms ease;
+}
+
+.studio-dashboard .studio-event-row:hover {
+    background: linear-gradient(90deg, #f0f6ff, #fbfdff 80%);
+}
+
+.studio-dashboard .studio-event-thumb {
+    border: 1px solid #dce8f7;
+    box-shadow: 0 4px 12px #1739600b;
+}
+
+.studio-dashboard .studio-shortcuts > a {
+    position: relative;
+}
+
+.studio-dashboard .studio-shortcuts > a:hover {
+    box-shadow: inset 3px 0 #4c8dd9;
+}
+
+.studio-dashboard .studio-note {
+    border-color: #d4e4f8;
+    background:
+        radial-gradient(circle at 100% 0%, #d1e4ffb0, transparent 45%),
+        linear-gradient(135deg, #f4f8ff, #e9f1fc);
+}
+
+.studio-dashboard .studio-note h3 {
+    color: #102a4d;
+}
+
+@media (max-width: 960px) {
+    .studio-dashboard .studio-bottom-grid {
+        gap: 18px;
+    }
+
+    .studio-dashboard .studio-rail {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        align-items: start;
+    }
+}
+
+@media (max-width: 640px) {
+    .studio-dashboard .studio-rail {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .studio-dashboard .studio-feature-copy {
+        padding: 27px 22px;
+    }
+
+    .studio-dashboard .studio-metric:hover {
+        transform: none;
+    }
+
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .studio-dashboard .studio-art-screen,
+    .studio-dashboard .studio-metric,
+    .studio-dashboard .studio-shortcut-icon,
+    .studio-dashboard .studio-event-row::before {
+        transition: none;
+    }
+}

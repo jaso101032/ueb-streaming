@@ -120,12 +120,18 @@ body { background:#f5f7fb; }
 .uebtv-watch-player { border-radius:16px; }
 .uebtv-watch-container { max-width:1600px; }
 .uebtv-watch-layout { grid-template-columns:minmax(0,1fr) 340px; gap:24px; }
+/* Reset the positions inherited from the former three-column layout. */
+.uebtv-watch-layout > .uebtv-watch-main { grid-column:1; grid-row:1; min-width:0; }
+.uebtv-watch-layout > .uebtv-live-chat { grid-column:2; grid-row:1; min-width:0; }
+.uebtv-watch-state { flex-shrink:0; white-space:nowrap; border-radius:8px; }
+.uebtv-watch-title-row h1 { overflow-wrap:anywhere; }
+.uebtv-watch-actions button, .uebtv-watch-actions a { border-radius:8px; }
 .uebtv-watch-aside--left { display:none; }
 .uebtv-live-chat { border-radius:16px; overflow:hidden; }
 .uebtv-footer { background:transparent; color:#64758d; padding:24px; }
 @media(min-width:961px) { .studio-mobile-nav { display:none!important; } }
 @media(max-width:1100px) { .studio-header-inner { gap:15px; padding:0 24px; }.studio-desktop-nav a { padding:11px 10px; }.studio-brand small { display:none; }.studio-bottom-grid { grid-template-columns:minmax(0,1fr) 300px; }.studio-feature-copy { padding:32px; }.studio-art-screen { width:240px; }.studio-metric { padding:18px; } }
-@media(max-width:960px) { .studio-desktop-nav { display:none; }.studio-menu-toggle { display:block; }.studio-bottom-grid { grid-template-columns:1fr; }.studio-rail { grid-template-columns:1fr 1fr; }.studio-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); }.studio-management-row { flex-wrap:wrap; }.studio-row-actions { margin-left:auto; }.uebtv-watch-layout { grid-template-columns:minmax(0,1fr); }.uebtv-watch-main { order:0; }.uebtv-live-chat { order:1; }.uebtv-catalog-toolbar { flex-wrap:wrap; gap:18px; } }
+@media(max-width:960px) { .studio-desktop-nav { display:none; }.studio-menu-toggle { display:block; }.studio-bottom-grid { grid-template-columns:1fr; }.studio-rail { grid-template-columns:1fr 1fr; }.studio-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); }.studio-management-row { flex-wrap:wrap; }.studio-row-actions { margin-left:auto; }.uebtv-watch-layout { grid-template-columns:minmax(0,1fr); }.uebtv-watch-layout > .uebtv-watch-main { grid-column:1; grid-row:1; }.uebtv-watch-layout > .uebtv-live-chat { grid-column:1; grid-row:2; }.uebtv-watch-main { order:0; }.uebtv-live-chat { order:1; }.uebtv-catalog-toolbar { flex-wrap:wrap; gap:18px; } }
 @media(max-width:640px) { .studio-header-inner { min-height:72px; padding:0 16px; gap:12px; }.studio-brand { font-size:21px; gap:8px; }.studio-brand-symbol { width:34px; height:34px; border-radius:10px; }.studio-account { gap:8px; }.studio-avatar { width:32px; height:32px; }.studio-page { padding:28px 16px 40px; }.studio-heading { align-items:flex-start; flex-direction:column; gap:18px; margin-bottom:24px; }.studio-heading h1 { font-size:34px; }.studio-heading > .studio-button { width:100%; }.studio-feature { grid-template-columns:1fr; border-radius:18px; }.studio-feature-copy { padding:28px 24px; }.studio-feature h2 { font-size:29px; }.studio-broadcast-art { display:none; }.studio-metrics { gap:12px; margin:18px 0 24px; }.studio-metric { padding:16px; border-radius:13px; }.studio-metric > div { font-size:11px; }.studio-metric strong { font-size:30px; }.studio-metric svg { width:18px; flex-shrink:0; }.studio-rail { grid-template-columns:1fr; }.studio-panel-heading { padding:22px 18px 18px; flex-wrap:wrap; }.studio-filter-group { padding:0 18px 16px; }.studio-event-row { padding:18px; display:grid; grid-template-columns:48px minmax(0,1fr); gap:10px 12px; }.studio-event-thumb { width:48px; height:48px; }.studio-event-row .studio-status { grid-column:2; justify-self:start; }.studio-event-row > svg { display:none; }.studio-empty { padding:34px 20px; }.studio-management-row { display:grid; grid-template-columns:48px minmax(0,1fr); gap:12px; padding:20px 18px; }.studio-management-row > .studio-status { grid-column:2; justify-self:start; }.studio-row-actions { grid-column:1/-1; width:100%; justify-content:flex-end; border-top:1px solid #edf1f7; padding-top:8px; }.uebtv-catalog-hero { padding:28px 22px; }.uebtv-catalog-hero h1 { font-size:36px; }.uebtv-catalog-mark { display:none; }.uebtv-catalog-search { padding:18px; }.uebtv-catalog-search > div { flex-basis:100%; }.uebtv-catalog-search button { flex:1; min-height:44px; }.uebtv-catalog-grid { grid-template-columns:minmax(0,1fr); }.uebtv-watch-page { padding:24px 16px; }.uebtv-watch-title-row { flex-direction:column; }.uebtv-player-empty { padding:16px; text-align:center; }.uebtv-player-empty h2 { font-size:18px; }.uebtv-player-empty__icon { width:36px; height:36px; margin-bottom:8px; }.uebtv-form-section { padding:22px 18px; }.uebtv-form-field input,.uebtv-form-field select,.uebtv-form-field textarea { font-size:16px; }.uebtv-form-actions { flex-wrap:wrap; }.uebtv-form-actions button { flex:1; justify-content:center; } }
 @media(prefers-reduced-motion:reduce) { *,*::before,*::after { animation-duration:.01ms!important; animation-iteration-count:1!important; transition-duration:.01ms!important; scroll-behavior:auto!important; } }
 
@@ -253,4 +259,99 @@ body input:not([type=checkbox]):not([type=radio]):not([type=hidden]),body select
  .uebtv-catalog-hero h1 { font-size:32px; }
  .uebtv-event-editor .uebtv-form-section { padding:20px 16px; }
  body input:not([type=checkbox]):not([type=radio]):not([type=hidden]),body select,body textarea,.uebtv-event-editor .uebtv-form-field input,.uebtv-event-editor .uebtv-form-field select,.uebtv-event-editor .uebtv-form-field textarea { font-size:16px; }
+}
+
+/* Sala: tarjeta institucional, reproductor y conversación. */
+.uebtv-watch-layout { display:grid; grid-template-columns:220px minmax(0,1fr) 300px; gap:20px; }
+.uebtv-watch-layout > .uebtv-watch-aside--left { display:flex; grid-column:1; grid-row:1; min-width:0; padding:20px; border-radius:18px; box-shadow:0 10px 30px #071a3508; }
+.uebtv-watch-layout > .uebtv-watch-main { grid-column:2; grid-row:1; }
+.uebtv-watch-layout > .uebtv-live-chat { grid-column:3; grid-row:1; }
+.uebtv-watch-aside__header { gap:8px; }
+.uebtv-watch-aside__header .uebtv-kicker { font-size:9px; letter-spacing:.12em; }
+.uebtv-watch-aside--left .uebtv-watch-aside__cover { position:relative; flex-direction:column; flex-shrink:0; gap:14px; height:168px; margin:20px 0; border-radius:13px; overflow:hidden; background:radial-gradient(ellipse at 100% 100%,#2368b4,transparent 75%),#071a35; letter-spacing:-.06em; }
+.uebtv-watch-aside__cover::before { content:""; position:absolute; width:210px; height:210px; border:1px solid #ffffff18; border-radius:50%; right:-95px; bottom:-125px; box-shadow:0 0 0 24px #ffffff05,0 0 0 48px #ffffff04; }
+.uebtv-watch-aside__cover small { margin:0; font-size:inherit; color:#93bff0; }
+.uebtv-watch-aside__cover p { font-size:10px; font-weight:400; letter-spacing:.03em; color:#cfdded; }
+.uebtv-watch-aside--left h2 { margin:0; padding:0; font-size:20px; line-height:1.3; letter-spacing:-.025em; }
+.uebtv-watch-aside--left > p { font-size:12px; line-height:1.8; }
+.uebtv-watch-aside--left .uebtv-watch-aside__rule { margin:22px 0 16px; }
+.uebtv-watch-aside__back { border-radius:9px; font-size:11px; }
+.uebtv-live-chat { border-radius:18px; box-shadow:0 10px 30px #071a3508; }
+.uebtv-live-chat__header { padding:19px 18px; align-items:flex-start; gap:8px; }
+.uebtv-live-chat__header .uebtv-kicker { font-size:9px; letter-spacing:.15em; }
+.uebtv-live-chat__header h2 { font-size:21px; font-weight:600; letter-spacing:-.035em; }
+.uebtv-live-chat__online { margin-top:4px; font-size:9px; padding:5px 7px; border-radius:20px; background:#eaf7f0; white-space:nowrap; }
+.uebtv-live-chat__messages { display:flex; flex-direction:column; gap:12px; padding:16px 13px; background:linear-gradient(180deg,#f4f8fd,#fbfdff); scrollbar-width:thin; scrollbar-color:#b8cce3 transparent; }
+.uebtv-chat-message { flex-shrink:0; width:100%; max-width:100%; padding:12px; gap:9px; border-radius:4px 13px 13px; border-color:#e3ebf5; box-shadow:0 3px 8px #071a3503; flex-wrap:wrap; }
+.uebtv-chat-message p { flex:1; font-size:12px; line-height:1.6; }
+.uebtv-chat-message strong { font-size:11px; line-height:1.4; margin-bottom:5px; }
+.uebtv-chat-avatar { border-radius:50%; height:30px; width:30px; flex-basis:30px; background:#e8f1fd; }
+.uebtv-chat-remove { padding:3px 6px; border-radius:5px; font-size:9px; }
+.uebtv-chat-remove:hover { background:#fff0f1; }
+.uebtv-live-chat__form { padding:13px; gap:8px; }
+.uebtv-live-chat__form input { border-radius:10px; background:#f7faff; font-size:12px; min-height:43px; }
+.uebtv-live-chat__form input:focus { box-shadow:0 0 0 3px #dceafd; }
+.uebtv-live-chat__form button { border-radius:10px; min-width:43px; }
+.uebtv-live-chat__note { margin-top:0; padding:8px 14px 12px; color:#718097; line-height:1.5; }
+.uebtv-live-chat__login { padding:18px; line-height:1.6; }
+.uebtv-live-chat__login a { display:flex; justify-content:center; border-radius:10px; min-height:42px; }
+.uebtv-chat-empty { margin:auto; font-size:12px; }
+.uebtv-live-chat :is(a,button):focus-visible,.uebtv-watch-aside__back:focus-visible { outline:2px solid #3879c2; outline-offset:3px; }
+@media(max-width:1250px) {
+    .uebtv-watch-layout { grid-template-columns:minmax(0,1fr) 300px; }
+    .uebtv-watch-layout > .uebtv-watch-main { grid-column:1; grid-row:1; }
+    .uebtv-watch-layout > .uebtv-live-chat { grid-column:2; grid-row:1; }
+    .uebtv-watch-layout > .uebtv-watch-aside--left { grid-column:1/-1; grid-row:2; }
+    .uebtv-watch-aside--left .uebtv-watch-aside__cover { height:130px; }
+    .uebtv-watch-aside--left > p { max-width:none; }
+}
+@media(max-width:960px) {
+    .uebtv-watch-layout { grid-template-columns:minmax(0,1fr); }
+    .uebtv-watch-layout > .uebtv-live-chat { grid-column:1; grid-row:2; height:460px!important; }
+    .uebtv-watch-layout > .uebtv-watch-aside--left { grid-column:1; grid-row:3; }
+    .uebtv-live-chat__messages { min-height:0; max-height:none; }
+}
+@media(min-width:1251px) {
+    .uebtv-watch-layout > .uebtv-watch-aside--left { box-sizing:border-box; overflow-y:auto; }
+    .uebtv-watch-aside--left .uebtv-watch-aside__cover { flex-shrink:1; min-height:80px; }
+    .uebtv-watch-aside--left .uebtv-watch-aside__rule { margin-top:auto; padding-top:20px; border-top:0; border-bottom:1px solid var(--uebtv-line); }
+    .uebtv-watch-aside--left :is(.uebtv-watch-aside__header,h2,p,.uebtv-watch-aside__back) { flex-shrink:0; }
+}
+
+.catalog-event-entry { min-width:0; display:flex; flex-direction:column; }
+.catalog-event-entry > .uebtv-catalog-card { flex:1; }
+.catalog-event-delete { padding:12px 16px; margin-top:8px; border:1px solid #efdde1; background:#fff; border-radius:10px; text-align:right; }
+.catalog-event-delete button { color:#a0394b; font-size:12px; font-weight:600; padding:7px 12px; border-radius:7px; }
+.catalog-event-delete button:hover { background:#fff0f1; }
+.catalog-event-delete button:focus-visible { outline:2px solid #a0394b; outline-offset:2px; }
+
+/* Management navigation: fixed on desktop, expandable in document flow on mobile. */
+.studio-sidebar { position:fixed; top:80px; bottom:0; left:0; z-index:40; width:240px; padding:28px 18px 20px; display:flex; flex-direction:column; overflow-y:auto; background:linear-gradient(180deg,#0b2343,#071a35); color:#c1d2e8; border-right:1px solid #ffffff12; }
+.studio-sidebar-caption { font-size:9px; font-weight:600; letter-spacing:.16em; padding:0 12px; margin-bottom:20px; color:#91afd2; }
+.studio-sidebar-create { display:flex; align-items:center; gap:10px; min-height:48px; padding:12px 16px; margin-bottom:26px; border-radius:10px; background:#2262b4; border:1px solid #4b80c2; color:#fff; font-size:13px; font-weight:600; box-shadow:0 5px 15px #0002; }
+.studio-sidebar-create > span { font-size:23px; line-height:1; }
+.studio-sidebar-create:hover,.studio-sidebar-create[aria-current] { background:#2b72ca; }
+.studio-sidebar nav { display:grid; gap:7px; }
+.studio-sidebar nav a { display:flex; align-items:center; gap:12px; padding:13px 12px; border:1px solid transparent; border-radius:9px; font-size:13px; line-height:1.5; }
+.studio-sidebar nav a:hover { color:#fff; background:#ffffff09; }
+.studio-sidebar nav a[aria-current] { color:white; background:#ffffff12; border-color:#ffffff14; box-shadow:inset 3px 0 #8cbcf5; }
+.studio-sidebar-icon { width:23px; flex-shrink:0; text-align:center; font-size:20px; color:#8eb8eb; }
+.studio-sidebar-footer { margin-top:auto; padding:30px 12px 0; color:#9db8da; }
+.studio-sidebar-footer strong { font-size:16px; letter-spacing:-.03em; }
+.studio-sidebar-footer p { margin-top:5px; font-size:10px; }
+.studio-workspace { margin-left:240px; display:flex; flex:1; min-width:0; flex-direction:column; }
+.studio-workspace > main { min-width:0; }
+.studio-workspace .studio-page { width:100%; }
+@media(min-width:961px) and (max-width:1400px) {
+    .studio-workspace .studio-bottom-grid { grid-template-columns:minmax(0,1fr); }
+    .studio-workspace .studio-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .studio-workspace .studio-feature { grid-template-columns:minmax(0,1fr); }
+    .studio-workspace .studio-broadcast-art { display:none; }
+}
+@media(max-width:960px) {
+    .studio-sidebar { display:none; position:static; width:100%; max-height:65vh; padding:20px; }
+    .studio-sidebar.is-open { display:flex; }
+    .studio-sidebar-create { margin-bottom:12px; }
+    .studio-sidebar-footer { display:none; }
+    .studio-workspace { margin-left:0; }
 }

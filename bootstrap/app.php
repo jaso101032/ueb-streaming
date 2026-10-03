@@ -17,5 +17,13 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        $exceptions->render(function (\Illuminate\Http\Exceptions\PostTooLargeException $exception, \Illuminate\Http\Request $request) {
+            $limits = \App\Support\UploadLimits::scheduled();
+            $message = 'La subida supera el límite del servidor. Máximo actual: '.$limits['maxMb'].' MB.';
+            if ($request->expectsJson()) return response()->json(['message' => $message], 413);
+            return response()->view('errors.upload-too-large', ['props' => [
+                'maxMb' => $limits['maxMb'],
+                'backUrl' => $request->is('admin/contenido-programado') ? route('admin.scheduled.index') : route('eventos.index'),
+            ]], 413);
+        });
     })->create();

@@ -19,6 +19,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        \Illuminate\Support\Facades\Gate::define('delete-event', fn (\App\Models\User $user) => strtolower(trim((string) $user->role)) === 'admin');
     }
 }

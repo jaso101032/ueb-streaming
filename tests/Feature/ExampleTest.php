@@ -12,10 +12,10 @@ class ExampleTest extends TestCase
     /**
      * A basic test example.
      */
-    public function test_the_public_home_opens_the_catalog_when_there_is_no_live_event(): void
+    public function test_the_public_home_opens_the_continuous_channel(): void
     {
         $response = $this->get('/');
 
-        $response->assertRedirectToRoute('eventos.index');
+        $response->assertRedirectToRoute('channel.index');
     }
 }

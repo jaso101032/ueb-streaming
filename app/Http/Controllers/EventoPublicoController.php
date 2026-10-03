@@ -31,7 +31,7 @@ class EventoPublicoController extends Controller
             'categoria_id.exists' => 'La categoría seleccionada no está disponible.',
         ]);
         $filter = $filters['filtro'] ?? 'todos';
-        $query = Evento::with(['facultad', 'categoria'])
+        $query = Evento::with(['facultad', 'carrera', 'categoria', 'organizador', 'transmision', 'scheduledVideo'])
             ->where('estado', '!=', 'cancelado');
 
         $search = trim($filters['q'] ?? '');
@@ -46,15 +46,18 @@ class EventoPublicoController extends Controller
             }
         }
 
-        $proximos = (clone $query)->where('estado', 'programado')
-            ->where('fecha_inicio', '>=', now())->orderBy('fecha_inicio')->orderBy('id')->limit(4)->get();
+        $timeline = collect(app(\App\Services\ChannelSchedule::class)->timeline());
+        $upcomingIds = $timeline->filter(fn ($i) => $i['state'] === 'upcoming')->keys()->all();
+        $endedIds = $timeline->filter(fn ($i) => $i['state'] === 'ended')->keys()->all();
+        $upcomingQuery = fn ($q) => $q->whereIn('id', $upcomingIds)->orWhere(fn ($q) => $q->whereDoesntHave('scheduledVideo')->where('estado', 'programado')->where('fecha_inicio', '>=', now()));
+        $proximos = (clone $query)->where($upcomingQuery)->orderBy('fecha_inicio')->orderBy('id')->limit(4)->get();
 
         if ($filter === 'en_vivo') {
             $query->where('estado', 'en_vivo');
         } elseif ($filter === 'anteriores') {
-            $query->where(fn ($events) => $events->where('estado', 'finalizado')->orWhereNotNull('video_url'));
+            $query->where(fn ($events) => $events->whereIn('id', $endedIds)->orWhere(fn ($q) => $q->whereDoesntHave('scheduledVideo')->where(fn ($q) => $q->where('estado', 'finalizado')->orWhereNotNull('video_url'))));
         } elseif ($filter === 'proximos') {
-            $query->where('estado', 'programado')->where('fecha_inicio', '>=', now());
+            $query->where($upcomingQuery);
         }
 
         $eventos = $query->orderBy('fecha_inicio', $filter === 'proximos' ? 'asc' : 'desc')
@@ -70,8 +73,8 @@ class EventoPublicoController extends Controller
      */
     public function show(Evento $evento, ChatFeed $feed)
     {
-        $evento->load(['facultad', 'categoria', 'transmision', 'organizador']);
-        $eventosRelacionados = Evento::with(['facultad', 'categoria', 'transmision'])
+        $evento->load(['facultad', 'carrera', 'categoria', 'transmision', 'organizador', 'scheduledVideo']);
+        $eventosRelacionados = Evento::with(['facultad', 'carrera', 'categoria', 'transmision', 'organizador', 'scheduledVideo'])
             ->whereKeyNot($evento->id)
             ->where('estado', '!=', 'cancelado')
             ->latest('fecha_inicio')

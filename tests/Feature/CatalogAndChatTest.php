@@ -74,7 +74,7 @@ class CatalogAndChatTest extends TestCase
         $this->evento(['fecha_inicio' => now()->subDay()]);
         $this->evento(['estado' => 'cancelado']);
         $this->evento(['estado' => 'finalizado']);
-        $this->get(route('eventos.index'))->assertOk()->assertSee('Próximos eventos')
+        $this->get(route('eventos.index'))->assertOk()
             ->assertViewHas('proximos', fn ($events) => $events->pluck('id')->all() === [$sooner->id, $later->id]);
         $this->get(route('eventos.index', ['filtro' => 'proximos']))->assertOk()
             ->assertViewHas('eventos', fn ($events) => $events->pluck('id')->all() === [$sooner->id, $later->id]);
@@ -87,7 +87,7 @@ class CatalogAndChatTest extends TestCase
         }
         $this->get(route('eventos.index', ['q' => 'Ciencia', 'categoria_id' => $this->categoria->id]))
             ->assertOk()->assertViewHas('eventos', fn ($events) => $events->count() === 12 && str_contains($events->nextPageUrl(), 'q=Ciencia') && str_contains($events->nextPageUrl(), 'categoria_id='));
-        $this->get(route('eventos.index', ['q' => 'inexistente']))->assertOk()->assertSee('No encontramos eventos');
+        $this->assertSame([], $this->reactProps($this->get(route('eventos.index', ['q' => 'inexistente'])))['events']);
         $this->getJson(route('eventos.index', ['q' => ['invalid']]))->assertUnprocessable();
     }
 
@@ -102,7 +102,7 @@ class CatalogAndChatTest extends TestCase
         $this->getJson(route('eventos.chat.index', $evento))->assertOk()->assertJsonCount(80)
             ->assertJsonPath('0.message', 'Mensaje 4')->assertJsonPath('79.message', 'Mensaje 83');
         $this->get(route('eventos.show', $evento))->assertOk()->assertViewHas('chatMessages', fn ($messages) => count($messages) === 80)
-            ->assertDontSee('data-remove-message=', false);
+            ->assertSee('&quot;canModerate&quot;:false', false);
     }
 
     public function test_feed_reuses_cache_and_returns_304_when_unchanged(): void
@@ -140,7 +140,7 @@ class CatalogAndChatTest extends TestCase
             $before = $this->getJson(route('eventos.chat.index', $evento));
             $this->actingAs($this->user)->deleteJson(route('eventos.chat.destroy', [$evento, $message]))->assertForbidden();
             $moderator = User::factory()->create(['role' => $role]);
-            $this->actingAs($moderator)->get(route('eventos.show', $evento))->assertOk()->assertSee('data-remove-message=', false);
+            $this->actingAs($moderator)->get(route('eventos.show', $evento))->assertOk()->assertSee('&quot;canModerate&quot;:true', false);
             $this->deleteJson(route('eventos.chat.destroy', [$evento, $message]))->assertNoContent();
             $this->assertSoftDeleted('chat_messages', ['id' => $message->id, 'moderated_by' => $moderator->id]);
             $this->getJson(route('eventos.chat.index', $evento), ['If-None-Match' => $before->headers->get('ETag')])->assertOk()->assertExactJson([]);

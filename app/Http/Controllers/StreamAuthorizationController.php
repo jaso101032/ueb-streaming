@@ -32,6 +32,7 @@ class StreamAuthorizationController extends Controller
             if ($call === 'publish' && $stream->activo && $stream->publisher_id &&
                 $stream->publisher_id !== $publisher && $stream->last_signal_at?->gt(now()->subSeconds(15))) abort(409);
 
+            app(\App\Services\ChannelClock::class)->signal($stream);
             $stream->update([
                 'activo' => true, 'publisher_id' => $publisher, 'last_signal_at' => now(),
                 'iniciado_en' => $stream->iniciado_en ?? now(), 'recording_status' => 'recording',
@@ -46,10 +47,14 @@ class StreamAuthorizationController extends Controller
     {
         $callback->verify($request);
         // An old disconnect delivered after reconnect must not end the new session.
-        Transmision::where('stream_key', $request->input('name'))
-            ->where('publisher_id', (string) $request->input('clientid', ''))
-            ->whereIn('recording_status', ['recording', 'waiting'])
-            ->update(['activo' => false, 'last_signal_at' => now(), 'recording_status' => 'waiting']);
+        DB::transaction(function () use ($request) {
+            $stream = Transmision::where('stream_key', $request->input('name'))
+                ->where('publisher_id', (string) $request->input('clientid', ''))
+                ->whereIn('recording_status', ['recording', 'waiting'])->lockForUpdate()->first();
+            if (!$stream) return;
+            app(\App\Services\ChannelClock::class)->stop($stream);
+            $stream->update(['activo' => false, 'last_signal_at' => now(), 'recording_status' => 'waiting']);
+        });
 
         return response('', 204);
     }

@@ -39,6 +39,11 @@ class Evento extends Model
         'fecha_fin' => 'datetime',
     ];
 
+    public function scheduledVideo()
+    {
+        return $this->hasOne(ScheduledVideo::class);
+    }
+
     public function organizador()
     {
         return $this->belongsTo(User::class, 'organizador_id');

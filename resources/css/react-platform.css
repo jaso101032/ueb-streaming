@@ -1,0 +1,559 @@
+/* Shared React surfaces: institutional color, clear hierarchy and keyboard access. */
+:root {
+    --ui-ink: #0b203d;
+    --ui-blue: #1c59a8;
+    --ui-line: #dbe6f4;
+    --ui-muted: #647d9e;
+}
+body {
+    font-family: "Inter Variable", Inter, system-ui, sans-serif;
+    color: var(--ui-ink);
+}
+button,
+a,
+input,
+select,
+textarea {
+    -webkit-tap-highlight-color: transparent;
+}
+:focus-visible {
+    outline: 3px solid #6ba9ed;
+    outline-offset: 4px;
+}
+button:disabled {
+    cursor: wait;
+    opacity: 0.65;
+}
+.react-panel {
+    padding: 30px;
+}
+.react-panel h2,
+.react-stream-card h2 {
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.7px;
+    margin: 0 0 20px;
+}
+.react-panel p {
+    color: var(--ui-muted);
+    line-height: 1.7;
+}
+.react-stack {
+    display: grid;
+    gap: 22px;
+}
+.react-detail-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(250px, 1fr);
+    gap: 24px;
+    align-items: start;
+}
+.react-cover {
+    width: 100%;
+    aspect-ratio: 16/9;
+    object-fit: cover;
+    border-radius: 18px;
+    margin-bottom: 28px;
+}
+.react-description {
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+}
+.react-facts {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-top: 28px;
+    border-top: 1px solid var(--ui-line);
+    padding-top: 24px;
+}
+.react-facts dt {
+    font-size: 12px;
+    color: var(--ui-muted);
+    margin-bottom: 5px;
+}
+.react-facts dd {
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+.react-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: center;
+    margin: 20px 0 28px;
+}
+.react-toolbar form {
+    margin: 0;
+}
+.react-danger {
+    color: #a92236;
+    background: #fff0f2;
+    border: 1px solid #f3cbd2;
+    padding: 12px 18px;
+    border-radius: 12px;
+    font-weight: 600;
+}
+.react-recording {
+    padding-bottom: 24px;
+    margin-bottom: 24px;
+    border-bottom: 1px solid var(--ui-line);
+}
+.react-recording h3 {
+    font-size: 21px;
+    margin: 12px 0;
+}
+.react-stream-card {
+    padding: 30px;
+    position: relative;
+    overflow: hidden;
+}
+.react-stream-card:before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 4px;
+    background: linear-gradient(#1a5fb5, #9cc9f5);
+}
+.react-credentials {
+    background: #f2f7fe;
+    border: 1px solid var(--ui-line);
+    border-radius: 14px;
+    padding: 18px;
+    margin: 22px 0;
+    display: grid;
+    gap: 16px;
+}
+.react-credentials > div {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+.react-credentials small {
+    color: var(--ui-muted);
+}
+.react-credentials code {
+    overflow-wrap: anywhere;
+    flex: 1;
+    min-width: 180px;
+    color: var(--ui-blue);
+}
+.react-credentials button {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--ui-blue);
+}
+.react-form {
+    display: grid;
+    gap: 22px;
+    margin-top: 24px;
+}
+.react-form .uebtv-form-field {
+    display: grid;
+    gap: 9px;
+}
+.react-form label {
+    font-size: 13px;
+    font-weight: 650;
+}
+.react-form input:not([type="checkbox"]),
+.react-form textarea {
+    background: #f7faff;
+    border: 1px solid #cedff3;
+    border-radius: 12px;
+    padding: 14px 16px;
+    width: 100%;
+    min-width: 0;
+    color: var(--ui-ink);
+    transition:
+        border-color 0.2s,
+        box-shadow 0.2s;
+}
+.react-form input:focus {
+    border-color: #4e8ed5;
+    box-shadow: 0 0 0 4px #daeafd;
+    outline: none;
+}
+.react-password {
+    position: relative;
+}
+.react-password input {
+    padding-right: 80px !important;
+}
+.react-password button {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ui-blue);
+}
+.react-form > .studio-button {
+    justify-content: space-between;
+    padding: 16px 20px;
+}
+.react-form small {
+    font-size: 12px;
+    color: var(--ui-muted);
+    line-height: 1.6;
+}
+.react-profile-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+}
+.react-account-danger {
+    grid-column: 1/-1;
+}
+.react-account-danger .react-form {
+    max-width: 500px;
+}
+.react-login-options {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 12px;
+}
+.react-login-options label {
+    font-size: 12px;
+    font-weight: 400;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+.react-login-options a {
+    font-weight: 650;
+    color: var(--ui-blue);
+}
+.react-auth {
+    min-height: 100svh;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    background: #f4f8fd;
+}
+.react-auth-brand {
+    background:
+        radial-gradient(ellipse at 90% 100%, #245e9e 0, transparent 55%),
+        #091e39;
+    color: #fff;
+    padding: clamp(32px, 6vw, 100px);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 80px;
+    position: relative;
+    overflow: hidden;
+}
+.react-auth-brand:after {
+    content: "";
+    width: 700px;
+    height: 700px;
+    border: 1px solid #ffffff12;
+    border-radius: 50%;
+    position: absolute;
+    right: -440px;
+    bottom: -400px;
+    box-shadow:
+        0 0 0 65px #ffffff04,
+        0 0 0 130px #ffffff03;
+    pointer-events: none;
+}
+.react-auth-logo {
+    font-size: 32px;
+    font-weight: 800;
+    letter-spacing: -1.8px;
+    width: fit-content;
+}
+.react-auth-logo span {
+    color: #9cc8f4;
+}
+.react-overline {
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: #a7bfdb;
+    font-weight: 650;
+}
+.react-auth-brand h2 {
+    font-size: clamp(40px, 4.5vw, 76px);
+    font-weight: 650;
+    line-height: 1.06;
+    letter-spacing: -3px;
+    margin: 28px 0;
+}
+.react-auth-brand em {
+    font-style: normal;
+    color: #9cc8f4;
+}
+.react-auth-brand p {
+    max-width: 360px;
+    color: #b6c8de;
+    font-size: 16px;
+    line-height: 1.85;
+}
+.react-auth-brand > span {
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: #9eb7d4;
+}
+.react-auth-content {
+    padding: 40px clamp(24px, 5vw, 90px);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 35px;
+}
+.react-auth-card {
+    width: 100%;
+    max-width: 500px;
+    margin: auto;
+    background: #fff;
+    border: 1px solid var(--ui-line);
+    border-radius: 28px;
+    padding: clamp(24px, 3vw, 46px);
+    box-shadow: 0 25px 70px #102f5c09;
+}
+.react-auth-card h1 {
+    font-size: clamp(28px, 3vw, 42px);
+    font-weight: 650;
+    letter-spacing: -1.6px;
+    line-height: 1.1;
+    margin: 18px 0;
+}
+.react-auth-card > p {
+    color: var(--ui-muted);
+    font-size: 14px;
+    line-height: 1.7;
+}
+.react-auth-symbol {
+    display: inline-grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    background: #edf4ff;
+    border: 1px solid #dbe8fa;
+    border-radius: 14px;
+    color: #1b5aab;
+    font-size: 24px;
+    margin-bottom: 24px;
+}
+.react-auth-card .studio-eyebrow {
+    font-size: 9px;
+    letter-spacing: 2px;
+}
+.react-auth-bottom {
+    border-top: 1px solid var(--ui-line);
+    padding-top: 24px;
+    margin-top: 28px !important;
+    text-align: center;
+}
+.react-auth-bottom a {
+    font-weight: 700;
+    color: var(--ui-blue);
+}
+.react-player-notice {
+    position: absolute;
+    inset: 0;
+    background: #071629ee;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 30px;
+    gap: 24px;
+    z-index: 3;
+    color: #e3edfb;
+}
+.react-player-notice > span {
+    font-size: 44px;
+    color: #9fc5ee;
+}
+.react-player-label {
+    position: absolute;
+    top: 60px;
+    left: 20px;
+    font-size: 11px;
+    color: #d1e4fa;
+    background: #102d50da;
+    padding: 6px 12px;
+    border-radius: 6px;
+    z-index: 2;
+}
+.uebtv-video[hidden] {
+    display: none;
+}
+.uebtv-watch-player {
+    position: relative;
+}
+.studio-mobile-nav a {
+    color: var(--ui-ink);
+}
+.event-editor-sidebar {
+    position: static !important;
+}
+.uebtv-form-field textarea {
+    resize: vertical;
+}
+.uebtv-form-actions {
+    grid-column: 1/-1;
+}
+@media (max-width: 960px) {
+    .react-auth {
+        grid-template-columns: 1fr;
+    }
+    .react-auth-brand {
+        padding: 26px 30px;
+        gap: 25px;
+    }
+    .react-auth-brand > div,
+    .react-auth-brand > span {
+        display: none;
+    }
+    .react-auth-content {
+        padding: 25px 20px 50px;
+    }
+    .react-detail-grid,
+    .react-profile-grid {
+        grid-template-columns: 1fr;
+    }
+    .react-panel,
+    .react-stream-card {
+        padding: 22px;
+    }
+    .react-account-danger {
+        grid-column: auto;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *:before,
+    *:after {
+        scroll-behavior: auto !important;
+        animation: none !important;
+        transition: none !important;
+    }
+}
+.watch-experience .uebtv-watch-container {
+    max-width: 1680px;
+    margin: auto;
+    padding-inline: 24px;
+}
+.uebtv-event-editor .uebtv-form-heading {
+    margin-top: 38px;
+    margin-bottom: 28px;
+}
+.event-editor-note {
+    margin-top: 20px;
+}
+.react-auth-content > .studio-text-link {
+    align-self: flex-start;
+    border: 0;
+    padding: 0;
+    background: transparent;
+}
+@media (max-width: 640px) {
+    .watch-experience .uebtv-watch-container {
+        padding-inline: 0;
+    }
+}
+.studio-sidebar-icon {
+    display: grid;
+    place-items: center;
+}
+.uebtv-watch-player__topline .uebtv-watch-live-dot.is-recorded {
+    background: #8fb8e8;
+    box-shadow: 0 0 0 4px #8fb8e81a;
+    animation: none;
+}
+
+/* Continuous channel */
+.channel-layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 24px; align-items: start; }
+.channel-screen { position: relative; aspect-ratio: 16 / 9; background: #061327; border-radius: 24px; overflow: hidden; box-shadow: 0 20px 50px #071a3520; }
+.channel-screen .uebtv-video { width: 100%; height: 100%; object-fit: contain; }
+.channel-screen .uebtv-player-empty { height: 100%; min-height: 0; }
+.channel-now { margin-top: 22px; padding: 26px; }
+.channel-now h2 { font-size: clamp(24px, 3vw, 34px); margin: 16px 0 10px; letter-spacing: -.035em; }
+.channel-now p, .channel-help { color: #617593; line-height: 1.7; margin-bottom: 16px; }
+.channel-live { color: #be2647; background: #fff0f3; }
+.channel-next { padding: 24px; }
+.channel-next h2 { font-size: 24px; margin: 10px 0; }
+.channel-next article { padding: 20px 0; border-bottom: 1px solid #e1eafb; }
+.channel-next time { color: #2363ac; font-size: 12px; }
+.channel-next h3 { font-weight: 650; margin: 8px 0; }
+.channel-next article p { font-size: 12px; color: #617593; }
+.channel-total { background: #0c2444; color: white; border-radius: 16px; padding: 20px; margin-top: 24px; }
+.channel-total small { display: block; letter-spacing: .1em; font-size: 10px; color: #a2c5ec; }
+.channel-total strong { display: block; font-size: 22px; margin-top: 8px; }
+.schedule-totals { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 18px; margin-bottom: 28px; }
+.schedule-totals article { border: 1px solid #d8e5f8; border-radius: 20px; padding: 22px; background: linear-gradient(140deg,#fff,#eff5ff); }
+.schedule-totals small { display: block; color: #567296; font-weight: 600; }
+.schedule-totals strong { display: block; color: #102d51; font-size: clamp(20px,2vw,28px); margin: 10px 0; letter-spacing: -.035em; }
+.schedule-totals p { color: #6a809d; font-size: 12px; }
+@media(max-width: 1000px) { .channel-layout { grid-template-columns: minmax(0,1fr); } }
+@media(max-width: 600px) { .schedule-totals { grid-template-columns: minmax(0,1fr); } .channel-screen { border-radius: 14px; } }
+
+/* Broadcast identity: contained to the continuous channel. */
+.channel-page { max-width: 1500px; padding-top: 38px; padding-bottom: 56px; }
+.channel-heading { display:flex; justify-content:space-between; align-items:center; gap:24px; margin-bottom:32px; }
+.channel-heading h1 { font-size:clamp(32px,3.5vw,52px); line-height:1.07; letter-spacing:-.055em; font-weight:750; margin:15px 0; color:#102744; }
+.channel-heading h1 em { font-style:normal; color:#2864ad; }
+.channel-heading > div > p:last-child { color:#637892; font-size:15px; }
+.channel-catalog { display:flex; align-items:center; gap:30px; border:1px solid #ccdaee; padding:15px 20px; border-radius:14px; color:#204c80; font-size:13px; font-weight:650; background:#ffffffb0; transition:background .2s,transform .2s; }
+.channel-catalog:hover { background:white; transform:translateY(-2px); }
+.channel-layout { grid-template-columns:minmax(0,1fr) 330px; gap:26px; }
+.channel-main { min-width:0; }
+.channel-screen-frame { background:#07172c; border:1px solid #193350; border-radius:24px; overflow:hidden; box-shadow:0 18px 45px #071a3520; }
+.channel-screen-bar { height:52px; padding:0 22px; display:flex; align-items:center; justify-content:space-between; gap:12px; color:#f5f9ff; }
+.channel-screen-bar > span:first-child { display:flex; align-items:center; gap:10px; font-size:13px; font-weight:700; }
+.channel-screen-bar i { width:7px; height:7px; border-radius:50%; background:#8eb7e8; box-shadow:0 0 0 4px #8eb7e815; }
+.channel-screen-bar i.is-live { background:#fb596c; box-shadow:0 0 0 4px #fb596c20; }
+.channel-screen-bar small { font-size:9px; color:#9eb4ce; letter-spacing:.14em; font-weight:500; margin-left:9px; }
+.channel-screen-status { font-size:9px; letter-spacing:.1em; color:#b6cbe5; border:1px solid #38506c; padding:5px 8px; border-radius:6px; }
+.channel-screen { border-radius:0; box-shadow:none; }
+.channel-idle { position:relative; height:100%; display:grid; place-items:center; padding:30px 34px 60px; isolation:isolate; background:radial-gradient(ellipse at 85% 80%,#225b983d,transparent 65%),linear-gradient(125deg,#0a1a30,#102d51); overflow:hidden; }
+.channel-orbits { position:absolute; inset:0; z-index:-1; overflow:hidden; }
+.channel-orbits i { position:absolute; border:1px solid #b0d5ff12; border-radius:50%; width:85%; aspect-ratio:1; right:-35%; top:5%; box-shadow:0 0 0 40px #92bded04; }
+.channel-orbits i:nth-child(2) { width:115%; right:-50%; top:-20%; }
+.channel-orbits i:nth-child(3) { width:150%; right:-67%; top:-50%; }
+.channel-idle-content { text-align:center; max-width:530px; }
+.channel-wordmark { font-size:clamp(42px,5.5vw,80px); font-weight:800; color:white; letter-spacing:-.07em; line-height:1; }
+.channel-wordmark span { color:#97c1f0; font-weight:600; }
+.channel-wordmark b { font-size:15px; color:#fa6474; vertical-align:middle; margin-left:12px; }
+.channel-idle-caption { display:block; color:#a9c4e4; font-size:9px; letter-spacing:.22em; margin:16px 0 30px; }
+.channel-idle h2 { color:#f2f7ff; font-size:clamp(20px,2vw,28px); font-weight:550; letter-spacing:-.03em; margin:0 0 12px; line-height:1.3; }
+.channel-idle p { color:#afc3dc; font-size:13px; max-width:400px; margin:0 auto; line-height:1.75; }
+.channel-idle-link,.channel-premiere { display:inline-flex; gap:24px; color:#e4f0ff; font-size:12px; border-bottom:1px solid #688db3; padding:10px 0; margin-top:16px; }
+.channel-idle-link:hover { color:white; border-color:white; }
+.channel-idle-footer { position:absolute; bottom:20px; left:26px; right:26px; display:flex; justify-content:space-between; gap:12px; color:#7999bd; font-size:9px; letter-spacing:.1em; }
+.channel-now { background:transparent; border:0; padding:26px 4px 0; margin:0; }
+.channel-now-top { display:flex; justify-content:space-between; gap:12px; align-items:center; flex-wrap:wrap; }
+.channel-badge { background:#e7effc; color:#26548e; border-radius:6px; padding:7px 10px; font-size:10px; font-weight:650; }
+.channel-badge.channel-live { background:#ffe8ec; color:#ae2040; }
+.channel-auto { color:#6e819c; font-size:11px; }
+.channel-now h2 { margin:18px 0 12px; font-weight:650; }
+.channel-now p { max-width:720px; font-size:14px; }
+.channel-next { background:#fff; border:1px solid #d9e5f5; border-radius:24px; overflow:hidden; padding:0; box-shadow:0 10px 32px #152f4f05; }
+.channel-next-heading { padding:26px 24px 20px; background:linear-gradient(130deg,#fff,#f3f7fd); border-bottom:1px solid #e5ecf6; }
+.channel-next h2 { display:flex; align-items:center; justify-content:space-between; font-size:25px; font-weight:650; letter-spacing:-.04em; margin:10px 0; }
+.channel-next h2 span { display:grid; place-items:center; width:26px; height:26px; border-radius:8px; background:#e5eefa; color:#47709c; font-size:11px; letter-spacing:0; }
+.channel-next-heading > p:last-child { font-size:12px; color:#76869f; line-height:1.7; }
+.channel-agenda { padding:0 24px; }
+.channel-agenda-item { display:flex; gap:15px; }
+.channel-agenda-number { color:#a7b9cf; font-size:11px; padding-top:3px; font-variant-numeric:tabular-nums; }
+.channel-agenda-item > div { min-width:0; }
+.channel-agenda-item h3 { overflow-wrap:anywhere; }
+.channel-agenda-empty { padding:30px 0; }
+.channel-agenda-empty svg { color:#7295bd; margin-bottom:16px; }
+.channel-agenda-empty h3 { font-size:15px; color:#1c3b60; margin:0 0 10px; }
+.channel-agenda-empty p { font-size:12px; line-height:1.85; color:#74869e; }
+.channel-agenda-empty a { display:flex; justify-content:space-between; font-size:12px; font-weight:600; color:#245b9e; margin-top:18px; }
+.channel-total { margin:0 16px; padding:22px; background:linear-gradient(125deg,#0c2546,#1e4775); }
+.channel-total strong { font-size:22px; letter-spacing:-.04em; line-height:1.3; }
+.channel-total p { font-size:11px; color:#b0c6df; line-height:1.7; margin-top:10px; }
+.channel-agenda-note { margin:18px 24px 24px; color:#7c8ca2; font-size:10px; line-height:1.7; }
+@media(min-width:1001px) and (max-width:1200px) { .channel-layout { grid-template-columns:minmax(0,1fr) 280px; gap:20px; } .channel-idle-caption { margin-bottom:18px; } .channel-screen.is-idle { aspect-ratio:auto; min-height:380px; } }
+@media(max-width:1000px) { .channel-layout { grid-template-columns:minmax(0,1fr); } .channel-next { max-width:none; } .channel-idle { min-height:100%; } }
+@media(max-width:600px) { .channel-heading { align-items:flex-start; flex-direction:column; gap:20px; } .channel-page { padding-top:24px; } .channel-screen-bar { padding-inline:14px; } .channel-screen-bar small { display:none; } .channel-screen.is-idle { aspect-ratio:auto; min-height:370px; } .channel-idle { min-height:370px; padding:32px 22px 60px; } .channel-idle-footer { left:20px; right:20px; font-size:8px; } .channel-idle-footer span:last-child { display:none; } .channel-now { padding-top:22px; } .channel-auto { font-size:10px; } }

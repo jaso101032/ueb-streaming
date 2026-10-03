@@ -17,7 +17,7 @@ class TransmisionController extends Controller
      */
     public function index()
     {
-        $eventos = Evento::with(['transmision', 'organizador', 'facultad', 'categoria'])
+        $eventos = Evento::with(['transmision', 'organizador', 'facultad', 'carrera', 'categoria', 'scheduledVideo'])
             ->orderBy('fecha_inicio', 'desc')
             ->paginate(10);
 
@@ -29,6 +29,7 @@ class TransmisionController extends Controller
      */
     public function generarClave(Request $request, Evento $evento)
     {
+        abort_if($evento->scheduledVideo, 409, 'Una emisión pregrabada no utiliza OBS.');
         abort_if(in_array($evento->estado, ['finalizado', 'cancelado']), 422, 'Crea otro evento para una nueva transmisión.');
         abort_if($evento->transmision?->iniciado_en, 422, 'La clave no puede cambiar después de comenzar la grabación. Crea otro evento.');
         // Generar una clave única y segura para RTMP
@@ -63,6 +64,7 @@ class TransmisionController extends Controller
                 }
 
                 $control->stop($stream->stream_key);
+                app(\App\Services\ChannelClock::class)->stop($stream);
                 $stream->update(['activo' => false, 'finalizado_en' => now(), 'espectadores_activos' => 0]);
                 $locked->update(['estado' => 'finalizado']);
             });

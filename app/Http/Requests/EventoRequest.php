@@ -10,7 +10,8 @@ class EventoRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return in_array($this->user()?->role, ['admin', 'operador'], true);
+        if ($this->route('evento') instanceof Evento && $this->route('evento')->scheduledVideo) return false;
+        return $this->user()?->role === 'admin';
     }
 
     protected function prepareForValidation(): void

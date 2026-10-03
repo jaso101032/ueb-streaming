@@ -10,16 +10,10 @@ use App\Http\Controllers\EventoController;
 use App\Http\Controllers\ChatMessageController;
 use App\Models\Evento;
 
-// 1. La raíz abre la transmisión activa o el catálogo público.
-Route::get('/', function () {
-    $eventoEnVivo = Evento::where('estado', 'en_vivo')
-        ->latest('fecha_inicio')
-        ->first();
-
-    return $eventoEnVivo
-        ? redirect()->route('eventos.show', $eventoEnVivo)
-        : redirect()->route('eventos.index');
-});
+// The public channel automatically follows the live signal and scheduled playlist.
+Route::get('/', fn () => redirect()->route('channel.index'));
+Route::get('/senal', [\App\Http\Controllers\ChannelController::class, 'index'])->name('channel.index');
+Route::get('/senal/estado', [\App\Http\Controllers\ChannelController::class, 'state'])->name('channel.state');
 
 Route::get('/eventos', [EventoPublicoController::class, 'index'])->name('eventos.index');
 Route::get('/eventos/{evento}/reproduccion', [\App\Http\Controllers\RecordingController::class, 'state'])->name('eventos.playback-state');
@@ -39,9 +33,7 @@ Route::get('/dashboard', function () {
         return redirect()->route('admin.dashboard');
     } 
     
-    if ($role === 'operador') {
-        return redirect()->route('streaming.control');
-    }
+
     
     // Los usuarios regulares entran directamente a la programación pública.
     if (Evento::where('estado', 'en_vivo')->exists()) {
@@ -58,16 +50,18 @@ Route::middleware('auth')->group(function () {
 });
 
 // Panel de Administrador / Operador para la Gestión de Eventos
-// Modificado el middleware para permitir 'admin' y 'operador' en las rutas de administración necesarias
-Route::middleware(['auth', 'role:admin,operador'])->prefix('admin')->name('admin.')->group(function () {
+// Funciones de gestión exclusivas del administrador.
+Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     
     // CRUD completo de Eventos accesible por Administrador y Operador
-    Route::resource('eventos', EventoController::class);
+    Route::resource('eventos', EventoController::class)->except('destroy');
+    Route::delete('/eventos/{evento}', [EventoController::class, 'destroy'])
+        ->middleware('can:delete-event')->name('eventos.destroy');
 });
 
 // Panel de Control de Streaming para Operador / Admin
-Route::middleware(['auth', 'role:admin,operador'])->prefix('streaming')->name('streaming.')->group(function () {
+Route::middleware(['auth', 'role:admin'])->prefix('streaming')->name('streaming.')->group(function () {
     Route::post('/evento/{evento}/finalizar', [TransmisionController::class, 'finalizar'])->middleware('throttle:10,1')->name('finalizar');
     Route::post('/evento/{evento}/reintentar-grabacion', [\App\Http\Controllers\RecordingController::class, 'retry'])->middleware('throttle:5,1')->name('recording.retry');
     Route::get('/control', [TransmisionController::class, 'index'])->name('control');
@@ -84,3 +78,10 @@ Route::post('/streaming/hooks/authorize', \App\Http\Controllers\StreamAuthorizat
     ->name('streaming.authorize');
 
 require __DIR__.'/auth.php';
+Route::middleware(['auth', 'role:admin'])->prefix('admin/contenido-programado')->group(function () {
+    Route::post('/{evento}/reintentar', [\App\Http\Controllers\ScheduledVideoController::class, 'retry'])->middleware('throttle:5,1')->name('admin.scheduled.retry');
+    Route::get('/', [\App\Http\Controllers\ScheduledVideoController::class, 'index'])->name('admin.scheduled.index');
+    Route::post('/', [\App\Http\Controllers\ScheduledVideoController::class, 'store'])->middleware('throttle:10,1')->name('admin.scheduled.store');
+});
+Route::get('/eventos/{evento}/programado/estado', [\App\Http\Controllers\ScheduledVideoController::class, 'state'])->name('scheduled.state');
+Route::get('/eventos/{evento}/programado/video', [\App\Http\Controllers\ScheduledVideoController::class, 'media'])->name('scheduled.media');

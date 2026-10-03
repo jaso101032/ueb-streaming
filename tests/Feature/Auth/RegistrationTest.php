@@ -14,11 +14,7 @@ class RegistrationTest extends TestCase
         $response = $this->get('/register');
 
         $response->assertStatus(200);
-        $response->assertSee('Mínimo 8 caracteres');
-        $response->assertSee('Al menos una letra mayúscula');
-        $response->assertSee('Al menos una letra minúscula');
-        $response->assertSee('Al menos un número');
-        $response->assertSee('Al menos un símbolo');
+        $this->assertSame('register', $this->reactProps($response)['mode']);
     }
 
     public function test_passwords_missing_a_requirement_are_rejected(): void

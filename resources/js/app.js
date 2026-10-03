@@ -1,48 +1,59 @@
-import '@fontsource-variable/inter';
-
-import Alpine from 'alpinejs';
-import React from 'react';
-import { createRoot } from 'react-dom/client';
-import UebtvDashboard from './components/UebtvDashboard';
-
-window.Alpine = Alpine;
-
-Alpine.start();
-
-const dashboard = document.getElementById('uebtv-dashboard');
-
-if (dashboard) {
-	createRoot(dashboard).render(React.createElement(
-		UebtvDashboard,
-		JSON.parse(dashboard.dataset.props),
-	));
-}
-
-import "./chat";
-
-import AdminStudio from './components/AdminStudio';
-const studio = document.getElementById('uebtv-admin-studio');
-if (studio) createRoot(studio).render(React.createElement(AdminStudio, JSON.parse(studio.dataset.props)));
-
-import "./form-feedback";
-
-// Password visibility is opt-in and never changes the field value.
-document.querySelectorAll('[data-password-toggle]').forEach(button => {
-    button.addEventListener('click', () => {
-        const field = document.getElementById(button.dataset.passwordToggle);
-        const reveal = field.type === 'password';
-        field.type = reveal ? 'text' : 'password';
-        button.setAttribute('aria-pressed', String(reveal));
-        button.setAttribute('aria-label', `${reveal ? 'Ocultar' : 'Mostrar'} ${field.id === 'password_confirmation' ? 'confirmación de contraseña' : 'contraseña'}`);
-    });
-});
-
-const passwordGuide = document.querySelector('.password-guide');
-const registrationPassword = document.querySelector('#password[autocomplete="new-password"]');
-if (passwordGuide && registrationPassword) {
-    const updateGuide = () => { passwordGuide.hidden = document.activeElement === registrationPassword ? false : true; };
-    registrationPassword.addEventListener('focus', updateGuide);
-    registrationPassword.addEventListener('blur', () => { passwordGuide.hidden = true; });
-    window.addEventListener('pageshow', updateGuide);
-    updateGuide();
+import "@fontsource-variable/inter";
+import React from "react";
+import { createRoot } from "react-dom/client";
+import ErrorBoundary from "./platform/ErrorBoundary";
+import Shell from "./platform/Shell";
+import { Context } from "./platform/shared";
+import AdminStudio from "./components/AdminStudio";
+import ScheduledStudio from "./components/ScheduledStudio";
+import Catalog from "./platform/Catalog";
+import { EventList, EventDetail, Streaming } from "./platform/Management";
+import EventForm from "./platform/EventForm";
+import Auth, { Profile } from "./platform/Auth";
+import Watch from "./platform/Watch";
+import Channel from "./platform/Channel";
+import UploadError from "./platform/UploadError";
+const pages = {
+    UploadError,
+    Channel,
+    AdminStudio,
+    ScheduledStudio,
+    Catalog,
+    EventList,
+    EventDetail,
+    Streaming,
+    EventForm,
+    Auth,
+    Profile,
+    Watch,
+};
+const root = document.getElementById("uebtv-platform");
+if (root) {
+    const mount = root.querySelector(
+        "[data-react-page],#uebtv-admin-studio,#uebtv-scheduled-studio",
+    );
+    if (mount) {
+        const name =
+            mount.dataset.reactPage ||
+            (mount.id === "uebtv-admin-studio"
+                ? "AdminStudio"
+                : "ScheduledStudio");
+        const Page = pages[name],
+            props = JSON.parse(mount.dataset.props),
+            shell = JSON.parse(root.dataset.shell);
+        const content = React.createElement(
+            ErrorBoundary,
+            null,
+            React.createElement(Page, props),
+        );
+        createRoot(root).render(
+            name === "Auth" || name === "UploadError"
+                ? React.createElement(
+                      Context.Provider,
+                      { value: shell },
+                      content,
+                  )
+                : React.createElement(Shell, { shell }, content),
+        );
+    }
 }

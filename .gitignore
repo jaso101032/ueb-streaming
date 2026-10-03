@@ -30,3 +30,6 @@ Homestead.yaml
 Thumbs.db
 
 /storage/framework/recordings-worker.lock
+
+/test-results/
+/playwright-report/

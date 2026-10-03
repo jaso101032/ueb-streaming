@@ -27,11 +27,11 @@ class StreamFinalizationTest extends TestCase
         return $event;
     }
 
-    public function test_operator_can_stop_only_the_selected_stream_and_repeat_safely(): void
+    public function test_admin_can_stop_only_the_selected_stream_and_repeat_safely(): void
     {
         $event = $this->event();
         Http::fake(['127.0.0.1:8091/*' => Http::response('1')]);
-        $this->actingAs(User::factory()->create(['role' => 'operador']));
+        $this->actingAs(User::factory()->create(['role' => 'admin']));
         $this->post(route('streaming.finalizar', $event))->assertSessionHasNoErrors()->assertSessionHas('success');
         $this->assertSame('finalizado', $event->fresh()->estado);
         $stream = $event->transmision()->first();
@@ -84,7 +84,7 @@ class StreamFinalizationTest extends TestCase
     {
         $event = $this->event();
         $this->actingAs(User::where('role', 'admin')->first());
-        $this->get(route('streaming.control'))->assertOk()->assertSee('Finalizar transmisión');
-        $this->get(route('admin.eventos.show', $event))->assertOk()->assertSee('Finalizar transmisión');
+        $this->get(route('streaming.control'))->assertOk()->assertSee(route('streaming.finalizar', $event), false);
+        $this->get(route('admin.eventos.show', $event))->assertOk()->assertSee(route('streaming.finalizar', $event), false);
     }
 }

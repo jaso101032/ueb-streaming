@@ -68,8 +68,8 @@ class EventoManagementTest extends TestCase
 
     public function test_forms_show_catalogs_and_admin_navigation(): void
     {
-        $this->get(route('admin.eventos.index'))->assertOk()->assertSee('Crear evento')->assertSee(route('admin.eventos.create'), false);
-        $this->get(route('admin.eventos.create'))->assertOk()->assertSee('Académico')->assertSee('Ingeniería')->assertSee('Software')->assertSee('multipart/form-data', false);
+        $this->get(route('admin.eventos.index'))->assertOk()->assertSee(route('admin.eventos.create'), false);
+        $this->get(route('admin.eventos.create'))->assertOk()->assertSee('Académico')->assertSee('Ingeniería')->assertSee('Software')->assertSee('data-react-page="EventForm"', false);
         $evento = $this->evento();
         $this->get(route('admin.eventos.edit', $evento))->assertOk()->assertSee('2026-10-01T12:00');
         $this->get(route('admin.eventos.show', $evento))->assertOk()->assertSee('Conferencia de prueba')->assertSee('Software');
@@ -88,15 +88,14 @@ class EventoManagementTest extends TestCase
         $this->get(route('eventos.index'))->assertOk()->assertSee('storage/'.$evento->miniatura, false);
     }
 
-    public function test_operator_can_manage_and_soft_delete_events(): void
+    public function test_operator_cannot_manage_events(): void
     {
+        $evento = $this->evento();
         $this->actingAs(User::factory()->create(['role' => 'operador']));
-        $this->post(route('admin.eventos.store'), $this->data())->assertSessionHasNoErrors();
-        $evento = Evento::firstOrFail();
-        $this->put(route('admin.eventos.update', $evento), $this->data(['titulo' => 'Actualizado', 'estado' => 'finalizado']))->assertRedirect(route('admin.eventos.show', $evento));
-        $this->assertSame('Actualizado', $evento->fresh()->titulo);
-        $this->delete(route('admin.eventos.destroy', $evento))->assertRedirect(route('admin.eventos.index'));
-        $this->assertSoftDeleted('eventos', ['id' => $evento->id]);
+        $this->post(route('admin.eventos.store'), $this->data())->assertForbidden();
+        $this->put(route('admin.eventos.update', $evento), $this->data())->assertForbidden();
+        $this->delete(route('admin.eventos.destroy', $evento))->assertForbidden();
+        $this->assertNotSoftDeleted('eventos', ['id' => $evento->id]);
     }
 
     public function test_partial_update_preserves_omitted_fields_thumbnail_and_slug(): void
@@ -202,5 +201,38 @@ class EventoManagementTest extends TestCase
         $this->seed();
         $this->assertSame($counts, [Categoria::count(), Facultad::count(), Carrera::count()]);
         $this->assertDatabaseMissing('users', ['email' => 'test@example.com']);
+    }
+    public function test_only_admin_can_delete_finished_events(): void
+    {
+        $evento = $this->evento();
+        $evento->update(['estado' => 'finalizado', 'video_url' => 'https://example.com/video.mp4']);
+        foreach (['operador', 'estudiante'] as $role) {
+            $this->actingAs(User::factory()->create(['role' => $role]));
+            $this->assertArrayNotHasKey('deleteUrl', $this->reactProps($this->get(route('eventos.index')))['events'][0]);
+            $this->delete(route('admin.eventos.destroy', $evento))->assertForbidden();
+            $this->assertNotSoftDeleted('eventos', ['id' => $evento->id]);
+        }
+        $this->actingAs($this->admin);
+        $this->assertSame(route('admin.eventos.destroy', $evento), $this->reactProps($this->get(route('eventos.index')))['events'][0]['deleteUrl']);
+        $this->delete(route('admin.eventos.destroy', $evento))->assertRedirect(route('admin.eventos.index'));
+        $this->assertSoftDeleted('eventos', ['id' => $evento->id]);
+        $this->get(route('eventos.show', $evento))->assertNotFound();
+        $this->get(route('eventos.recording', $evento))->assertNotFound();
+        $this->get(route('eventos.index'))->assertDontSee($evento->titulo);
+    }
+
+    public function test_guest_cannot_delete_event(): void
+    {
+        $evento = $this->evento();
+        auth()->logout();
+        $this->delete(route('admin.eventos.destroy', $evento))->assertRedirect(route('login'));
+        $this->assertNotSoftDeleted('eventos', ['id' => $evento->id]);
+    }
+
+    public function test_operator_management_does_not_offer_delete(): void
+    {
+        $evento = $this->evento();
+        $this->actingAs(User::factory()->create(['role' => 'operador']));
+        $this->get(route('admin.eventos.index'))->assertForbidden();
     }
 }

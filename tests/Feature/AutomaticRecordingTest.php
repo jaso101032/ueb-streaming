@@ -108,7 +108,7 @@ class AutomaticRecordingTest extends TestCase
         $this->get(route('eventos.recording', $this->event))->assertNotFound();
         $this->actingAs(User::factory()->create(['role' => 'usuario']));
         $this->post(route('streaming.recording.retry', $this->event))->assertForbidden();
-        $this->actingAs(User::factory()->create(['role' => 'operador']));
+        $this->actingAs(User::factory()->create(['role' => 'admin']));
         $this->post(route('streaming.recording.retry', $this->event))->assertSessionHas('success');
         $this->assertSame('waiting', $this->event->transmision()->first()->recording_status);
     }

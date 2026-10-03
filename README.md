@@ -6,7 +6,7 @@ Plataforma institucional de transmisiones de la Universidad Estatal de Bolívar.
 
 - Laravel 13 y PHP 8.3 o superior.
 - PostgreSQL o SQLite, según el entorno.
-- Vite, Tailwind CSS, React 19 y Alpine.js.
+- React 19 para toda la interfaz, Vite y estilos CSS/Tailwind.
 - Nginx con módulo RTMP para recibir OBS y generar HLS.
 
 ## Requisitos
@@ -39,7 +39,7 @@ Configura la base de datos en `.env` antes de ejecutar las migraciones. Nunca su
 Para permitir conexiones desde otros dispositivos de la red:
 
 ```bash
-php artisan serve --host=0.0.0.0 --port=8000
+bash scripts/serve-local.sh
 ```
 
 Consulta la IP vigente del servidor:
@@ -60,7 +60,12 @@ El comando completo para iniciar Laravel, cola, logs y Vite es:
 composer run dev
 ```
 
-La IP es dinámica y no debe escribirse como valor permanente en el código. Si DHCP cambia la IP, abre la aplicación con la nueva dirección. El panel de streaming refleja automáticamente el host usado para acceder.
+Para compartir el sitio por IP sin depender del servidor HMR de Vite, detén
+el entorno de desarrollo y ejecuta `composer run share`. Este comando compila
+los recursos de React y CSS para servirlos desde Laravel por el puerto 8000.
+Los cambios de interfaz requieren volver a ejecutar el comando para compilar.
+
+Vite también debe ser accesible desde la red local para que el navegador del otro dispositivo cargue React y los estilos; el proyecto detecta la IP local al iniciar. Si hay varias interfaces de red, puedes indicar la IP correcta con `VITE_HMR_HOST=192.168.1.25 composer run dev`. Permite los puertos TCP `8000` y `5173` en el firewall. La IP es dinámica y no debe escribirse como valor permanente en el código. Si DHCP cambia la IP, abre la aplicación con la nueva dirección.
 
 ## Streaming con OBS
 
@@ -208,7 +213,7 @@ curl -I http://IP_DEL_SERVIDOR/hls/CLAVE.m3u8
 
 ## Estado del proyecto
 
-UEBTV cuenta con catálogo público, salas de reproducción, soporte HLS/RTMP, biblioteca de videos archivados, panel administrativo, control para operadores, React integrado con Blade y autenticación con roles.
+UEBTV cuenta con catálogo público, salas de reproducción, soporte HLS/RTMP, biblioteca de videos archivados, panel administrativo, control para operadores, interfaz React y autenticación con roles en Laravel. Blade sirve únicamente el documento inicial y los datos de cada página.
 
 
 ## Gestión de eventos y miniaturas
@@ -242,5 +247,50 @@ Comprobaciones específicas:
 
 ```bash
 php artisan test --filter=CatalogAndChatTest
-node tests/js/chat.test.js
+npm run test:browser
 ```
+
+
+## Frontend React
+
+Toda la interfaz de las rutas activas se renderiza con React: acceso y recuperación de cuenta, perfil, catálogo, sala de reproducción y comentarios, administración de eventos, streaming y contenido programado. Alpine y los scripts anteriores de manipulación del DOM fueron retirados.
+
+- Entrada y registro de páginas: `resources/js/app.js`.
+- Navegación, páginas y reproductores: `resources/js/platform/`.
+- Panel y programador: `resources/js/components/`.
+- Datos públicos y permisos de interfaz: `app/Support/ReactPage.php`.
+- Estilos compartidos: `resources/css/react-platform.css`, `studio.css`, `watch-experience.css` y `scheduled-admin.css`.
+
+Laravel mantiene rutas, sesiones, CSRF, validación, cargas de archivos y autorización. La navegación entre páginas y los formularios usan las rutas existentes; no se requiere un servidor Node en producción. Los archivos Blade son puntos de arranque con datos serializados, no contienen la interfaz. Los estilos siguen siendo CSS: React administra componentes e interacciones.
+
+Después de actualizar el código:
+
+```bash
+npm ci
+npm run build
+php artisan view:clear
+```
+
+En el hosting hay que publicar también **todo** `public/uebtv-build-v2` (incluido el manifest y el fragmento HLS). Un commit por sí solo no compila los estilos. El reproductor HLS se descarga del propio build solo cuando se abre una emisión en directo.
+
+### Pruebas de interfaz
+
+```bash
+npx playwright install chromium
+npm run test:browser
+```
+
+Requieren PHP con SQLite y FFmpeg. El servidor de prueba usa el puerto 8017 y una base SQLite temporal en `/tmp`; no utiliza la base real. No ejecutes otra instancia de prueba en ese puerto. Si existe configuración Laravel cacheada, el script se detiene para evitar utilizar otra base de datos.
+
+Las pruebas cubren navegación móvil, formularios y vistas previas, permisos, chat con errores de red, y sincronización de un MP4 de prueba. Para validar una emisión OBS real hace falta que Nginx/RTMP esté recibiendo señal.
+
+## Canal automático y subida de videos
+
+Abre `/senal` para ver la programación continua: el directo tiene prioridad y, al
+terminar, el pregrabado continúa desde el punto interrumpido. En **Contenido
+programado** se muestran la duración total y los minutos de video pendientes.
+
+Para subir videos de hasta 500 MB localmente, detén el servidor anterior y usa
+`bash scripts/serve-local.sh` o `composer run dev`. El PHP por defecto puede
+limitar los archivos a 2 MB; `php artisan serve` sin configurar los límites no
+los amplía. Más detalles en [contenido programado](docs/contenido-programado.md).
