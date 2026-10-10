@@ -54,11 +54,16 @@ Abre desde otro dispositivo:
 http://IP_DEL_SERVIDOR:8000/login
 ```
 
-El comando completo para iniciar Laravel, cola, logs y Vite es:
+El comando completo para iniciar Laravel, la cola, los logs, Vite y el
+procesador que optimiza los videos programados es:
 
 ```bash
 composer run dev
 ```
+
+El procesador queda atento a nuevas cargas mientras esta terminal siga
+ejecutándose. No necesitas iniciar `php artisan scheduled:process --watch`
+por separado; al cerrar `composer run dev`, también se detiene.
 
 Para compartir el sitio por IP sin depender del servidor HMR de Vite, detén
 el entorno de desarrollo y ejecuta `composer run share`. Este comando compila

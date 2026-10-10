@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import NavIcon from "./NavIcon";
 import { Context, Action } from "./shared";
+import UniversityMark from "./UniversityMark";
+import UebtvMark from "./UebtvMark";
 export default function Shell({ shell, children }) {
     const [menu, setMenu] = useState(false);
     useEffect(() => {
@@ -18,18 +20,8 @@ export default function Shell({ shell, children }) {
                 </a>
                 <header className="studio-header">
                     <div className="studio-header-inner">
-                        <a className="studio-brand" href={shell.home}>
-                            <img
-                                className="brand-mascot"
-                                src={shell.mascot}
-                                alt="Mascota de la UEB"
-                                width="48"
-                                height="64"
-                            />
-                            <span>
-                                UEB<span className="studio-brand-tv">TV</span>
-                                <small>UNIVERSIDAD ESTATAL DE BOLÍVAR</small>
-                            </span>
+                        <a className="studio-brand" href={shell.home} aria-label="UEBTV">
+                            <UebtvMark className="uebtv-brand-logo--header" />
                         </a>
                         <div className="studio-account">
                             {shell.user ? (
@@ -104,8 +96,7 @@ export default function Shell({ shell, children }) {
                             ))}
                         </nav>
                         <div className="studio-sidebar-footer">
-                            <strong>UEBTV</strong>
-                            <p>Tu universidad. Tu señal.</p>
+                            <UniversityMark className="university-mark--sidebar" />
                         </div>
                     </aside>
                 ) : (

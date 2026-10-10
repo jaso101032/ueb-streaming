@@ -1,4 +1,41 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { useShell } from "../platform/shared";
+
+function CountUp({ value, delay = 0 }) {
+    const target = Number(value) || 0;
+    const [count, setCount] = useState(0);
+
+    useEffect(() => {
+        let frame = 0;
+        const reducedMotion = window.matchMedia?.(
+            "(prefers-reduced-motion: reduce)",
+        ).matches;
+        if (reducedMotion || target === 0) {
+            setCount(target);
+            return;
+        }
+
+        let startTime;
+        const tick = (time) => {
+            startTime ??= time;
+            const progress = Math.min((time - startTime) / 760, 1);
+            const eased = 1 - Math.pow(1 - progress, 3);
+            setCount(Math.round(target * eased));
+            if (progress < 1) frame = requestAnimationFrame(tick);
+        };
+        const timeout = window.setTimeout(
+            () => (frame = requestAnimationFrame(tick)),
+            delay,
+        );
+
+        return () => {
+            window.clearTimeout(timeout);
+            cancelAnimationFrame(frame);
+        };
+    }, [target, delay]);
+
+    return new Intl.NumberFormat("es").format(count);
+}
 
 function Icon({ name, ...props }) {
     const paths = {
@@ -62,7 +99,8 @@ export default function AdminStudio({
     streamingUrl,
     catalogUrl,
 }) {
-    const [filter, setFilter] = useState("todos");
+    const shell = useShell(),
+        [filter, setFilter] = useState("todos");
     const counts = useMemo(
         () => ({
             todos: events.length,
@@ -118,17 +156,17 @@ export default function AdminStudio({
                     <div className="studio-orbit studio-orbit-one" />
                     <div className="studio-orbit studio-orbit-two" />
                     <div className="studio-art-screen">
-                        <div className="studio-art-bars">
-                            {[
-                                35, 58, 42, 80, 100, 68, 90, 48, 72, 38, 56, 28,
-                            ].map((h, i) => (
-                                <i key={i} style={{ height: `${h}%` }} />
-                            ))}
+                        <span className="studio-art-screen__label">
+                            LA VOZ DE NUESTRA UNIVERSIDAD
+                        </span>
+                        <div className="studio-art-screen__brand">
+                            <img
+                                src={shell.logo}
+                                alt="Universidad Estatal de Bolívar"
+                                width="2000"
+                                height="420"
+                            />
                         </div>
-                        <span>LA VOZ DE NUESTRA UNIVERSIDAD</span>
-                        <strong>
-                            UEB<span>TV</span>
-                        </strong>
                         <div className="studio-art-line">
                             <i /> UN ESPACIO PARA CONECTAR
                         </div>
@@ -145,18 +183,18 @@ export default function AdminStudio({
                 {metrics.map((metric, i) => (
                     <article
                         key={metric.label}
-                        className={
-                            i === 1
-                                ? "studio-metric studio-metric-live"
-                                : "studio-metric"
-                        }
+                        className={metric.label === "En vivo" && metric.value > 0
+                            ? "studio-metric studio-metric-live"
+                            : "studio-metric"}
                     >
                         <div>
-                            <span>{metric.label}</span>
+                            <span className={metric.label === "En vivo" && metric.value > 0 ? "studio-metric-live-label is-live" : "studio-metric-live-label"}>
+                                {metric.label}
+                            </span>
                             <Icon name={metric.icon} />
                         </div>
                         <strong>
-                            {new Intl.NumberFormat("es").format(metric.value)}
+                            <CountUp value={metric.value} delay={i * 90} />
                         </strong>
                         <p>{metric.detail}</p>
                     </article>

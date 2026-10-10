@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ChatMessage;
 use App\Models\Evento;
+use App\Models\Transmision;
 use App\Services\ChatFeed;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -32,11 +33,24 @@ class ChatMessageController extends Controller
             'message.max' => 'El mensaje no puede superar 180 caracteres.',
         ]);
 
-        $message = ChatMessage::create([
-            'evento_id' => $evento->id,
-            'user_id' => $request->user()->id,
-            'message' => trim($validated['message']),
-        ]);
+        // Match the lock order used by stream start/finalization so comments
+        // are consistently assigned to the live timeline.
+        $message = DB::transaction(function () use ($evento, $request, $validated) {
+            $lockedEvent = Evento::whereKey($evento->id)->lockForUpdate()->firstOrFail();
+            $stream = Transmision::where('evento_id', $lockedEvent->id)->lockForUpdate()->first();
+            $playbackSeconds = null;
+
+            if ($lockedEvent->estado === 'en_vivo' && $stream?->iniciado_en && !$stream->finalizado_en) {
+                $playbackSeconds = max(0, now()->getTimestamp() - $stream->iniciado_en->getTimestamp());
+            }
+
+            return ChatMessage::create([
+                'evento_id' => $lockedEvent->id,
+                'user_id' => $request->user()->id,
+                'message' => trim($validated['message']),
+                'playback_seconds' => $playbackSeconds,
+            ]);
+        });
         $feed->forget($evento);
 
         return response()->json([
@@ -44,6 +58,7 @@ class ChatMessageController extends Controller
             'user' => $request->user()->name,
             'message' => $message->message,
             'created_at' => $message->created_at->toIso8601String(),
+            'playback_seconds' => $message->playback_seconds,
         ], 201);
     }
 

@@ -177,7 +177,7 @@ export function ScheduledPlayer({ scheduled, poster, onState }) {
         </>
     );
 }
-export default function Player({ event: e, onScheduledState }) {
+export default function Player({ event: e, onScheduledState, recordingRef }) {
     const video = useRef(),
         [error, setError] = useState(""),
         [retry, setRetry] = useState(0);
@@ -268,6 +268,7 @@ export default function Player({ event: e, onScheduledState }) {
     if (e.videoUrl)
         return (
             <video
+                ref={recordingRef}
                 className="uebtv-video"
                 src={e.videoUrl}
                 controls

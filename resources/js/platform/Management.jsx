@@ -191,7 +191,7 @@ function StreamCard({ event: e }) {
                             d.finalizado
                                 ? "Transmisión finalizada"
                                 : d.en_vivo
-                                  ? "● Señal recibida"
+                                  ? "Señal recibida"
                                   : "○ Esperando señal de OBS",
                         );
                 } catch {
@@ -222,7 +222,20 @@ function StreamCard({ event: e }) {
             <div>
                 <span className="studio-eyebrow">{e.category}</span>
                 <h2>{e.title}</h2>
-                <p role="status">{signal}</p>
+                <p
+                    role="status"
+                    className={`react-stream-signal ${
+                        signal === "Señal recibida"
+                            ? "is-live"
+                            : signal === "Transmisión finalizada"
+                              ? "is-finished"
+                              : signal.startsWith("○")
+                                ? "is-waiting"
+                                : "is-error"
+                    }`}
+                >
+                    {signal.replace(/^[○●]\s*/, "")}
+                </p>
             </div>
             {e.streamKey ? (
                 <div className="react-credentials">

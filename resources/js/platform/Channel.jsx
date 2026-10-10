@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import Player from "./Player";
 import { useShell } from "./shared";
+import UebtvMark from "./UebtvMark";
 
 export function durationLabel(seconds = 0) {
     const s = Math.max(0, Math.floor(seconds));
@@ -181,13 +182,7 @@ export default function Channel({ stateUrl }) {
                                         <i />
                                     </div>
                                     <div className="channel-idle-content">
-                                        <div
-                                            className="channel-wordmark"
-                                            aria-hidden="true"
-                                        >
-                                            UEB<span>TV</span>
-                                            <b>●</b>
-                                        </div>
+                                        <UebtvMark className="uebtv-brand-logo--channel" />
                                         <span className="channel-idle-caption">
                                             TU UNIVERSIDAD. TU SEÑAL.
                                         </span>

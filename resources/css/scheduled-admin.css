@@ -29,7 +29,7 @@
 .schedule-submit p { color:#6c819d; font-size:10px; }
 .schedule-submit .studio-button { font-size:12px; }
 .schedule-preview { min-width:0; border-radius:18px; overflow:hidden; background:#fff; border:1px solid #dbe6f3; }
-.schedule-preview-art { position:relative; display:flex; flex-direction:column; align-items:center; justify-content:space-between; min-height:210px; padding:22px; color:white; background:radial-gradient(ellipse at 100% 100%,#245c9a,transparent 75%),#071a35; }
+.schedule-preview-art { position:relative; display:flex; flex-direction:column; align-items:center; justify-content:space-between; min-height:230px; padding:22px; color:white; background:radial-gradient(ellipse at 100% 100%,#245c9a,transparent 75%),#071a35; }
 .schedule-preview-brand { align-self:start; font-weight:700; font-size:18px; letter-spacing:-.05em; }
 .schedule-preview-brand > span { color:#9dc6f5; }
 .schedule-preview-play { display:grid; place-items:center; width:57px; height:57px; padding-left:3px; border:1px solid #9ec0e777; border-radius:50%; background:#ffffff09; color:#c3ddfb; font-size:17px; box-shadow:0 0 0 12px #ffffff03; }

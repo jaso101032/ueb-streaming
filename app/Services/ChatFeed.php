@@ -18,6 +18,7 @@ class ChatFeed
                 'user' => $message->user?->name ?? 'Usuario',
                 'message' => $message->message,
                 'created_at' => $message->created_at->toIso8601String(),
+                'playback_seconds' => $message->playback_seconds,
             ])->all()
         );
     }
@@ -29,6 +30,6 @@ class ChatFeed
 
     private function key(Evento $evento): string
     {
-        return 'chat-feed:v1:'.$evento->id;
+        return 'chat-feed:v2:'.$evento->id;
     }
 }

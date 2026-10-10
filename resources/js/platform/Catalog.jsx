@@ -18,6 +18,7 @@ export function Card({ event: e }) {
                     <span
                         className={`uebtv-catalog-card__status ${e.status === "en_vivo" ? "is-live" : ""}`}
                     >
+                        <i aria-hidden="true" />
                         {statusLabel(e)}
                     </span>
                 </div>
@@ -76,10 +77,13 @@ export default function Catalog({
                             Ver señal continua ↗
                         </a>
                     </div>
-                    <div className="uebtv-catalog-mark">
-                        <strong>UEB</strong>
-                        <span>TV</span>
-                        <i />
+                    <div className="uebtv-catalog-mark" aria-label="Universidad Estatal de Bolívar">
+                        <img
+                            src={shell.logo}
+                            alt="Universidad Estatal de Bolívar"
+                            width="2000"
+                            height="420"
+                        />
                     </div>
                 </section>
                 <Feedback />

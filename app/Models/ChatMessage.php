@@ -14,6 +14,11 @@ class ChatMessage extends Model
         'evento_id',
         'user_id',
         'message',
+        'playback_seconds',
+    ];
+
+    protected $casts = [
+        'playback_seconds' => 'integer',
     ];
 
     public function user()

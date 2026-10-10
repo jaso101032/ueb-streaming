@@ -7,6 +7,7 @@ use App\Models\ChatMessage;
 use App\Models\Evento;
 use App\Models\Facultad;
 use App\Models\User;
+use App\Models\Transmision;
 use App\Services\ChatFeed;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -129,6 +130,42 @@ class CatalogAndChatTest extends TestCase
         }
         $this->postJson(route('eventos.chat.store', $evento), ['message' => ' Hola comunidad '])->assertCreated()->assertJsonPath('message', 'Hola comunidad');
         $this->getJson(route('eventos.chat.index', $evento), ['If-None-Match' => $before->headers->get('ETag')])->assertOk()->assertJsonCount(1);
+    }
+
+    public function test_live_chat_messages_store_and_expose_their_position_in_the_recording(): void
+    {
+        $startedAt = now()->subMinutes(3);
+        $evento = $this->evento(['estado' => 'en_vivo']);
+        Transmision::create([
+            'evento_id' => $evento->id,
+            'stream_key' => 'ueb_'.Str::random(32),
+            'iniciado_en' => $startedAt,
+            'activo' => true,
+        ]);
+
+        $this->travelTo($startedAt->copy()->addSeconds(95));
+        $response = $this->actingAs($this->user)
+            ->postJson(route('eventos.chat.store', $evento), ['message' => 'Gran evento'])
+            ->assertCreated()
+            ->assertJsonPath('playback_seconds', 95);
+
+        $messageId = $response->json('id');
+        $this->assertDatabaseHas('chat_messages', [
+            'id' => $messageId,
+            'playback_seconds' => 95,
+        ]);
+        $this->getJson(route('eventos.chat.index', $evento))
+            ->assertOk()
+            ->assertJsonPath('0.playback_seconds', 95);
+    }
+
+    public function test_messages_outside_an_active_live_stream_have_no_playback_position(): void
+    {
+        $evento = $this->evento();
+        $this->actingAs($this->user)
+            ->postJson(route('eventos.chat.store', $evento), ['message' => 'Hola'])
+            ->assertCreated()
+            ->assertJsonPath('playback_seconds', null);
     }
 
     public function test_only_moderators_can_remove_messages_and_deletion_propagates(): void

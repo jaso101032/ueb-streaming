@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useShell, statusLabel } from "./shared";
 import Player from "./Player";
 import Chat from "./Chat";
+import UebtvMark from "./UebtvMark";
 export default function Watch({
     event: e,
     initialReady,
@@ -11,6 +12,7 @@ export default function Watch({
 }) {
     const shell = useShell(),
         player = useRef(),
+        recordingVideo = useRef(),
         left = useRef(),
         chat = useRef(),
         draft = useRef(""),
@@ -111,37 +113,22 @@ export default function Watch({
                                 EN ESTA SALA
                             </p>
                             <span className="uebtv-watch-aside__signal">
-                                <i />
+                                <i className={e.status === "en_vivo" ? "is-live" : ""} />
                                 UEBTV
                             </span>
                         </div>
                         <div className="uebtv-watch-aside__cover">
-                            <div
-                                className="watch-brand-waves"
-                                aria-hidden="true"
-                            >
-                                {[1, 2, 3, 4, 5].map((x) => (
-                                    <i key={x} />
-                                ))}
-                            </div>
-                            <span>
-                                UEB<small>TV</small>
-                            </span>
+                            <UebtvMark className="uebtv-brand-logo--watch-cover" />
                             <p>Tu universidad. Tu señal.</p>
-                            <span className="watch-brand-caption">
-                                UNIVERSIDAD ESTATAL DE BOLÍVAR
-                            </span>
+                            <span className="watch-brand-caption">TELEVISIÓN UNIVERSITARIA</span>
                         </div>
                         <h2>La señal de nuestra comunidad</h2>
                         <p>
                             Conocimiento, cultura y momentos que nos conectan.
                         </p>
                         <div className="watch-community-signature">
-                            <span>U</span>
-                            <div>
-                                Hecho para nuestra comunidad
-                                <small>Universidad Estatal de Bolívar</small>
-                            </div>
+                            Hecho para nuestra comunidad
+                            <small>Universidad Estatal de Bolívar</small>
                         </div>
                         <div className="uebtv-watch-aside__rule" />
                         <a
@@ -171,6 +158,7 @@ export default function Watch({
                             <Player
                                 event={e}
                                 onScheduledState={setScheduledState}
+                                recordingRef={recordingVideo}
                             />
                         </div>
                         <div className="uebtv-watch-title-block">
@@ -181,9 +169,8 @@ export default function Watch({
                                     </span>
                                     <h1>{e.title}</h1>
                                 </div>
-                                <span
-                                    className={`uebtv-watch-state ${e.status === "en_vivo" ? "is-live" : ""}`}
-                                >
+                                <span className={`uebtv-watch-state ${e.status === "en_vivo" ? "is-live" : ""}`}>
+                                    <i aria-hidden="true" />
                                     {statusLabel(
                                         e.scheduled
                                             ? {
@@ -225,6 +212,13 @@ export default function Watch({
                         endpoint={e.chatUrl}
                         initial={messages}
                         canModerate={canModerate}
+                        seekable={e.status === "finalizado" && Boolean(e.videoUrl)}
+                        onSeek={(seconds) => {
+                            const video = recordingVideo.current;
+                            if (!video) return;
+                            video.currentTime = seconds;
+                            video.play().catch(() => {});
+                        }}
                         isRecording={
                             e.status === "finalizado" ||
                             scheduledState === "ended"

@@ -6,6 +6,8 @@ export default function Chat({
     canModerate,
     panelRef,
     isRecording,
+    seekable = false,
+    onSeek,
     onDraft,
 }) {
     const { user, login, csrf } = useShell(),
@@ -20,6 +22,10 @@ export default function Chat({
         bottom = useRef(true),
         revision = useRef(0),
         controllers = useRef(new Set());
+    const formatPlaybackTime = (seconds) => {
+        const value = Math.max(0, Math.floor(Number(seconds) || 0));
+        return `${Math.floor(value / 60)}:${String(value % 60).padStart(2, "0")}`;
+    };
     useEffect(() => () => controllers.current.forEach((c) => c.abort()), []);
     useEffect(() => {
         onDraft?.(draft);
@@ -188,9 +194,27 @@ export default function Chat({
                         <span className="uebtv-chat-avatar">
                             {Array.from(m.user)[0]?.toUpperCase()}
                         </span>
-                        <p>
+                        <p className="uebtv-chat-message__content">
                             <strong>{m.user}</strong>
-                            {m.message}
+                            <span>{m.message}</span>
+                            {m.playback_seconds != null && (
+                                seekable && onSeek ? (
+                                    <button
+                                        type="button"
+                                        className="uebtv-chat-time"
+                                        onClick={() => onSeek(m.playback_seconds)}
+                                        aria-label={`Ir al minuto ${formatPlaybackTime(m.playback_seconds)} de la grabación`}
+                                        title="Ver este momento de la grabación"
+                                    >
+                                        <span aria-hidden="true">▶</span>
+                                        {formatPlaybackTime(m.playback_seconds)}
+                                    </button>
+                                ) : (
+                                    <span className="uebtv-chat-time" title="Minuto de la emisión">
+                                        {formatPlaybackTime(m.playback_seconds)}
+                                    </span>
+                                )
+                            )}
                         </p>
                         {canModerate && (
                             <button
@@ -247,7 +271,9 @@ export default function Chat({
                             disabled={busy}
                             aria-label="Enviar mensaje"
                         >
-                            ↗
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M4 12h15M12 5l7 7-7 7" />
+                            </svg>
                         </button>
                     </form>
                     <p className="uebtv-live-chat__note">

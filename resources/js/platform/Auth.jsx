@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Token, Feedback, Action, Field, useShell } from "./shared";
+import UebtvMark from "./UebtvMark";
 export function Password({
     name = "password",
     label = "Contraseña",
@@ -54,8 +55,15 @@ export default function Auth({ mode, action, name, email, token, forgotUrl }) {
     return (
         <div className="react-auth">
             <aside className="react-auth-brand">
-                <a href={shell.catalog} className="react-auth-logo">
-                    UEB<span>TV</span>
+                <a href={shell.catalog} className="react-auth-logo" aria-label="UEBTV">
+                    <UebtvMark className="uebtv-brand-logo--auth" />
+                    <img
+                        className="react-auth-mascot"
+                        src={shell.mascot}
+                        alt="Mascota de la Universidad Estatal de Bolívar"
+                        width="48"
+                        height="72"
+                    />
                 </a>
                 <div>
                     <span className="react-overline">

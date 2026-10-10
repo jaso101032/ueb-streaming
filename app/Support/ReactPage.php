@@ -54,7 +54,10 @@ class ReactPage
         return ['user' => $user?->only(['name', 'email', 'role']), 'links' => $links, 'operator' => $operator, 'createUrl' => $operator ? route('admin.eventos.create') : null,
             'creating' => request()->routeIs('admin.eventos.create'), 'home' => $operator ? route('admin.dashboard') : route('eventos.index'),
             'login' => route('login'), 'register' => route('register'), 'logout' => route('logout'), 'profile' => route('profile.edit'),
-            'channel' => route('channel.index'), 'catalog' => route('eventos.index'), 'mascot' => asset('images/mascota-ueb-login.png'), 'csrf' => csrf_token(),
+            'channel' => route('channel.index'), 'catalog' => route('eventos.index'),
+            'logo' => asset('images/brand/ueb-wordmark.png'),
+            'mascot' => asset('images/brand/mascota-ueb.webp'),
+            'tvLogo' => asset('images/brand/uebtv-logo-transparent.webp'), 'csrf' => csrf_token(),
             'errors' => session('errors')?->all() ?? [], 'success' => session('success'), 'status' => session('status'), 'year' => now()->year];
     }
 }

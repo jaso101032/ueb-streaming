@@ -1,5 +1,6 @@
 import { durationLabel } from "../platform/Channel";
 import { Action } from "../platform/shared";
+import UebtvMark from "../platform/UebtvMark";
 import React, { useEffect, useState } from "react";
 
 function Icon({ name = "play", size = 22 }) {
@@ -406,9 +407,7 @@ export default function ScheduledStudio({
                         </div>
                     ) : (
                         <div className="schedule-preview-art">
-                            <span className="schedule-preview-brand">
-                                UEB<span>TV</span>
-                            </span>
+                            <UebtvMark className="uebtv-brand-logo--schedule" />
                             <span className="schedule-preview-play">
                                 <Icon />
                             </span>

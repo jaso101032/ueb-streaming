@@ -307,6 +307,114 @@
     color: #102a4d;
 }
 
+/* Small, quick interactions make controls and artwork feel responsive without slowing navigation. */
+@keyframes uebtv-view-enter {
+    from { opacity:0; transform:translateY(7px); }
+    to { opacity:1; transform:translateY(0); }
+}
+#contenido > :is(.studio-page, .uebtv-catalog-page, .uebtv-watch-page) {
+    animation:uebtv-view-enter 280ms cubic-bezier(.2,.7,.25,1) both;
+}
+
+#contenido :is(button, a.studio-button, a.studio-signout, .studio-text-link,
+    .studio-sidebar-create, .uebtv-watch-actions a, .uebtv-watch-actions button,
+    .uebtv-catalog-search > a) {
+    transition:transform 150ms ease, box-shadow 170ms ease, background-color 170ms ease,
+        border-color 170ms ease, color 170ms ease;
+}
+#contenido button:not(:disabled):hover,
+#contenido a.studio-button:hover,
+#contenido a.studio-signout:hover,
+#contenido .studio-text-link:hover,
+#contenido .studio-sidebar-create:hover,
+#contenido .uebtv-watch-actions a:hover,
+#contenido .uebtv-watch-actions button:hover,
+#contenido .uebtv-catalog-search > a:hover {
+    transform:translateY(-1px);
+}
+#contenido button:not(:disabled):active,
+#contenido a.studio-button:active,
+#contenido a.studio-signout:active,
+#contenido .studio-sidebar-create:active,
+#contenido .uebtv-watch-actions a:active,
+#contenido .uebtv-watch-actions button:active,
+#contenido .uebtv-catalog-search > a:active {
+    transform:translateY(0) scale(.98);
+}
+
+#contenido .uebtv-catalog-card {
+    transform:translateY(0);
+    transition:transform 240ms cubic-bezier(.2,.7,.25,1), box-shadow 240ms ease,
+        border-color 200ms ease;
+}
+#contenido .uebtv-catalog-card:hover,
+#contenido .uebtv-catalog-card:focus-visible {
+    transform:translateY(-5px);
+    border-color:#c0d5ef;
+    box-shadow:0 18px 34px #0b2b501c;
+}
+#contenido .uebtv-catalog-card__visual {
+    background-size:cover;
+    transition:background-size 400ms ease, filter 300ms ease;
+}
+#contenido .uebtv-catalog-card:hover .uebtv-catalog-card__visual,
+#contenido .uebtv-catalog-card:focus-visible .uebtv-catalog-card__visual {
+    background-size:108% 108%;
+    filter:saturate(1.08) brightness(1.04);
+}
+#contenido .uebtv-catalog-card__visual::after { transition:background-color 300ms ease; }
+#contenido .uebtv-catalog-card:hover .uebtv-catalog-card__visual.has-image::after,
+#contenido .uebtv-catalog-card:focus-visible .uebtv-catalog-card__visual.has-image::after {
+    background:rgba(5,20,42,.14);
+}
+#contenido .uebtv-catalog-card__play { transition:transform 220ms ease, background-color 220ms ease; }
+#contenido .uebtv-catalog-card:hover .uebtv-catalog-card__play,
+#contenido .uebtv-catalog-card:focus-visible .uebtv-catalog-card__play {
+    transform:scale(1.08);
+    background:#ffffff20;
+}
+
+.studio-sidebar nav a {
+    position:relative;
+    overflow:hidden;
+    transition:color 180ms ease, background-color 180ms ease, border-color 180ms ease;
+}
+.studio-sidebar nav a::before {
+    content:"";
+    position:absolute;
+    top:9px;
+    bottom:9px;
+    left:0;
+    width:3px;
+    border-radius:0 4px 4px 0;
+    background:#91c2fa;
+    transform:scaleY(0);
+    transition:transform 190ms cubic-bezier(.2,.7,.25,1);
+}
+.studio-sidebar nav a[aria-current] { box-shadow:none; }
+.studio-sidebar nav a[aria-current]::before { transform:scaleY(1); }
+.studio-sidebar nav a:hover .studio-sidebar-icon,
+.studio-sidebar nav a[aria-current] .studio-sidebar-icon {
+    color:#b6d7ff;
+    transition:color 180ms ease, transform 180ms ease;
+}
+.studio-sidebar nav a:hover .studio-sidebar-icon { transform:translateX(2px); }
+
+.studio-dashboard .studio-metric-live {
+    background:linear-gradient(145deg,#edf4ff,#e7f0ff);
+    border-color:#c8dcf8;
+    box-shadow:inset 0 1px #ffffffd9;
+}
+.studio-dashboard .studio-metric-live > div > svg { color:#1c5eae; }
+.studio-dashboard .studio-event-row .studio-event-thumb img {
+    transition:transform 320ms cubic-bezier(.2,.7,.25,1), filter 250ms ease;
+}
+.studio-dashboard .studio-event-row:hover .studio-event-thumb img,
+.studio-dashboard .studio-event-row:focus-visible .studio-event-thumb img {
+    transform:scale(1.08);
+    filter:saturate(1.08);
+}
+
 @media (max-width: 960px) {
     .studio-dashboard .studio-bottom-grid {
         gap: 18px;
@@ -334,10 +442,388 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+    #contenido > :is(.studio-page, .uebtv-catalog-page, .uebtv-watch-page) { animation:none; }
+    #contenido :is(button, a, .studio-sidebar-create, .studio-sidebar nav a,
+        .uebtv-catalog-card, .uebtv-catalog-card__visual, .uebtv-catalog-card__play),
+    .studio-sidebar nav a,
+    .studio-sidebar nav a::before,
+    .studio-dashboard .studio-event-row .studio-event-thumb img { transition:none; }
     .studio-dashboard .studio-art-screen,
     .studio-dashboard .studio-metric,
     .studio-dashboard .studio-shortcut-icon,
     .studio-dashboard .studio-event-row::before {
+        transition: none;
+    }
+}
+
+/* Streaming control cards: make signal state and OBS credentials easy to scan. */
+.react-stack > .react-stream-card {
+    border: 1px solid #d8e4f2;
+    border-radius: 20px;
+    background: linear-gradient(145deg, #fff 0%, #fff 72%, #f7faff 100%);
+    box-shadow: 0 18px 42px -34px #102b4c55, 0 2px 8px #102b4c08;
+    transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+
+.react-stack > .react-stream-card:hover {
+    transform: translateY(-2px);
+    border-color: #c3d7ef;
+    box-shadow: 0 22px 44px -32px #102b4c66, 0 4px 12px #102b4c0b;
+}
+
+.react-stream-card > div:first-child > .studio-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    min-height: 26px;
+    padding: 0 10px;
+    border: 1px solid #d8e7f8;
+    border-radius: 999px;
+    background: #f2f7ff;
+    color: #376293;
+    font-size: 10px;
+    letter-spacing: .12em;
+}
+
+.react-stream-card h2 {
+    margin: 10px 0 12px;
+    color: #102b4c;
+    font-size: clamp(21px, 2vw, 26px);
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+}
+
+.react-stream-card .react-stream-signal {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    min-height: 34px;
+    margin: 0;
+    padding: 0 12px;
+    border: 1px solid #d9e5f2;
+    border-radius: 999px;
+    background: #f6f8fb;
+    color: #50647e;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.react-stream-card .react-stream-signal::before {
+    content: "";
+    width: 8px;
+    height: 8px;
+    flex: 0 0 auto;
+    border-radius: 50%;
+    background: #94a3b8;
+}
+
+.react-stream-card .react-stream-signal.is-live {
+    border-color: #b7e3cc;
+    background: #effaf3;
+    color: #17633d;
+}
+
+.react-stream-card .react-stream-signal.is-live::before {
+    background: #20a464;
+    box-shadow: 0 0 0 4px #20a46420;
+    animation: stream-signal-pulse 1.8s ease-out infinite;
+}
+
+.react-stream-card .react-stream-signal.is-waiting {
+    border-color: #f0dfb8;
+    background: #fffaf0;
+    color: #795a1d;
+}
+
+.react-stream-card .react-stream-signal.is-waiting::before {
+    background: #d69b2e;
+}
+
+.react-stream-card .react-stream-signal.is-finished::before {
+    background: #8795a8;
+}
+
+.react-stream-card .react-stream-signal.is-error {
+    border-color: #f0cbd1;
+    background: #fff5f6;
+    color: #983548;
+}
+
+.react-stream-card .react-stream-signal.is-error::before {
+    background: #cb4358;
+}
+
+.react-stream-card .react-credentials {
+    margin: 22px 0 0;
+    padding: 10px 16px;
+    border-color: #d8e5f4;
+    border-radius: 15px;
+    background: linear-gradient(120deg, #f5f9ff, #eef5fd);
+    gap: 0;
+}
+
+.react-stream-card .react-credentials > div {
+    display: grid;
+    grid-template-columns: 78px minmax(0, 1fr) auto;
+    gap: 14px;
+    min-height: 48px;
+    padding: 8px 0;
+}
+
+.react-stream-card .react-credentials > div + div {
+    border-top: 1px solid #dce7f4;
+}
+
+.react-stream-card .react-credentials > div > small {
+    align-self: center;
+    color: #6a7f99;
+    font-size: 12px;
+}
+
+.react-stream-card .react-credentials code {
+    align-self: center;
+    min-width: 0;
+    padding: 9px 11px;
+    border: 1px solid #dce7f4;
+    border-radius: 9px;
+    background: #fff;
+    color: #1c59a8;
+    font-size: 13px;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+
+.react-stream-card .react-credentials button {
+    align-self: center;
+    min-height: 36px;
+    padding: 0 12px;
+    border: 1px solid transparent;
+    border-radius: 9px;
+    background: #e8f1fc;
+    color: #1856a1;
+    transition: background-color 150ms ease, border-color 150ms ease, transform 150ms ease;
+}
+
+.react-stream-card .react-credentials button:hover {
+    transform: translateY(-1px);
+    border-color: #c5d9f1;
+    background: #fff;
+}
+
+.react-stream-card .react-credentials > small[role="status"] {
+    padding: 0 0 7px 92px;
+    color: #1b7047;
+    font-size: 11px;
+}
+
+.react-stream-card .react-toolbar {
+    gap: 10px;
+    margin: 20px 0 0;
+    padding-top: 18px;
+    border-top: 1px solid #e5edf7;
+}
+
+.react-stream-card .react-toolbar .studio-text-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 42px;
+    padding: 0 14px;
+    border: 1px solid #d3e2f4;
+    border-radius: 10px;
+    background: #f7faff;
+    color: #1856a1;
+    font-size: 13px;
+    font-weight: 650;
+    transition: background-color 150ms ease, border-color 150ms ease, transform 150ms ease;
+}
+
+.react-stream-card .react-toolbar .studio-text-link:hover {
+    transform: translateY(-1px);
+    border-color: #a9c6e8;
+    background: #edf5ff;
+}
+
+@keyframes stream-signal-pulse {
+    0%, 100% { box-shadow: 0 0 0 3px #20a4641c; }
+    50% { box-shadow: 0 0 0 6px #20a46408; }
+}
+
+@media (max-width: 640px) {
+    .react-stack > .react-stream-card:hover { transform: none; }
+    .react-stream-card .react-credentials > div { grid-template-columns:minmax(0, 1fr) auto; gap:8px 10px; }
+    .react-stream-card .react-credentials code { grid-column:1; grid-row:2; }
+    .react-stream-card .react-credentials button { grid-column:2; grid-row:2; }
+    .react-stream-card .react-credentials > small[role="status"] { padding-left:0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .react-stack > .react-stream-card,
+    .react-stream-card .react-stream-signal.is-live::before,
+    .react-stream-card .react-credentials button,
+    .react-stream-card .react-toolbar .studio-text-link {
+        animation: none;
+        transition: none;
+    }
+}
+
+/* Admin forms: a consistent, calm production-workspace treatment. */
+.uebtv-event-editor .uebtv-form-section,
+.schedule-react .schedule-form {
+    position: relative;
+    border-color: #d8e4f2;
+    box-shadow: 0 18px 45px -34px #102b4c55, 0 2px 8px #102b4c08;
+}
+
+.uebtv-event-editor .uebtv-form-section::before,
+.schedule-react .schedule-form::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto;
+    height: 3px;
+    background: linear-gradient(90deg, #1d5fb0 0%, #77b3f0 48%, #e8f2ff 100%);
+    pointer-events: none;
+}
+
+.uebtv-event-editor .uebtv-form-section__title,
+.schedule-react .schedule-section-title {
+    border-bottom-color: #e5edf7;
+}
+
+.uebtv-event-editor .uebtv-form-section__title > span,
+.schedule-react .schedule-section-title > span {
+    background: linear-gradient(145deg, #edf5ff, #e3efff);
+    box-shadow: inset 0 0 0 1px #d6e6fa, 0 4px 10px #1d5fb010;
+}
+
+.uebtv-event-editor .uebtv-form-field label,
+.schedule-react .uebtv-form-field label {
+    color: #203a5d;
+    font-weight: 650;
+    letter-spacing: -.01em;
+}
+
+.uebtv-event-editor .uebtv-form-field :is(input, select, textarea),
+.schedule-react .uebtv-form-field :is(input, select, textarea) {
+    min-height: 50px;
+    border: 1px solid #d5e1ef;
+    border-radius: 12px;
+    background-color: #f8fafd;
+    color: #172f50;
+    box-shadow: inset 0 1px 2px #102b4c08;
+    transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease, transform 160ms ease;
+}
+
+.uebtv-event-editor .uebtv-form-field :is(input, select, textarea)::placeholder,
+.schedule-react .uebtv-form-field :is(input, select, textarea)::placeholder {
+    color: #8191a7;
+    opacity: 1;
+}
+
+.uebtv-event-editor .uebtv-form-field :is(input, select, textarea):hover,
+.schedule-react .uebtv-form-field :is(input, select, textarea):hover {
+    border-color: #a9c4e4;
+    background-color: #fff;
+}
+
+.uebtv-event-editor .uebtv-form-field :is(input, select, textarea):focus-visible,
+.schedule-react .uebtv-form-field :is(input, select, textarea):focus-visible {
+    outline: none;
+    border-color: #3477c4;
+    background-color: #fff;
+    box-shadow: 0 0 0 4px #2b70bd18, 0 4px 12px #102b4c0a;
+}
+
+.uebtv-event-editor .uebtv-form-field textarea,
+.schedule-react .uebtv-form-field textarea {
+    min-height: 132px;
+    line-height: 1.65;
+}
+
+.uebtv-event-editor .uebtv-form-field input[type="file"],
+.schedule-react .schedule-upload input[type="file"] {
+    min-height: 58px;
+    border: 1px dashed #a9c4e4;
+    background: linear-gradient(120deg, #f7faff, #f0f6ff);
+}
+
+.uebtv-event-editor input::file-selector-button,
+.schedule-react .schedule-upload input::file-selector-button {
+    border: 1px solid #c5d9f1;
+    border-radius: 9px;
+    background: #fff;
+    color: #1856a1;
+    box-shadow: 0 2px 5px #102b4c0d;
+    transition: background-color 150ms ease, border-color 150ms ease, transform 150ms ease;
+}
+
+.uebtv-event-editor input::file-selector-button:hover,
+.schedule-react .schedule-upload input::file-selector-button:hover {
+    border-color: #8fb4e0;
+    background: #edf5ff;
+    transform: translateY(-1px);
+}
+
+.uebtv-event-editor .uebtv-form-actions {
+    padding: 22px 4px 4px;
+    border-top-color: #dce7f4;
+}
+
+.uebtv-event-editor .uebtv-form-actions button,
+.schedule-react .schedule-submit .studio-button {
+    min-height: 50px;
+    border: 1px solid #1b5cad;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #246bc0, #1554a6);
+    box-shadow: 0 8px 18px #1554a626, inset 0 1px #ffffff25;
+    transition: transform 150ms ease, box-shadow 150ms ease, filter 150ms ease;
+}
+
+.uebtv-event-editor .uebtv-form-actions button:hover:not(:disabled),
+.schedule-react .schedule-submit .studio-button:hover:not(:disabled) {
+    filter: brightness(1.06);
+    transform: translateY(-1px);
+    box-shadow: 0 11px 22px #1554a633, inset 0 1px #ffffff30;
+}
+
+.uebtv-event-editor .uebtv-form-actions button:active:not(:disabled),
+.schedule-react .schedule-submit .studio-button:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 4px 10px #1554a620;
+}
+
+.uebtv-event-editor .event-preview,
+.schedule-react .schedule-preview {
+    border-color: #d7e3f1;
+    box-shadow: 0 20px 45px -32px #102b4c55, 0 2px 8px #102b4c08;
+}
+
+.uebtv-event-editor .event-preview-body,
+.schedule-react .schedule-preview-body {
+    background: linear-gradient(180deg, #fff, #fbfdff);
+}
+
+.uebtv-event-editor .event-editor-note {
+    box-shadow: 0 16px 36px -26px #071a3570;
+}
+
+.uebtv-event-editor :is(a, button, input, select, textarea):focus-visible,
+.schedule-react :is(a, button, input, select, textarea):focus-visible {
+    scroll-margin-block: 24px;
+}
+
+@media (max-width: 640px) {
+    .uebtv-event-editor .uebtv-form-section,
+    .schedule-react .schedule-form {
+        box-shadow: 0 12px 30px -27px #102b4c55;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .uebtv-event-editor .uebtv-form-field :is(input, select, textarea),
+    .uebtv-event-editor input::file-selector-button,
+    .schedule-react .uebtv-form-field :is(input, select, textarea),
+    .schedule-react .schedule-upload input::file-selector-button,
+    .uebtv-event-editor .uebtv-form-actions button,
+    .schedule-react .schedule-submit .studio-button {
         transition: none;
     }
 }
