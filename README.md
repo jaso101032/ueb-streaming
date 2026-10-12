@@ -2,6 +2,8 @@
 
 Plataforma institucional de transmisiones de la Universidad Estatal de Bolívar. Permite programar eventos, emitir desde OBS mediante RTMP, reproducir la señal en HLS y publicar videos archivados en un catálogo tipo YouTube.
 
+> Estado de entrega: consulta [la guía de entrega del 12 de octubre de 2026](docs/ENTREGA_2026-10-12.md) antes de continuar el desarrollo. Resume lo implementado, los límites conocidos y el arranque local para PC, OBS y teléfono.
+
 ## Tecnologías
 
 - Laravel 13 y PHP 8.3 o superior.
@@ -48,11 +50,14 @@ Consulta la IP vigente del servidor:
 ip -4 addr show
 ```
 
-Abre desde otro dispositivo:
+Para abrir solamente Laravel desde otro dispositivo:
 
 ```text
-http://IP_DEL_SERVIDOR:8000/login
+http://IP_DEL_SERVIDOR:8000/senal
 ```
+
+Para probar una transmisión HLS o acceder desde teléfono, usa el proxy local
+descrito en la guía de entrega y abre `http://IP_DEL_SERVIDOR:8080/senal`.
 
 El comando completo para iniciar Laravel, la cola, los logs, Vite y el
 procesador que optimiza los videos programados es:
@@ -67,8 +72,10 @@ por separado; al cerrar `composer run dev`, también se detiene.
 
 Para compartir el sitio por IP sin depender del servidor HMR de Vite, detén
 el entorno de desarrollo y ejecuta `composer run share`. Este comando compila
-los recursos de React y CSS para servirlos desde Laravel por el puerto 8000.
-Los cambios de interfaz requieren volver a ejecutar el comando para compilar.
+los recursos de React y CSS y sirve Laravel por el puerto 8000. Si también se
+inició `scripts/start-local-rtmp.sh`, el navegador debe entrar por el proxy
+del puerto 8080 para que el sitio y HLS tengan el mismo origen. Los cambios de
+interfaz requieren volver a ejecutar el comando para compilar.
 
 Vite también debe ser accesible desde la red local para que el navegador del otro dispositivo cargue React y los estilos; el proyecto detecta la IP local al iniciar. Si hay varias interfaces de red, puedes indicar la IP correcta con `VITE_HMR_HOST=192.168.1.25 composer run dev`. Permite los puertos TCP `8000` y `5173` en el firewall. La IP es dinámica y no debe escribirse como valor permanente en el código. Si DHCP cambia la IP, abre la aplicación con la nueva dirección.
 
@@ -120,13 +127,14 @@ http {
 }
 ```
 
-El playlist se genera con este formato:
+El playlist local se genera con este formato:
 
 ```text
-http://IP_DEL_SERVIDOR/hls/CLAVE.m3u8
+http://IP_DEL_SERVIDOR:8080/hls/CLAVE.m3u8
 ```
 
-Puertos necesarios: `8000` para Laravel, `80` para HLS y `1935` para RTMP.
+Puertos necesarios en el entorno local incluido: `8000` para Laravel, `8080`
+para el proxy HLS/aplicación y `1935` para RTMP.
 
 ## Flujo de eventos
 

@@ -56,7 +56,7 @@ class EventoController extends Controller
                 $evento->transmision()->create([
                     'stream_key' => $key,
                     'rtmp_server' => 'rtmp://'.$request->getHost().':1935/live',
-                    'hls_url' => 'http://'.$request->getHost().'/hls/'.$key.'.m3u8',
+                    'hls_url' => 'http://'.$request->getHost().':8080/hls/'.$key.'.m3u8',
                     'activo' => false,
                 ]);
 

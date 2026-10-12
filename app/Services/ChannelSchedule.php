@@ -76,8 +76,10 @@ class ChannelSchedule
     {
         $items ??= $this->timeline();
         $available = array_filter($items, fn ($i) => $i['state'] !== 'cancelled');
+        $endsAt = collect($available)->max('ends_at');
 
         return ['count' => count($available), 'totalSeconds' => array_sum(array_column($available, 'duration')),
-            'remainingSeconds' => array_sum(array_map(fn ($i) => $i['duration'] - $i['position'], $available))];
+            'remainingSeconds' => array_sum(array_map(fn ($i) => $i['duration'] - $i['position'], $available)),
+            'endsAt' => $endsAt];
     }
 }

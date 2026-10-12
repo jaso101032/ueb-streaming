@@ -22,9 +22,8 @@ class ChannelController extends Controller
         ])->values();
         $event = $live?->evento ?? ($active['event'] ?? null);
         $data = $event ? ReactPage::event($event) : null;
-        if ($live) {
-            $data['hlsUrl'] = $live->hls_url ?: $data['hlsUrl'];
-        }
+        // ReactPage builds the public HLS URL against the streaming proxy (port 8080).
+        // Stored legacy URLs may point at Laravel's port and must not replace it.
         $playback = $active;
         if ($playback) {
             unset($playback['event']);

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useShell, Feedback, Pagination, statusLabel, Action } from "./shared";
 export function Card({ event: e }) {
     return (
@@ -25,8 +25,10 @@ export function Card({ event: e }) {
                 <div className="uebtv-catalog-card__body">
                     <span>{e.category}</span>
                     <h3>{e.title}</h3>
-                    <p>{e.faculty}</p>
-                    <small>{e.date}</small>
+                    <div className="uebtv-catalog-card__meta">
+                        <span>{e.faculty}</span>
+                        <time>{e.date}</time>
+                    </div>
                 </div>
             </a>
             {e.deleteUrl && (e.status === "finalizado" || e.scheduled) && (
@@ -54,6 +56,12 @@ export default function Catalog({
     faculties,
 }) {
     const shell = useShell();
+    const appliedFilters = [
+        filters.q,
+        filters.facultad_id,
+        filters.categoria_id,
+    ].filter(Boolean).length;
+    const [filtersOpen, setFiltersOpen] = useState(appliedFilters > 0);
     const link = (value) =>
         `${shell.catalog}?${new URLSearchParams({ ...filters, filtro: value })}`;
     return (
@@ -62,19 +70,17 @@ export default function Catalog({
                 <section className="uebtv-catalog-hero">
                     <div>
                         <p className="uebtv-kicker">
-                            PROGRAMACIÓN INSTITUCIONAL
+                            EXPLORA EL CONTENIDO
                         </p>
                         <h1>
-                            Todo lo que pasa
-                            <br />
-                            <em>en la UEB.</em>
+                            Catálogo <em>UEBTV.</em>
                         </h1>
                         <p>
-                            Transmisiones, conferencias y contenidos para seguir
-                            conectados con nuestra comunidad.
+                            Eventos en vivo, próximos encuentros y grabaciones
+                            de nuestra comunidad.
                         </p>
                         <a className="studio-button" href={shell.channel}>
-                            Ver señal continua ↗
+                            Ir a la señal continua ↗
                         </a>
                     </div>
                     <div className="uebtv-catalog-mark" aria-label="Universidad Estatal de Bolívar">
@@ -87,51 +93,73 @@ export default function Catalog({
                     </div>
                 </section>
                 <Feedback />
-                <form className="uebtv-catalog-search" action={shell.catalog}>
+                <form
+                    className={`uebtv-catalog-search ${filtersOpen ? "is-open" : ""}`}
+                    action={shell.catalog}
+                >
                     <input type="hidden" name="filtro" value={filter} />
-                    <div>
-                        <label htmlFor="q">Buscar por título</label>
-                        <input
-                            id="q"
-                            type="search"
-                            name="q"
-                            maxLength={120}
-                            defaultValue={filters.q || ""}
-                            placeholder="¿Qué quieres ver?"
-                        />
-                    </div>
-                    {[
-                        [
-                            "facultad_id",
-                            "Facultad",
-                            faculties,
-                            "Todas las facultades",
-                        ],
-                        [
-                            "categoria_id",
-                            "Categoría",
-                            categories,
-                            "Todas las categorías",
-                        ],
-                    ].map(([name, label, options, placeholder]) => (
-                        <div key={name}>
-                            <label htmlFor={name}>{label}</label>
-                            <select
-                                id={name}
-                                name={name}
-                                defaultValue={filters[name] || ""}
-                            >
-                                <option value="">{placeholder}</option>
-                                {options.map((o) => (
-                                    <option key={o.id} value={o.id}>
-                                        {o.nombre}
-                                    </option>
-                                ))}
-                            </select>
+                    <button
+                        type="button"
+                        className="uebtv-catalog-filter-toggle"
+                        aria-expanded={filtersOpen}
+                        aria-controls="catalog-search-fields"
+                        onClick={() => setFiltersOpen((open) => !open)}
+                    >
+                        <span aria-hidden="true">☷</span>
+                        Filtrar catálogo
+                        {appliedFilters > 0 && (
+                            <small>{appliedFilters}</small>
+                        )}
+                        <b aria-hidden="true">⌄</b>
+                    </button>
+                    <div
+                        id="catalog-search-fields"
+                        className="uebtv-catalog-search-fields"
+                    >
+                        <div>
+                            <label htmlFor="q">Buscar por título</label>
+                            <input
+                                id="q"
+                                type="search"
+                                name="q"
+                                maxLength={120}
+                                defaultValue={filters.q || ""}
+                                placeholder="¿Qué quieres ver?"
+                            />
                         </div>
-                    ))}
-                    <button>Buscar</button>
-                    <a href={shell.catalog}>Limpiar filtros</a>
+                        {[
+                            [
+                                "facultad_id",
+                                "Facultad",
+                                faculties,
+                                "Todas las facultades",
+                            ],
+                            [
+                                "categoria_id",
+                                "Categoría",
+                                categories,
+                                "Todas las categorías",
+                            ],
+                        ].map(([name, label, options, placeholder]) => (
+                            <div key={name}>
+                                <label htmlFor={name}>{label}</label>
+                                <select
+                                    id={name}
+                                    name={name}
+                                    defaultValue={filters[name] || ""}
+                                >
+                                    <option value="">{placeholder}</option>
+                                    {options.map((o) => (
+                                        <option key={o.id} value={o.id}>
+                                            {o.nombre}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        ))}
+                        <button>Buscar</button>
+                        <a href={shell.catalog}>Limpiar filtros</a>
+                    </div>
                 </form>
                 <div className="uebtv-catalog-toolbar">
                     <div>

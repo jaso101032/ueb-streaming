@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import Player from "./Player";
+import Player, { BrandedVideo } from "./Player";
 import { useShell } from "./shared";
 import UebtvMark from "./UebtvMark";
 
@@ -42,31 +42,28 @@ function ChannelVideo({ snapshot, received }) {
     }, [snapshot]);
     return (
         <>
-            <video
-                ref={video}
-                className="uebtv-video"
+            <BrandedVideo
+                videoRef={video}
                 src={snapshot.event.scheduled.mediaUrl}
-                controls
-                autoPlay
-                muted
-                playsInline
+                mediaTitle={snapshot.event.title}
+                live={snapshot.event.status === "en_vivo" && !snapshot.event.scheduled}
                 onLoadedMetadata={play}
                 onSeeking={align}
-                onRateChange={align}
                 onError={() =>
                     setNotice(
                         "No se pudo cargar el archivo. Reintentando con la programación…",
                     )
                 }
-            />
-            {notice && (
-                <div className="react-player-notice" role="status">
-                    <p>{notice}</p>
-                    <button className="studio-button" onClick={play}>
-                        Reproducir
-                    </button>
-                </div>
-            )}
+            >
+                {notice && (
+                    <div className="react-player-notice" role="status">
+                        <p>{notice}</p>
+                        <button className="studio-button" onClick={play}>
+                            Reproducir
+                        </button>
+                    </div>
+                )}
+            </BrandedVideo>
         </>
     );
 }
@@ -121,18 +118,23 @@ export default function Channel({ stateUrl }) {
             <header className="channel-heading">
                 <div>
                     <p className="studio-eyebrow">
-                        EL CANAL DE NUESTRA COMUNIDAD
+                        SEÑAL CONTINUA UEBTV
                     </p>
                     <h1>
-                        Tu universidad.
-                        <br />
-                        <em>Siempre cerca.</em>
+                        Señal <em>UEBTV.</em>
                     </h1>
-                    <p>Conocimiento, cultura e historias que nos conectan.</p>
+                    <p>En vivo y programación automática de la Universidad Estatal de Bolívar.</p>
                 </div>
-                <a className="channel-catalog" href={shell.catalog}>
-                    Explorar el catálogo <span aria-hidden="true">↗</span>
-                </a>
+                <div className="channel-heading-actions">
+                    <img
+                        className="channel-institution-mark"
+                        src="/images/brand/ueb-wordmark.png"
+                        alt="Universidad Estatal de Bolívar"
+                    />
+                    <a className="channel-catalog" href={shell.catalog}>
+                        Explorar catálogo <span aria-hidden="true">↗</span>
+                    </a>
+                </div>
             </header>
             {error && (
                 <p role="status" className="studio-alert">
@@ -142,21 +144,15 @@ export default function Channel({ stateUrl }) {
             <div className="channel-layout">
                 <section className="channel-main" aria-label="Señal de UEBTV">
                     <div className="channel-screen-frame">
-                        <div className="channel-screen-bar">
+                        {!live && <div className="channel-screen-bar">
                             <span>
-                                <i className={live ? "is-live" : ""} /> UEBTV{" "}
-                                <small>SEÑAL CONTINUA</small>
+                                <i /> SEÑAL UEBTV
+                                <small>PROGRAMACIÓN CONTINUA</small>
                             </span>
                             <span className="channel-screen-status">
-                                {live
-                                    ? "EN DIRECTO"
-                                    : playing
-                                      ? "PREGRABADO"
-                                      : data
-                                        ? "ENTRE EMISIONES"
-                                        : "CONECTANDO"}
+                                {playing ? "PREGRABADO" : data ? "ENTRE EMISIONES" : "CONECTANDO"}
                             </span>
-                        </div>
+                        </div>}
                         <div
                             className={`channel-screen ${playing ? "is-playing" : "is-idle"}`}
                         >
@@ -233,7 +229,7 @@ export default function Channel({ stateUrl }) {
                         </div>
                     </div>
                     <div className="channel-now">
-                        <div className="channel-now-top">
+                        {!live && <div className="channel-now-top">
                             <span
                                 className={`channel-badge ${live ? "channel-live" : ""}`}
                             >
@@ -246,14 +242,14 @@ export default function Channel({ stateUrl }) {
                             <span className="channel-auto">
                                 ↻ Programación automática
                             </span>
-                        </div>
+                        </div>}
                         <h2>
                             {data?.event?.title ||
                                 "Un espacio para encontrarnos"}
                         </h2>
                         <p>
                             {live
-                                ? `La programación está en pausa.${data.resumeTitle ? ` Después continuamos con «${data.resumeTitle}».` : " Continuará al terminar el directo."}`
+                                ? data.resumeTitle ? `Al finalizar esta transmisión, continuamos con «${data.resumeTitle}».` : "Al finalizar esta transmisión, la programación continuará automáticamente."
                                 : playing
                                   ? "Estás viendo el mismo momento que nuestra comunidad. Al terminar, continuamos con la siguiente emisión."
                                   : "Conferencias, encuentros y momentos de la UEB. En directo cuando sucede; disponibles para volver a disfrutarlos."}

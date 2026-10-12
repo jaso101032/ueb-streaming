@@ -23,6 +23,17 @@ class RecordingController extends Controller
             ->header('Cache-Control', 'no-store');
     }
 
+    /** The protected download endpoint is deliberately separate from public playback. */
+    public function download(Evento $evento)
+    {
+        $path = $evento->transmision?->recordingPath();
+        abort_unless($evento->estado === 'finalizado' && $path, 404);
+
+        return response()->download($path, 'uebtv-'.str($evento->slug ?: $evento->id)->slug().'.mp4', [
+            'Content-Type' => 'video/mp4', 'X-Content-Type-Options' => 'nosniff',
+        ]);
+    }
+
     public function retry(Evento $evento)
     {
         DB::transaction(function () use ($evento) {

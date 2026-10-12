@@ -6,6 +6,7 @@ export default function Chat({
     canModerate,
     panelRef,
     isRecording,
+    canComment = true,
     seekable = false,
     onSeek,
     onDraft,
@@ -24,7 +25,12 @@ export default function Chat({
         controllers = useRef(new Set());
     const formatPlaybackTime = (seconds) => {
         const value = Math.max(0, Math.floor(Number(seconds) || 0));
-        return `${Math.floor(value / 60)}:${String(value % 60).padStart(2, "0")}`;
+        const hours = Math.floor(value / 3600);
+        const minutes = Math.floor((value % 3600) / 60);
+        const remaining = value % 60;
+        return hours
+            ? `${hours}:${String(minutes).padStart(2, "0")}:${String(remaining).padStart(2, "0")}`
+            : `${minutes}:${String(remaining).padStart(2, "0")}`;
     };
     useEffect(() => () => controllers.current.forEach((c) => c.abort()), []);
     useEffect(() => {
@@ -175,9 +181,12 @@ export default function Chat({
                     </p>
                     <h2>{isRecording ? "Comentarios" : "Chat en vivo"}</h2>
                     <p className="watch-chat-subtitle">
-                        Aquí también somos comunidad.
+                        {canComment ? "Comparte el momento con la comunidad." : "Mensajes conservados junto a cada momento del video."}
                     </p>
                 </div>
+                <span className={`uebtv-chat-status ${canComment ? "is-open" : "is-closed"}`}>
+                    <i aria-hidden="true" />{canComment ? "Activo" : "Historial"}
+                </span>
             </div>
             <div
                 ref={list}
@@ -194,10 +203,23 @@ export default function Chat({
                         <span className="uebtv-chat-avatar">
                             {Array.from(m.user)[0]?.toUpperCase()}
                         </span>
-                        <p className="uebtv-chat-message__content">
-                            <strong>{m.user}</strong>
-                            <span>{m.message}</span>
-                            {m.playback_seconds != null && (
+                        <div className="uebtv-chat-message__body">
+                            <div className="uebtv-chat-message__meta">
+                                <strong>{m.user}</strong>
+                                {canModerate && (
+                                    <button
+                                        type="button"
+                                        className="uebtv-chat-remove"
+                                        aria-label={`Retirar mensaje de ${m.user}`}
+                                        disabled={removing === m.id}
+                                        onClick={() => remove(m)}
+                                    >
+                                        Retirar
+                                    </button>
+                                )}
+                            </div>
+                            <p className="uebtv-chat-bubble">{m.message}</p>
+                            {isRecording && m.playback_seconds != null && (
                                 seekable && onSeek ? (
                                     <button
                                         type="button"
@@ -206,27 +228,15 @@ export default function Chat({
                                         aria-label={`Ir al minuto ${formatPlaybackTime(m.playback_seconds)} de la grabación`}
                                         title="Ver este momento de la grabación"
                                     >
-                                        <span aria-hidden="true">▶</span>
-                                        {formatPlaybackTime(m.playback_seconds)}
+                                        <span aria-hidden="true">▶</span>Ver momento {formatPlaybackTime(m.playback_seconds)}
                                     </button>
                                 ) : (
                                     <span className="uebtv-chat-time" title="Minuto de la emisión">
-                                        {formatPlaybackTime(m.playback_seconds)}
+                                        Momento {formatPlaybackTime(m.playback_seconds)}
                                     </span>
                                 )
                             )}
-                        </p>
-                        {canModerate && (
-                            <button
-                                type="button"
-                                className="uebtv-chat-remove"
-                                aria-label={`Retirar mensaje de ${m.user}`}
-                                disabled={removing === m.id}
-                                onClick={() => remove(m)}
-                            >
-                                Retirar
-                            </button>
-                        )}
+                        </div>
                     </div>
                 ))}
                 {!messages.length && (
@@ -252,7 +262,12 @@ export default function Chat({
                     Moderación: puedes retirar mensajes inapropiados.
                 </p>
             )}
-            {user ? (
+            {!canComment ? (
+                <div className="uebtv-live-chat__closed" role="status">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /></svg>
+                    <p><strong>El chat terminó con la transmisión.</strong> Los comentarios se mantienen disponibles con su minuto correspondiente.</p>
+                </div>
+            ) : user ? (
                 <>
                     <form className="uebtv-live-chat__form" onSubmit={send}>
                         <input
@@ -283,7 +298,9 @@ export default function Chat({
             ) : (
                 <div className="uebtv-live-chat__login">
                     <p>Inicia sesión para participar.</p>
-                    <a href={login}>Iniciar sesión ↗</a>
+                    <a className="uebtv-live-chat__login-action" href={login}>
+                        Iniciar sesión ↗
+                    </a>
                 </div>
             )}
         </aside>

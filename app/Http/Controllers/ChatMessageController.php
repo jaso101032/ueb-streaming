@@ -9,6 +9,7 @@ use App\Services\ChatFeed;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class ChatMessageController extends Controller
 {
@@ -39,6 +40,10 @@ class ChatMessageController extends Controller
             $lockedEvent = Evento::whereKey($evento->id)->lockForUpdate()->firstOrFail();
             $stream = Transmision::where('evento_id', $lockedEvent->id)->lockForUpdate()->first();
             $playbackSeconds = null;
+
+            if ($lockedEvent->estado === 'finalizado' || $stream?->finalizado_en) {
+                throw ValidationException::withMessages(['message' => 'El chat está cerrado porque la transmisión ya terminó.']);
+            }
 
             if ($lockedEvent->estado === 'en_vivo' && $stream?->iniciado_en && !$stream->finalizado_en) {
                 $playbackSeconds = max(0, now()->getTimestamp() - $stream->iniciado_en->getTimestamp());

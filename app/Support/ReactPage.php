@@ -22,14 +22,20 @@ class ReactPage
             'image' => $e->miniatura ? asset('storage/'.$e->miniatura) : null, 'url' => route('eventos.show', $e),
             'scheduled' => $scheduled ? ['stateUrl' => route('scheduled.state', $e), 'mediaUrl' => route('scheduled.media', $e), 'state' => $scheduled->playback()['state']] : null,
             'videoUrl' => $recording?->recordingPath() && $e->estado === 'finalizado' ? route('eventos.recording', $e) : $e->video_url,
-            'recordingStatus' => $recording?->recording_status, 'playbackUrl' => route('eventos.playback-state', $e),
-            'hlsUrl' => $recording ? 'http://'.request()->getHost().'/hls/'.$recording->stream_key.'.m3u8' : null,
+            // Estas consultas deben mantener el mismo origen desde el que se
+            // abrió la sala. Así funcionan tanto en 127.0.0.1 como desde un
+            // teléfono conectado mediante el proxy local del puerto 8080.
+            'recordingStatus' => $recording?->recording_status, 'viewers' => $recording?->espectadores_activos ?? 0, 'viewersUrl' => '/eventos/'.$e->id.'/espectadores', 'playbackUrl' => '/eventos/'.$e->id.'/estado',
+            // HLS is served by the local streaming proxy. Laravel itself lives on 8000,
+            // so using the current request origin here makes the player look in the wrong place.
+            'hlsUrl' => $recording ? request()->getScheme().'://'.request()->getHost().':8080/hls/'.$recording->stream_key.'.m3u8' : null,
             'chatUrl' => route('eventos.chat.index', $e)];
         if ($manage) {
             $data += ['editUrl' => $scheduled ? null : route('admin.eventos.edit', $e), 'detailUrl' => route('admin.eventos.show', $e),
                 'deleteUrl' => auth()->user()?->can('delete-event') ? route('admin.eventos.destroy', $e) : null,
                 'finishUrl' => $recording && ! $recording->finalizado_en && ! in_array($e->estado, ['finalizado', 'cancelado']) ? route('streaming.finalizar', $e) : null,
                 'retryUrl' => $recording?->recording_status === 'failed' ? route('streaming.recording.retry', $e) : null,
+                'downloadUrl' => auth()->user()?->role === 'admin' && $recording?->recordingPath() ? route('admin.recording.download', $e) : null,
                 'generateUrl' => ! $scheduled && ! $recording?->iniciado_en && ! in_array($e->estado, ['finalizado', 'cancelado']) ? route('streaming.generar.clave', $e) : null,
                 'streamKey' => $recording?->stream_key, 'server' => 'rtmp://'.request()->getHost().':1935/live', 'statusUrl' => route('streaming.estado', $e)];
         }
@@ -43,16 +49,18 @@ class ReactPage
         $operator = $user?->role === 'admin';
         $links = [];
         if ($operator) {
-            foreach (['Vista general' => ['admin.dashboard', 'admin.dashboard'], 'Eventos' => ['admin.eventos.index', 'admin.eventos.*'], 'Streaming' => ['streaming.control', 'streaming.*'], 'Explorar' => ['eventos.index', 'eventos.*']] as $label => $r) {
+            foreach (['Resumen' => ['admin.dashboard', 'admin.dashboard'], 'Gestionar eventos' => ['admin.eventos.index', 'admin.eventos.*'], 'Emitir con OBS' => ['streaming.control', 'streaming.*'], 'Catálogo público' => ['eventos.index', 'eventos.*']] as $label => $r) {
                 $links[] = ['label' => $label, 'url' => route($r[0]), 'active' => request()->routeIs($r[1]) && ! request()->routeIs('admin.eventos.create')];
             }
         }
         if ($user?->role === 'admin') {
-            $links[] = ['label' => 'Contenido programado', 'url' => route('admin.scheduled.index'), 'active' => request()->routeIs('admin.scheduled.*')];
+            $links[] = ['label' => 'Parrilla 24/7', 'url' => route('admin.scheduled.index'), 'active' => request()->routeIs('admin.scheduled.*')];
         }
 
         return ['user' => $user?->only(['name', 'email', 'role']), 'links' => $links, 'operator' => $operator, 'createUrl' => $operator ? route('admin.eventos.create') : null,
-            'creating' => request()->routeIs('admin.eventos.create'), 'home' => $operator ? route('admin.dashboard') : route('eventos.index'),
+            // The public logo returns to the continuous channel, the audience's
+            // primary entry point. The catalog remains a distinct discovery view.
+            'creating' => request()->routeIs('admin.eventos.create'), 'home' => $operator ? route('admin.dashboard') : route('channel.index'),
             'login' => route('login'), 'register' => route('register'), 'logout' => route('logout'), 'profile' => route('profile.edit'),
             'channel' => route('channel.index'), 'catalog' => route('eventos.index'),
             'logo' => asset('images/brand/ueb-wordmark.png'),

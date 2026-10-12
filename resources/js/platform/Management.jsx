@@ -10,13 +10,13 @@ import {
 export function EventList({ events, pagination }) {
     return (
         <div className="studio-page">
-            <Heading eyebrow="TU PROGRAMACIÓN" title="Eventos">
-                Organiza los encuentros que conectan a nuestra comunidad.
+            <Heading eyebrow="GESTIÓN DE CONTENIDO" title="Gestionar eventos">
+                Aquí creas, editas y consultas todos los eventos y sus grabaciones.
             </Heading>
             <Feedback />
             <section className="studio-panel studio-management">
                 <div className="studio-panel-heading">
-                    <h2>Todos los eventos</h2>
+                    <h2>Eventos y grabaciones</h2>
                     <span>{pagination.total} eventos</span>
                 </div>
                 {events.map((e) => (
@@ -83,6 +83,11 @@ function Recording({ event: e }) {
                     Ver video ↗
                 </a>
             )}
+            {e.downloadUrl && (
+                <a className="studio-text-link" href={e.downloadUrl}>
+                    Descargar MP4 ↧
+                </a>
+            )}
             {e.retryUrl && (
                 <Action url={e.retryUrl}>Reintentar grabación</Action>
             )}
@@ -94,12 +99,12 @@ export function EventDetail({ event: e }) {
     return (
         <div className="studio-page">
             <Heading eyebrow={e.category} title={e.title}>
-                {statusLabel(e)} · {e.date}
+                Detalle del evento · {statusLabel(e)} · {e.date}
             </Heading>
             <Feedback />
             <div className="react-toolbar">
                 <a className="studio-button" href={e.url}>
-                    Abrir sala ↗
+                    Ver sala pública ↗
                 </a>
                 {e.editUrl && (
                     <a
@@ -151,17 +156,17 @@ export function EventDetail({ event: e }) {
                 <aside className="studio-panel react-panel">
                     <Recording event={e} />
                     <p>
-                        Gestiona la señal y las credenciales desde el control de
-                        streaming.
+                        Si este evento se transmite en vivo, su señal y
+                        credenciales se gestionan desde “Emitir con OBS”.
                     </p>
                     <a
                         className="studio-text-link"
                         href={
-                            shell.links.find((l) => l.label === "Streaming")
+                            shell.links.find((l) => l.label === "Emitir con OBS")
                                 ?.url
                         }
                     >
-                        Control de streaming ↗
+                        Ir a Emitir con OBS ↗
                     </a>
                 </aside>
             </div>
@@ -295,9 +300,10 @@ function StreamCard({ event: e }) {
 export function Streaming({ events, pagination }) {
     return (
         <div className="studio-page">
-            <Heading eyebrow="CENTRO DE EMISIÓN" title="Control de streaming">
-                Conecta OBS, comprueba la señal y comparte tu próxima
-                transmisión.
+            <Heading eyebrow="OPERACIÓN EN VIVO" title="Emitir con OBS">
+                Solo aparecen eventos que requieren señal de OBS. Las
+                grabaciones se consultan desde Gestionar eventos y los videos
+                programados desde Parrilla 24/7.
             </Heading>
             <Feedback />
             <div className="react-stack">
@@ -318,8 +324,8 @@ export function Streaming({ events, pagination }) {
                 <Pagination pagination={pagination} />
                 {!events.length && (
                     <div className="studio-panel react-panel">
-                        No hay eventos para transmitir. Crea uno desde el panel
-                        lateral.
+                        No hay emisiones de OBS pendientes. Crea o revisa un
+                        evento desde Gestionar eventos.
                     </div>
                 )}
             </div>

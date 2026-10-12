@@ -18,6 +18,13 @@ Route::get('/senal/estado', [\App\Http\Controllers\ChannelController::class, 'st
 Route::get('/eventos', [EventoPublicoController::class, 'index'])->name('eventos.index');
 Route::get('/eventos/{evento}/reproduccion', [\App\Http\Controllers\RecordingController::class, 'state'])->name('eventos.playback-state');
 Route::get('/eventos/{evento}/grabacion', [\App\Http\Controllers\RecordingController::class, 'show'])->name('eventos.recording');
+// Presence is anonymous telemetry, not an account action. It must work from
+// every public viewer (including phones behind the local HLS proxy), so it
+// cannot rely on a browser session's CSRF token. Rate limiting remains active.
+Route::post('/eventos/{evento}/espectadores', [TransmisionController::class, 'viewerHeartbeat'])
+    ->middleware('throttle:30,1')
+    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\PreventRequestForgery::class])
+    ->name('eventos.viewers');
 Route::get('/eventos/{evento}', [EventoPublicoController::class, 'show'])->name('eventos.show');
 Route::get('/eventos/{evento}/chat', [ChatMessageController::class, 'index'])->name('eventos.chat.index');
 Route::post('/eventos/{evento}/chat', [ChatMessageController::class, 'store'])->middleware(['auth', 'throttle:30,1'])->name('eventos.chat.store');
@@ -58,6 +65,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::resource('eventos', EventoController::class)->except('destroy');
     Route::delete('/eventos/{evento}', [EventoController::class, 'destroy'])
         ->middleware('can:delete-event')->name('eventos.destroy');
+    Route::get('/eventos/{evento}/grabacion/descargar', [\App\Http\Controllers\RecordingController::class, 'download'])->name('recording.download');
 });
 
 // Panel de Control de Streaming para Operador / Admin

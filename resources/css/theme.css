@@ -1,0 +1,291 @@
+/* Two deliberately designed palettes. Video, UEB marks and the live red are never inverted. */
+.studio-theme-toggle { display:grid; place-items:center; width:38px; height:38px; padding:0; border:1px solid #ffffff38; border-radius:50%; background:#ffffff12; color:#f6fbff; cursor:pointer; transition:background .18s,transform .18s,border-color .18s; }
+.studio-theme-toggle:hover { border-color:#ffffff75; background:#ffffff24; transform:translateY(-1px); }
+.studio-theme-toggle:focus-visible { outline:3px solid #9bc7ff; outline-offset:3px; }
+.studio-theme-toggle svg { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+
+html[data-theme="dark"] { color-scheme:dark; --uebtv-line:#263c59; --uebtv-ink:#edf4ff; --uebtv-navy:#edf4ff; --uebtv-blue:#8fc2ff; }
+html[data-theme="dark"] body { background:#081426; color:#dce8f7; }
+html[data-theme="dark"] .min-h-screen, html[data-theme="dark"] .studio-workspace { background:#081426; }
+html[data-theme="dark"] .studio-header { background:#061126; box-shadow:0 4px 24px #0008; }
+html[data-theme="dark"] .studio-sidebar { background:#0a1b34; border-color:#1e3653; }
+html[data-theme="dark"] .studio-sidebar nav a { color:#b9cce3; }
+html[data-theme="dark"] .studio-sidebar nav a:hover, html[data-theme="dark"] .studio-sidebar nav a[aria-current] { background:#163252; color:#fff; }
+html[data-theme="dark"] .studio-page, html[data-theme="dark"] .watch-experience, html[data-theme="dark"] .uebtv-watch-page, html[data-theme="dark"] .uebtv-catalog-page { background-color:#081426; color:#dce8f7; }
+html[data-theme="dark"] .watch-experience { background:radial-gradient(ellipse at 50% 0%,#15345a 0,transparent 55%),#081426; }
+html[data-theme="dark"] :is(.studio-page,.watch-experience) :is(h1,h2,h3,dt) { color:#f0f6ff; }
+html[data-theme="dark"] :is(.studio-page,.watch-experience) :is(p,dd,.uebtv-watch-meta,.uebtv-watch-description) { color:#aebfd3; }
+/* The room sidebar is a complete surface, not a light card left over from the day palette. */
+html[data-theme="dark"] .uebtv-watch-aside--left { background:linear-gradient(160deg,#102744 0%,#0d1d33 100%); border-color:#29425f; box-shadow:0 14px 32px -22px #000b; }
+html[data-theme="dark"] .uebtv-watch-aside--left h2 { color:#f0f6ff; }
+html[data-theme="dark"] .uebtv-watch-aside--left > p { color:#b7c9de; }
+html[data-theme="dark"] .uebtv-watch-aside__header .uebtv-kicker { color:#9fc9ff; }
+html[data-theme="dark"] .uebtv-watch-aside__signal { color:#b4c6dc; }
+html[data-theme="dark"] .watch-community-signature { color:#b7c9de; }
+html[data-theme="dark"] .watch-community-signature small { color:#8fa9c5; }
+html[data-theme="dark"] .uebtv-watch-aside__rule { border-color:#29425f; }
+html[data-theme="dark"] .uebtv-watch-breadcrumb { color:#9eb2cb; }
+html[data-theme="dark"] .uebtv-watch-breadcrumb a { border-color:#365474; background:#132c4a; color:#9fc9ff; }
+html[data-theme="dark"] .uebtv-watch-category { background:#173554; color:#9fc9ff; }
+html[data-theme="dark"] :is(.studio-panel,.react-panel,.uebtv-watch-broadcast-card,.uebtv-watch-title-block,.uebtv-watch-player-info,.schedule-section,.schedule-totals article,.uebtv-live-chat__form,.uebtv-live-chat__note,.uebtv-live-chat__login,.uebtv-live-chat__closed,.uebtv-catalog-card,.uebtv-video-card,.uebtv-library-empty) { background:#10223b; border-color:#29425f; box-shadow:0 14px 32px -22px #000b; }
+html[data-theme="dark"] .uebtv-watch-player-info__brand { color:#9fc9ff; }
+html[data-theme="dark"] .uebtv-watch-player-info__viewers { background:#351623; border-color:#8e3447; color:#ffc3cd; }
+html[data-theme="dark"] .uebtv-watch-player-info__viewers strong { color:#ff6680; }
+html[data-theme="dark"] .uebtv-live-chat { background:#0d1d33; border-color:#29425f; }
+html[data-theme="dark"] .uebtv-live-chat__messages { background:linear-gradient(180deg,#0c1b30,#10223b); }
+html[data-theme="dark"] .uebtv-chat-bubble { border-color:#315d8d; background:linear-gradient(135deg,#12365f,#123055); color:#e5f1ff; box-shadow:0 3px 10px #0004; }
+html[data-theme="dark"] .uebtv-chat-bubble::before { border-color:#315d8d; background:#12365f; }
+html[data-theme="dark"] .uebtv-chat-message__meta strong { color:#c8ddf5; }
+html[data-theme="dark"] .uebtv-chat-avatar { background:#163b65; border-color:#2e6195; color:#b9dcff; }
+html[data-theme="dark"] .uebtv-live-chat__form input { border-color:#345171; background:#0a192c; color:#edf5ff; }
+html[data-theme="dark"] .uebtv-live-chat__form input::placeholder { color:#8da3bc; }
+html[data-theme="dark"] .uebtv-live-chat__closed { background:#2a1820; border-color:#6a3443; color:#f3c7cf; }
+html[data-theme="dark"] .uebtv-live-chat__closed strong { color:#ff93a4; }
+html[data-theme="dark"] .uebtv-live-chat__login { color:#c2d3e7; }
+html[data-theme="dark"] .uebtv-live-chat__login-action { border:1px solid #5d95cf; background:#1d5eaa; color:#fff; box-shadow:0 5px 14px #0005; }
+html[data-theme="dark"] .uebtv-live-chat__login-action:hover { border-color:#9ecbff; background:#2873c5; color:#fff; }
+html[data-theme="dark"] :is(.studio-page,.watch-experience) :is(input,select,textarea) { border-color:#345171; background:#0a192c; color:#edf5ff; }
+html[data-theme="dark"] :is(.studio-page,.watch-experience) :is(input,select,textarea)::placeholder { color:#8da3bc; }
+html[data-theme="dark"] .uebtv-watch-actions :is(button,a) { border-color:#345171; background:#132b49; color:#dceaff; }
+html[data-theme="dark"] .uebtv-watch-actions :is(button,a):hover { border-color:#6599d3; background:#193a63; }
+html[data-theme="dark"] .uebtv-footer { background:#061126; color:#94a9c2; }
+html[data-theme="dark"] .studio-theme-toggle { border-color:#88bfff; background:#173c68; color:#ffdf82; }
+
+/* Production dashboard: these components had fixed day-palette backgrounds. */
+html[data-theme="dark"] .studio-dashboard .studio-metric { border-color:#29425f; background:linear-gradient(145deg,#122842,#0e2037); box-shadow:0 10px 28px #0008; }
+html[data-theme="dark"] .studio-dashboard .studio-metric-live { border-color:#31587f; background:linear-gradient(145deg,#153457,#102944); }
+html[data-theme="dark"] .studio-dashboard .studio-metric::before { background:linear-gradient(90deg,#5fa5ec,#294c72 72%,transparent); }
+html[data-theme="dark"] .studio-dashboard .studio-metric > div { color:#c8daf0; }
+html[data-theme="dark"] .studio-dashboard .studio-metric > div > svg { background:#193a61; color:#9fc9ff; }
+html[data-theme="dark"] .studio-dashboard .studio-metric-live > div > svg { background:#1d416c; }
+html[data-theme="dark"] .studio-dashboard .studio-metric p, html[data-theme="dark"] .studio-dashboard .studio-event-info p, html[data-theme="dark"] .studio-dashboard .studio-shortcuts small { color:#9db2cc; }
+html[data-theme="dark"] .studio-dashboard .studio-panel { border-color:#29425f; background:#10223b; box-shadow:0 14px 38px #0008; }
+html[data-theme="dark"] .studio-dashboard .studio-panel-heading { background:linear-gradient(180deg,#122842,#10223b); border-color:#29425f; }
+html[data-theme="dark"] .studio-dashboard .studio-filter-group button { border-color:#355372; background:#172f4d; color:#c9dcf3; }
+html[data-theme="dark"] .studio-dashboard .studio-filter-group button[aria-pressed="true"] { border-color:#4a88cc; background:#1b5fac; color:#fff; }
+html[data-theme="dark"] .studio-dashboard .studio-filter-count { background:#274766; color:#c9dcf3; }
+html[data-theme="dark"] .studio-dashboard .studio-event-row { border-color:#29425f; }
+html[data-theme="dark"] .studio-dashboard .studio-event-row:hover { background:linear-gradient(90deg,#153457,#102944 80%); }
+html[data-theme="dark"] .studio-dashboard .studio-shortcuts > a { border-color:#29425f; color:#dceaff; }
+html[data-theme="dark"] .studio-dashboard .studio-shortcuts > a:hover { background:#173352; }
+html[data-theme="dark"] .studio-dashboard .studio-shortcut-icon { background:#193b63; color:#a9d0ff; }
+html[data-theme="dark"] .studio-dashboard .studio-note { border-color:#315273; background:radial-gradient(circle at 100% 0%,#1d4d7b,transparent 48%),linear-gradient(135deg,#142d4b,#10233b); }
+html[data-theme="dark"] .studio-dashboard .studio-note h3 { color:#f0f6ff; }
+html[data-theme="dark"] .studio-dashboard .studio-note p { color:#b5c8df; }
+html[data-theme="dark"] .studio-dashboard .studio-note a { color:#9fc9ff; }
+
+/* Streaming credentials retain their clear hierarchy without a bright rectangle. */
+html[data-theme="dark"] .react-stack > .react-stream-card { border-color:#294b6b; background:linear-gradient(145deg,#142d4a 0%,#10223b 72%,#0d1d33 100%); box-shadow:0 18px 42px -30px #000d; }
+html[data-theme="dark"] .react-stack > .react-stream-card:hover { border-color:#46739d; }
+html[data-theme="dark"] .react-stream-card > div:first-child > .studio-eyebrow { border-color:#39628b; background:#16385e; color:#a9d0ff; }
+html[data-theme="dark"] .react-stream-card h2 { color:#f0f6ff; }
+html[data-theme="dark"] .react-stream-card .react-stream-signal { border-color:#39617e; background:#142b46; color:#c8dbf1; }
+html[data-theme="dark"] .react-stream-card .react-stream-signal.is-live { border-color:#297b59; background:#103d32; color:#9fe7c4; }
+html[data-theme="dark"] .react-stream-card .react-stream-signal.is-waiting { border-color:#756038; background:#342d1d; color:#f4daa0; }
+html[data-theme="dark"] .react-stream-card .react-stream-signal.is-error { border-color:#803d4c; background:#391c27; color:#ffc1ca; }
+html[data-theme="dark"] .react-stream-card .react-credentials { border-color:#315271; background:linear-gradient(120deg,#0c1c31,#132b47); }
+html[data-theme="dark"] .react-stream-card .react-credentials > div + div, html[data-theme="dark"] .react-stream-card .react-toolbar { border-color:#294b6b; }
+html[data-theme="dark"] .react-stream-card .react-credentials > div > small { color:#a9bfd8; }
+html[data-theme="dark"] .react-stream-card .react-credentials code { border-color:#315271; background:#09182b; color:#9fc9ff; }
+html[data-theme="dark"] .react-stream-card .react-credentials button, html[data-theme="dark"] .react-stream-card .react-toolbar .studio-text-link { border-color:#365b80; background:#173a61; color:#b9dcff; }
+html[data-theme="dark"] .react-stream-card .react-credentials button:hover, html[data-theme="dark"] .react-stream-card .react-toolbar .studio-text-link:hover { border-color:#5d94cb; background:#1d4a78; }
+
+/* Catalog filters, institutional hero and forms. */
+html[data-theme="dark"] .uebtv-catalog-hero { border-color:#294f77; background:radial-gradient(ellipse at 86% 14%,#1d4f82 0,transparent 53%),linear-gradient(125deg,#102d4d,#0a1d34); box-shadow:0 18px 38px -24px #000c; }
+html[data-theme="dark"] .uebtv-catalog-hero::after { border-color:#87bfff38; box-shadow:0 0 0 42px #8fc0f808,0 0 0 84px #8fc0f805; }
+html[data-theme="dark"] .uebtv-catalog-hero h1 { color:#f2f7ff; }
+html[data-theme="dark"] .uebtv-catalog-hero h1 em { color:#8fc2ff; }
+html[data-theme="dark"] .uebtv-catalog-hero .uebtv-kicker { color:#a9d0ff; }
+html[data-theme="dark"] .uebtv-catalog-hero p:not(.uebtv-kicker) { color:#bfd1e7; }
+html[data-theme="dark"] .uebtv-catalog-mark { opacity:1; }
+html[data-theme="dark"] .uebtv-catalog-mark img { filter:brightness(0) invert(1); opacity:.94; }
+html[data-theme="dark"] .uebtv-catalog-search, html[data-theme="dark"] .uebtv-upcoming-card { border-color:#29425f; background:#10223b; box-shadow:0 14px 32px -22px #000b; }
+html[data-theme="dark"] .uebtv-catalog-search label { color:#c8daf0; }
+html[data-theme="dark"] .uebtv-catalog-search input, html[data-theme="dark"] .uebtv-catalog-search select { border-color:#355371; background:#0b1a2d; color:#edf5ff; }
+html[data-theme="dark"] .uebtv-catalog-search input::placeholder { color:#8fa5bd; }
+html[data-theme="dark"] .uebtv-catalog-search > a { color:#9fc9ff; }
+html[data-theme="dark"] .uebtv-catalog-search > a { border:1px solid #365b80; border-radius:8px; background:#173a61; color:#b9dcff; text-decoration:none; }
+html[data-theme="dark"] .uebtv-catalog-search > a:hover { border-color:#5d94cb; background:#1d4a78; }
+html[data-theme="dark"] .uebtv-catalog-filter-toggle { color:#c7e2ff; }
+html[data-theme="dark"] .uebtv-catalog-filter-toggle:hover { background:#153454; }
+html[data-theme="dark"] .uebtv-catalog-filter-toggle > span { background:#193b63; color:#a9d0ff; }
+html[data-theme="dark"] .uebtv-catalog-card__meta { border-color:#29425f; color:#9db2cc; }
+html[data-theme="dark"] .uebtv-catalog-card__meta time { color:#b6ceea; }
+html[data-theme="dark"] :is(a,button,input,select,textarea):focus-visible { outline-color:#8ec4ff; }
+html[data-theme="dark"] .uebtv-catalog-filters { background:#132b48; }
+html[data-theme="dark"] .uebtv-catalog-filters a { color:#aec3da; }
+html[data-theme="dark"] .uebtv-catalog-filters a.is-active, html[data-theme="dark"] .uebtv-catalog-filters a:hover { background:#1e426b; color:#e8f3ff; box-shadow:none; }
+html[data-theme="dark"] .uebtv-upcoming-card p, html[data-theme="dark"] .uebtv-upcoming-card > span { color:#aebfd3; }
+
+/* Continuous channel: its light cards need their own dark palette. */
+html[data-theme="dark"] .channel-heading { border-color:#294b6b; background:radial-gradient(ellipse at 86% 15%,#1c4f81 0,transparent 47%),linear-gradient(120deg,#102947,#0b1c31); box-shadow:0 18px 40px -28px #000d; }
+html[data-theme="dark"] .channel-heading::after { border-color:#78b7f042; box-shadow:0 0 0 34px #80bfff0d,0 0 0 68px #80bfff08; }
+html[data-theme="dark"] .channel-heading h1 { color:#f1f7ff; }
+html[data-theme="dark"] .channel-heading h1 em { color:#86c1ff; }
+html[data-theme="dark"] .channel-heading > div > p:last-child { color:#b8cbe1; }
+html[data-theme="dark"] .channel-institution-mark { filter:brightness(0) invert(1); }
+html[data-theme="dark"] .channel-catalog { border-color:#4778ab; background:#163859; color:#c7e2ff; }
+html[data-theme="dark"] .channel-catalog:hover { background:#1d4771; color:#eef7ff; }
+html[data-theme="dark"] .channel-main { border-color:#29425f; background:#10223b; box-shadow:0 18px 42px -25px #000c; }
+html[data-theme="dark"] .channel-now { background:#10223b; }
+html[data-theme="dark"] .channel-now p, html[data-theme="dark"] .channel-auto { color:#adc0d6; }
+html[data-theme="dark"] .channel-badge { background:#173a61; color:#b9dcff; }
+html[data-theme="dark"] .channel-badge.channel-live { background:#391b28; color:#ffb7c4; }
+html[data-theme="dark"] .channel-next { border-color:#29425f; background:#10223b; box-shadow:0 16px 36px -25px #000c; }
+html[data-theme="dark"] .channel-next-heading { border-color:#29425f; background:linear-gradient(135deg,#142f4f,#10223b); }
+html[data-theme="dark"] .channel-next h2, html[data-theme="dark"] .channel-agenda-empty h3 { color:#eef6ff; }
+html[data-theme="dark"] .channel-next-heading > p:last-child, html[data-theme="dark"] .channel-agenda-item p, html[data-theme="dark"] .channel-agenda-empty p, html[data-theme="dark"] .channel-agenda-note { color:#a9bdd5; }
+html[data-theme="dark"] .channel-next article { border-color:#29425f; }
+html[data-theme="dark"] .channel-next time, html[data-theme="dark"] .channel-agenda-empty a { color:#9fc9ff; }
+html[data-theme="dark"] .channel-next h2 span { background:#193c63; color:#b9dcff; }
+
+/* Scheduled content studio. Its form, preview and upload area are independent components. */
+html[data-theme="dark"] .schedule-pill { border-color:#365c82; background:#16385e; color:#afd3ff; }
+html[data-theme="dark"] .schedule-totals article, html[data-theme="dark"] .schedule-progress, html[data-theme="dark"] .schedule-form, html[data-theme="dark"] .schedule-preview { border-color:#294b6b; background:#10243e; box-shadow:0 14px 32px -22px #000c; }
+html[data-theme="dark"] .schedule-totals article { background:linear-gradient(145deg,#142e4c,#10233b); }
+html[data-theme="dark"] .schedule-totals :is(strong,h2,h3), html[data-theme="dark"] .schedule-section-title h2, html[data-theme="dark"] .schedule-preview-body h2, html[data-theme="dark"] .schedule-guide h3, html[data-theme="dark"] .schedule-empty h3 { color:#eef6ff; }
+html[data-theme="dark"] .schedule-totals p, html[data-theme="dark"] .schedule-section-title p, html[data-theme="dark"] .schedule-zone, html[data-theme="dark"] .schedule-help, html[data-theme="dark"] .schedule-submit p, html[data-theme="dark"] .schedule-preview-date, html[data-theme="dark"] .schedule-preview-body > small, html[data-theme="dark"] .schedule-guide p, html[data-theme="dark"] .schedule-empty p { color:#a7bdd6; }
+html[data-theme="dark"] .schedule-progress { color:#aec2da; }
+html[data-theme="dark"] .schedule-progress > span { color:#dceaff; }
+html[data-theme="dark"] .schedule-progress i { border-color:#365472; background:#132c49; color:#b8d9ff; }
+html[data-theme="dark"] .schedule-progress .is-complete { color:#9fc9ff; }
+html[data-theme="dark"] .schedule-progress .is-complete i { border-color:#4576a8; background:#193d66; }
+html[data-theme="dark"] .schedule-section + .schedule-section, html[data-theme="dark"] .schedule-submit, html[data-theme="dark"] .schedule-guide, html[data-theme="dark"] .schedule-event, html[data-theme="dark"] .schedule-empty, html[data-theme="dark"] .schedule-pagination { border-color:#294b6b; }
+html[data-theme="dark"] .schedule-section-title > span, html[data-theme="dark"] .schedule-category, html[data-theme="dark"] .schedule-date { background:#183b64; color:#b4d7ff; }
+html[data-theme="dark"] .schedule-form label > span { color:#9fc9ff; }
+html[data-theme="dark"] .schedule-form label > small { color:#9ab0c9; }
+html[data-theme="dark"] .schedule-form .uebtv-form-field :is(input,select,textarea) { border-color:#365472; background:#0a1a2d; color:#edf5ff; }
+html[data-theme="dark"] .schedule-form .uebtv-form-field :is(input,select,textarea):focus { border-color:#6599d3; background:#0d2138; box-shadow:0 0 0 3px #3b70a544; }
+html[data-theme="dark"] .schedule-upload { border-color:#4775a5; background:linear-gradient(130deg,#102b49,#142f4f); }
+html[data-theme="dark"] .schedule-upload-icon { border-color:#365b80; background:#173a61; color:#b9dcff; }
+html[data-theme="dark"] .schedule-upload label { color:#e5f1ff; }
+html[data-theme="dark"] .schedule-upload > p, html[data-theme="dark"] .schedule-upload input { color:#a8bfd8; }
+html[data-theme="dark"] .schedule-upload input::file-selector-button { border-color:#426b94; background:#183c64; color:#c4e1ff; }
+html[data-theme="dark"] .schedule-upload .schedule-file { color:#a9d3ff; }
+html[data-theme="dark"] .schedule-upload.has-file { border-color:#5387ba; background:#14365a; }
+html[data-theme="dark"] .schedule-submit { background:#0e2037; }
+html[data-theme="dark"] .schedule-preview-body { background:#10243e; }
+html[data-theme="dark"] .schedule-guide { background:#0d1d33; }
+html[data-theme="dark"] .schedule-guide li > span { border-color:#42668b; color:#b4d7ff; }
+html[data-theme="dark"] .schedule-guide strong { color:#d8e8fa; }
+html[data-theme="dark"] .schedule-count { background:#173a61; color:#b8d9ff; }
+html[data-theme="dark"] .schedule-pagination { color:#aac0d8; }
+html[data-theme="dark"] .schedule-pagination a { background:#173a61; color:#b9dcff; }
+
+/* Keep long chat history inside its scroll area: it must never draw over the header or composer. */
+.uebtv-live-chat__header, .uebtv-live-chat__form, .uebtv-live-chat__note, .uebtv-live-chat__closed, .uebtv-live-chat__login { position:relative; z-index:1; flex:0 0 auto; }
+.uebtv-live-chat__messages { position:relative; z-index:0; min-height:0; overflow-y:auto; overscroll-behavior:contain; }
+.uebtv-chat-message, .uebtv-chat-message__body, .uebtv-chat-bubble { min-width:0; max-width:100%; }
+
+/* Conversation first: the header identifies the room without competing with messages. */
+.watch-experience .uebtv-live-chat__header { align-items:center; min-height:58px; padding:13px 16px; }
+.watch-experience .uebtv-live-chat__header .uebtv-kicker, .watch-experience .watch-chat-subtitle { display:none; }
+.watch-experience .uebtv-live-chat__header h2 { margin:0; font-size:19px; line-height:1.15; }
+.watch-experience .uebtv-chat-status { margin:0; }
+.watch-experience .uebtv-live-chat__header::after { left:16px; width:34px; }
+.watch-experience .uebtv-live-chat__messages { gap:15px; padding:15px 14px; }
+.watch-experience .uebtv-chat-message__meta strong { color:#466482; font-size:10px; font-weight:700; }
+.watch-experience .uebtv-chat-bubble { padding:11px 13px; border-color:#75ace3; border-radius:5px 15px 15px; background:linear-gradient(135deg,#d4eaff,#eef7ff); color:#102f53; font-size:13px; font-weight:600; line-height:1.52; box-shadow:0 5px 13px #1b5f9e18; }
+.watch-experience .uebtv-chat-bubble::before { border-color:#75ace3; background:#d4eaff; }
+html[data-theme="dark"] .watch-experience .uebtv-chat-bubble { border-color:#4988c1; background:linear-gradient(135deg,#164d7e,#143d68); color:#f1f7ff; box-shadow:0 5px 13px #0006; }
+html[data-theme="dark"] .watch-experience .uebtv-chat-bubble::before { border-color:#4988c1; background:#164d7e; }
+html[data-theme="dark"] .watch-experience .uebtv-chat-message__meta strong { color:#accdf0; }
+
+/* Phone-first refinement: preserve the important action, avoid compressed desktop rows. */
+@media (max-width:640px) {
+    .studio-header-inner { min-height:64px; padding-inline:14px; gap:10px; }
+    .uebtv-brand-logo--header { width:90px; height:48px; padding:4px 6px; border-radius:7px; }
+    .studio-account { gap:6px; }
+    .studio-theme-toggle { width:34px; height:34px; }
+    .studio-signout { min-height:38px; padding-inline:9px; font-size:11px; border-radius:8px; }
+    .studio-menu-toggle { width:38px; height:38px; border-radius:8px; }
+    .studio-mobile-nav, .studio-sidebar { padding-inline:14px; }
+    .studio-sidebar-caption { padding-inline:8px; }
+    .studio-sidebar nav a { min-height:46px; padding:11px 10px; }
+
+    .studio-page, .uebtv-catalog-page { padding:22px 14px 42px; }
+    .watch-experience .uebtv-watch-container { padding-inline:12px; }
+    .studio-heading { gap:10px; margin-bottom:18px; }
+    .studio-heading h1, .schedule-page .studio-heading h1 { font-size:clamp(26px,8vw,32px); line-height:1.12; }
+    .studio-heading p:last-child { font-size:13px; }
+    .studio-heading > .studio-button { width:100%; min-height:46px; }
+
+    .studio-metrics, .schedule-totals { grid-template-columns:1fr; gap:10px; margin:16px 0 20px; }
+    .studio-metric, .schedule-totals article { min-height:0; padding:16px; border-radius:14px; }
+    .studio-metric strong { margin:8px 0 3px; font-size:28px; }
+    .studio-bottom-grid, .studio-rail { gap:14px; }
+    .studio-panel-heading { padding:18px 16px 14px; }
+    .studio-event-row, .schedule-event { padding:16px; }
+
+    .uebtv-catalog-hero { display:grid; grid-template-columns:minmax(0,1fr) 92px; align-items:center; gap:8px 10px; min-height:0; padding:13px 15px; border-radius:15px; }
+    .uebtv-catalog-hero h1 { margin-top:5px; font-size:clamp(22px,7.2vw,27px); line-height:1.06; letter-spacing:-.045em; }
+    .uebtv-catalog-hero .uebtv-kicker { font-size:7px; letter-spacing:1.1px; }
+    .uebtv-catalog-hero p:not(.uebtv-kicker), .uebtv-catalog-hero .studio-button { display:none; }
+    .uebtv-catalog-mark { display:grid; position:static; align-self:center; width:92px; min-height:0; margin:0; padding:0; opacity:1; }
+    .uebtv-catalog-mark img { width:100%; max-height:38px; object-fit:contain; }
+    .uebtv-catalog-search { align-items:stretch; gap:12px; margin:16px 0 24px; padding:16px; border-radius:14px; }
+    .uebtv-catalog-search > div { flex-basis:100%; }
+    .uebtv-catalog-search label { margin-bottom:6px; }
+    .uebtv-catalog-search :is(input,select) { min-height:46px; }
+    .uebtv-catalog-search > :is(button,a) { display:inline-flex; flex:1 1 calc(50% - 6px); align-items:center; justify-content:center; min-height:44px; padding-inline:10px; }
+    .uebtv-catalog-toolbar { align-items:flex-start; gap:12px; margin:22px 0 14px; }
+    .uebtv-catalog-toolbar h2 { font-size:22px; }
+    .uebtv-catalog-filters { width:100%; flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; }
+    .uebtv-catalog-filters::-webkit-scrollbar { display:none; }
+    .uebtv-catalog-filters a { flex:0 0 auto; min-height:36px; }
+    .uebtv-catalog-card__body { padding:16px; }
+
+    .schedule-progress { align-items:flex-start; padding:14px; }
+    .schedule-progress > div { gap:6px; }
+    .schedule-progress > div > span { font-size:10px; }
+    .schedule-progress i { width:20px; height:20px; }
+    .schedule-layout { gap:16px; }
+    .schedule-section { padding:20px 16px; }
+    .schedule-section-title { align-items:flex-start; margin-bottom:18px; }
+    .schedule-section-title > span { flex-basis:34px; width:34px; height:34px; border-radius:10px; }
+    .schedule-section-title h2 { font-size:16px; }
+    .schedule-upload { padding:20px 12px; }
+    .schedule-submit { padding:16px; }
+    .schedule-submit .studio-button { min-height:46px; }
+    .schedule-preview-body, .schedule-guide { padding:18px; }
+
+    .watch-experience .uebtv-watch-breadcrumb { margin-bottom:14px; }
+    .watch-experience .uebtv-watch-player { border-radius:14px; }
+    .watch-experience .uebtv-watch-broadcast-card { border-radius:16px; overflow:hidden; }
+    .watch-experience .uebtv-watch-title-block { margin-top:0; padding:13px 14px 14px; border-top:1px solid #d9e6f4; border-radius:0 0 15px 15px; background:linear-gradient(135deg,#f7fbff,#e8f2ff); }
+    html[data-theme="dark"] .watch-experience .uebtv-watch-title-block { border-top-color:#29425f; background:linear-gradient(135deg,#10223b,#122d4d); }
+    .watch-experience .uebtv-watch-category { margin-bottom:7px; padding:4px 8px; font-size:8px; }
+    .watch-experience .uebtv-watch-title-row h1 { font-size:20px; line-height:1.13; }
+    .watch-experience .uebtv-watch-state.is-live { display:none; }
+    .watch-experience .uebtv-watch-meta { gap:6px; }
+    .watch-experience .uebtv-watch-actions { margin-top:16px; padding-top:14px; }
+    .watch-experience .uebtv-watch-actions :is(button,a) { flex:1 1 100%; justify-content:center; min-height:44px; }
+    .watch-experience .uebtv-live-chat { border-radius:16px; }
+    .watch-experience .uebtv-live-chat__header { min-height:54px; padding:11px 14px; }
+    .watch-experience .uebtv-live-chat__header h2 { font-size:18px; }
+    .watch-experience .uebtv-chat-status { padding:4px 7px; font-size:8px; }
+    .watch-experience .uebtv-live-chat__messages { gap:13px; padding:14px 12px; }
+    .watch-experience .uebtv-chat-avatar { flex-basis:30px; width:30px; height:30px; font-size:10px; }
+    .watch-experience .uebtv-chat-bubble { padding:10px 11px; font-size:13px; }
+    .watch-experience .uebtv-live-chat__form { padding:12px; }
+    .watch-experience .uebtv-live-chat { min-height:380px; height:auto!important; }
+    .watch-experience .uebtv-live-chat__messages { min-height:230px; max-height:360px; }
+
+    .uebtv-player-controls { padding:2px 9px 8px; background:linear-gradient(transparent,#030b18f5 42%); }
+    .uebtv-player-timeline { min-height:13px; gap:7px; margin-bottom:4px; }
+    .uebtv-player-live-static, .uebtv-player-range { height:2px; }
+    .uebtv-player-range::-moz-range-track, .uebtv-player-range::-moz-range-progress { height:2px; }
+    .uebtv-player-live-static i { width:9px; height:9px; }
+    .uebtv-player-range::-webkit-slider-thumb { width:9px; height:9px; }
+    .uebtv-player-range::-moz-range-thumb { width:8px; height:8px; }
+    .uebtv-player-live-position { min-width:63px; font-size:8px; }
+    .uebtv-player-actions { gap:7px; }
+    .uebtv-player-icon-button { width:32px; height:32px; border-color:#ffffff3d; background:#071a35cc; box-shadow:0 3px 10px #0005; }
+    .uebtv-player-icon-button--primary { border-color:#ff9aaa; background:#ff3152; }
+    .uebtv-player-icon-svg { width:18px; height:18px; }
+    .uebtv-player-go-live { min-height:32px; height:32px; padding-inline:8px; font-size:9px; }
+    .uebtv-player-pip-return { max-width:calc(100% - 28px); min-height:42px; text-align:center; }
+}
+
+@media(max-width:640px) { .studio-theme-toggle { width:34px; height:34px; } .studio-theme-toggle svg { width:16px; height:16px; } }
+@media(prefers-reduced-motion:reduce) { .studio-theme-toggle { transition:none; } }

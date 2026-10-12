@@ -168,6 +168,20 @@ class CatalogAndChatTest extends TestCase
             ->assertJsonPath('playback_seconds', null);
     }
 
+    public function test_chat_is_closed_after_a_live_stream_finishes_but_its_history_remains_available(): void
+    {
+        $evento = $this->evento(['estado' => 'finalizado']);
+        $this->message($evento, 'Mensaje conservado');
+
+        $this->actingAs($this->user)
+            ->postJson(route('eventos.chat.store', $evento), ['message' => 'No debe enviarse'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('message');
+        $this->getJson(route('eventos.chat.index', $evento))
+            ->assertOk()
+            ->assertJsonPath('0.message', 'Mensaje conservado');
+    }
+
     public function test_only_moderators_can_remove_messages_and_deletion_propagates(): void
     {
         $evento = $this->evento();

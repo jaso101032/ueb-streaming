@@ -1,0 +1,55 @@
+worker_processes 1;
+daemon off;
+
+events {
+    worker_connections 1024;
+}
+
+rtmp {
+    server {
+        listen 1935;
+
+        application live {
+            live on;
+            record off;
+            hls on;
+            hls_path /tmp/hls;
+            hls_fragment 2s;
+            hls_playlist_length 90s;
+
+            on_publish http://127.0.0.1:8000/streaming/hooks/authorize?token=${STREAMING_CALLBACK_TOKEN};
+            on_update http://127.0.0.1:8000/streaming/hooks/authorize?token=${STREAMING_CALLBACK_TOKEN};
+            on_publish_done http://127.0.0.1:8000/streaming/hooks/disconnected?token=${STREAMING_CALLBACK_TOKEN};
+            notify_update_timeout 3s;
+            notify_update_strict on;
+        }
+    }
+}
+
+http {
+    include mime.types;
+    default_type application/octet-stream;
+    sendfile on;
+
+    server {
+        listen 8080;
+        server_name _;
+
+        location /hls/ {
+            alias /tmp/hls/;
+            add_header Cache-Control no-cache;
+            add_header Access-Control-Allow-Origin *;
+            types {
+                application/vnd.apple.mpegurl m3u8;
+                video/mp2t ts;
+            }
+        }
+
+        location / {
+            proxy_pass http://127.0.0.1:8000;
+            proxy_set_header Host $http_host;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+    }
+}

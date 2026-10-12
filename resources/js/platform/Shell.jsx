@@ -3,8 +3,26 @@ import NavIcon from "./NavIcon";
 import { Context, Action } from "./shared";
 import UniversityMark from "./UniversityMark";
 import UebtvMark from "./UebtvMark";
+
+function ThemeIcon({ theme }) {
+    return theme === "dark" ? (
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 15.2A8.5 8.5 0 0 1 8.8 4 8.5 8.5 0 1 0 20 15.2Z" /></svg>
+    ) : (
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4" /><path d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></svg>
+    );
+}
+
 export default function Shell({ shell, children }) {
     const [menu, setMenu] = useState(false);
+    const [theme, setTheme] = useState(() => {
+        if (typeof window === "undefined") return "light";
+        const saved = window.localStorage.getItem("uebtv-theme");
+        return saved === "dark" || saved === "light"
+            ? saved
+            : window.matchMedia("(prefers-color-scheme: dark)").matches
+              ? "dark"
+              : "light";
+    });
     useEffect(() => {
         const fn = (e) => {
             if (e.key === "Escape") setMenu(false);
@@ -12,6 +30,10 @@ export default function Shell({ shell, children }) {
         window.addEventListener("keydown", fn);
         return () => window.removeEventListener("keydown", fn);
     }, []);
+    useEffect(() => {
+        document.documentElement.dataset.theme = theme;
+        window.localStorage.setItem("uebtv-theme", theme);
+    }, [theme]);
     return (
         <Context.Provider value={shell}>
             <div className="min-h-screen flex flex-col">
@@ -24,6 +46,15 @@ export default function Shell({ shell, children }) {
                             <UebtvMark className="uebtv-brand-logo--header" />
                         </a>
                         <div className="studio-account">
+                            <button
+                                type="button"
+                                className="studio-theme-toggle"
+                                onClick={() => setTheme((value) => value === "dark" ? "light" : "dark")}
+                                aria-label={theme === "dark" ? "Activar modo claro" : "Activar modo oscuro"}
+                                title={theme === "dark" ? "Modo claro" : "Modo oscuro"}
+                            >
+                                <ThemeIcon theme={theme} />
+                            </button>
                             {shell.user ? (
                                 <>
                                     <a

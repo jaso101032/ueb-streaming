@@ -125,6 +125,9 @@ export default function ScheduledStudio({
     const complete = [!!title.trim() && !!category, !!date, !!file].filter(
         Boolean,
     ).length;
+    const coverageEnd = summary.endsAt
+        ? new Date(summary.endsAt).toLocaleString("es-EC", { dateStyle: "short", timeStyle: "short" })
+        : null;
     return (
         <div className="studio-page schedule-page schedule-react">
             <div className="studio-heading">
@@ -176,11 +179,9 @@ export default function ScheduledStudio({
                     </p>
                 </article>
                 <article>
-                    <small>SEÑAL CONTINUA</small>
-                    <strong>Directo prioritario</strong>
-                    <a className="studio-text-link" href={channelUrl}>
-                        Abrir canal automático ↗
-                    </a>
+                    <small>COBERTURA PREVISTA</small>
+                    <strong>{coverageEnd || "Sin contenido listo"}</strong>
+                    <p>{coverageEnd ? "La programación llega hasta esta hora; un directo puede desplazarla." : "Sube contenido para calcular la cobertura del canal."}</p>
                 </article>
             </div>
             <div

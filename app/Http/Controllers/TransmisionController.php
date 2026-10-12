@@ -17,8 +17,13 @@ class TransmisionController extends Controller
      */
     public function index()
     {
-        $eventos = Evento::with(['transmision', 'organizador', 'facultad', 'carrera', 'categoria', 'scheduledVideo'])
-            ->orderBy('fecha_inicio', 'desc')
+        // This is an OBS workspace, not an archive or the scheduled playlist.
+        // Finished events belong to "Gestionar eventos" and scheduled videos
+        // belong to "Parrilla 24/7", keeping one clear purpose per screen.
+        $eventos = Evento::with(['transmision', 'organizador', 'facultad', 'carrera', 'categoria'])
+            ->whereNotIn('estado', ['finalizado', 'cancelado'])
+            ->whereDoesntHave('scheduledVideo')
+            ->orderBy('fecha_inicio')
             ->paginate(10);
 
         return view('streaming.index', compact('eventos'));
@@ -36,7 +41,7 @@ class TransmisionController extends Controller
         $streamKey = 'ueb_' . Str::random(32);
         $host = $request->getHost();
         $rtmpServer = 'rtmp://' . $host . ':1935/live';
-        $hlsUrl = 'http://' . $host . '/hls/' . $streamKey . '.m3u8';
+        $hlsUrl = 'http://' . $host . ':8080/hls/' . $streamKey . '.m3u8';
 
         // Actualizar o crear la transmisión asociada al evento
         Transmision::updateOrCreate(
@@ -90,5 +95,32 @@ class TransmisionController extends Controller
             'espectadores' => $transmision?->espectadores_activos ?: 0,
             'actualizado' => now()->toIso8601String(),
         ]);
+    }
+
+    /**
+     * Registra una presencia anónima y temporal en una sala pública.
+     * El navegador envía un UUID local: no se guardan cuentas, nombres ni direcciones IP.
+     */
+    public function viewerHeartbeat(Request $request, Evento $evento)
+    {
+        $data = $request->validate(['viewer' => ['required', 'uuid']]);
+        $stream = $evento->transmision;
+
+        if (! $stream || $evento->estado !== 'en_vivo' || $stream->finalizado_en) {
+            return response()->json(['viewers' => 0]);
+        }
+
+        $now = now();
+        DB::table('event_viewers')->updateOrInsert(
+            ['evento_id' => $evento->id, 'viewer_key' => $data['viewer']],
+            ['last_seen_at' => $now, 'created_at' => $now, 'updated_at' => $now],
+        );
+
+        // Old entries are only housekeeping; the count itself uses a short live window.
+        DB::table('event_viewers')->where('evento_id', $evento->id)->where('last_seen_at', '<', $now->copy()->subDay())->delete();
+        $viewers = DB::table('event_viewers')->where('evento_id', $evento->id)->where('last_seen_at', '>=', $now->copy()->subSeconds(75))->count();
+        $stream->update(['espectadores_activos' => $viewers]);
+
+        return response()->json(['viewers' => $viewers]);
     }
 }
