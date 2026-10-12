@@ -56,7 +56,6 @@ export default function Auth({ mode, action, name, email, token, forgotUrl }) {
         <div className="react-auth">
             <aside className="react-auth-brand">
                 <a href={shell.catalog} className="react-auth-logo" aria-label="UEBTV">
-                    <UebtvMark className="uebtv-brand-logo--auth" />
                     <img
                         className="react-auth-mascot"
                         src={shell.mascot}
@@ -64,6 +63,7 @@ export default function Auth({ mode, action, name, email, token, forgotUrl }) {
                         width="48"
                         height="72"
                     />
+                    <UebtvMark className="uebtv-brand-logo--auth" />
                 </a>
                 <div>
                     <span className="react-overline">

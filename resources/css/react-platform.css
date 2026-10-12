@@ -315,8 +315,9 @@ button:disabled {
 .uebtv-brand-logo {
     display: inline-block;
     flex: 0 0 auto;
+    position:relative;
     overflow: visible;
-    aspect-ratio: 1.8 / 1;
+    aspect-ratio: 2 / 1;
     background: transparent;
     border: 0;
     border-radius: 0;
@@ -360,23 +361,44 @@ button:disabled {
 .studio-sidebar-footer .university-mark { display:flex; width:100%; gap:5px; }
 .studio-sidebar-footer .university-mark__mascot { width:36px; height:56px; }
 .studio-sidebar-footer .university-mark__logo { width:min(132px,calc(100% - 42px)); padding:4px 6px; border-radius:5px; background:#c8def8; }
-.uebtv-brand-logo--header { box-sizing:border-box; width:112px; height:60px; padding:5px 8px; overflow:hidden; border-radius:9px; background:#fff; filter:drop-shadow(0 4px 8px #00000022); }
+.uebtv-brand-logo--header {
+    box-sizing:border-box;
+    width:220px;
+    height:110px;
+    padding:0;
+    overflow:visible;
+    border-radius:0;
+    background:transparent;
+    box-shadow:none;
+}
 .react-auth-logo {
     display: inline-flex;
     align-items: center;
-    gap: 12px;
+    gap: 0;
     width: fit-content;
     min-height: 58px;
 }
-.uebtv-brand-logo--auth { width:132px; height:70px; background:radial-gradient(ellipse,#c4e2ff62 0%,#83baff29 42%,transparent 76%); filter:drop-shadow(0 6px 12px #0000003d); }
-.react-auth-mascot { display:block; width:52px; height:80px; object-fit:contain; filter:drop-shadow(0 8px 12px #00000030); }
+.uebtv-brand-logo--auth { width:188px; height:94px; background:transparent; }
+.react-auth-mascot {
+    display:block;
+    position:relative;
+    z-index:1;
+    flex:0 0 auto;
+    width:58px;
+    height:88px;
+    margin-right:-12px;
+    object-fit:contain;
+    transform:translate(4px,5px) rotate(6deg);
+    transform-origin:bottom center;
+    filter:drop-shadow(0 8px 12px #00000030);
+}
 .react-auth-product {
     font-size: 20px;
 }
-.uebtv-brand-logo--dashboard { width: 152px; height: 81px; }
-.uebtv-brand-logo--channel { width: min(230px, 43vw); height: auto; }
-.uebtv-brand-logo--watch-cover { width: 138px; height: 74px; }
-.uebtv-brand-logo--schedule { width: 138px; height: 74px; }
+.uebtv-brand-logo--dashboard { width: 196px; height: 98px; }
+.uebtv-brand-logo--channel { width: min(360px, 66vw); height: auto; }
+.uebtv-brand-logo--watch-cover { width:168px; height:84px; }
+.uebtv-brand-logo--schedule { width:168px; height:84px; }
 .studio-art-screen__label { display:block; font-size:7px; letter-spacing:1.5px; color:#a2c0e4; text-align:center; }
 .studio-art-screen__brand { display:grid; place-items:center; width:190px; height:86px; margin:5px auto 0; background:radial-gradient(ellipse,#c6e2ff55 0%,#78aff32b 45%,transparent 76%); }
 .studio-dashboard .studio-art-screen .studio-art-screen__brand { width:100%; height:68px; margin:11px 0 12px; padding:11px 14px; border:1px solid #fff; border-radius:7px; background:#fff; box-shadow:0 5px 16px #020b1833; }
@@ -509,12 +531,12 @@ button:disabled {
     z-index: 2;
     top: 18px;
     right: 18px;
-    width: clamp(58px, 7.5vw, 92px);
-    padding: 4px;
-    border-radius: 7px;
-    background: #071a3599;
-    box-shadow: 0 4px 14px #0004;
-    opacity: .76;
+    width: clamp(82px, 9vw, 112px);
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    opacity: .88;
     pointer-events: none;
     transition:opacity .22s ease,transform .22s ease;
 }
@@ -617,7 +639,7 @@ button:disabled {
 .uebtv-player-speed option { color: #071a35; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
 @media (max-width: 620px) {
-    .uebtv-player-mark { top: 11px; right: 11px; width: 58px; }
+    .uebtv-player-mark { top: 11px; right: 11px; width:80px; }
     .uebtv-player-live { top: 12px; left: 12px; padding: 5px 8px; font-size: 9px; }
     .uebtv-player-title { top:11px; left:11px; max-width:58%; padding:4px 7px; font-size:9px; }
     .uebtv-player-title.is-live { top:42px; }

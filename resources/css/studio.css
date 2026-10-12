@@ -6,7 +6,7 @@ body { background:#f5f7fb; }
 .studio-skip { position:fixed; top:8px; left:8px; transform:translateY(-150%); z-index:100; padding:12px 20px; background:white; border-radius:10px; }
 .studio-skip:focus { transform:none; }
 .studio-header { position:sticky; top:0; z-index:50; background:#071a35; color:#fff; box-shadow:0 4px 24px #071a3510; }
-.studio-header-inner { max-width:1360px; margin:auto; min-height:84px; display:flex; align-items:center; gap:30px; padding:0 32px; }
+.studio-header-inner { max-width:1360px; margin:auto; min-height:110px; display:flex; align-items:center; gap:30px; padding:0 32px; }
 .studio-brand { display:flex; align-items:center; gap:12px; flex-shrink:0; font-size:24px; font-weight:700; letter-spacing:-1px; }
 .studio-brand-symbol { display:grid; place-items:center; width:42px; height:42px; background:#1554a6; border:1px solid #ffffff24; border-radius:13px; font-size:18px; }
 .studio-brand-tv { color:#89b9f4; }
@@ -203,7 +203,7 @@ body, .font-sans, .access-page { font-family:'Inter Variable',system-ui,sans-ser
 .brand-mascot-access { width:64px; height:88px; }
 .uebtv-login-brand__top { display:flex; align-items:center; gap:14px; }
 .guest-brand { color:#071a35; }
-.studio-header-inner { min-height:80px; }
+.studio-header-inner { min-height:110px; }
 .studio-page { padding-top:30px; padding-bottom:40px; }
 .studio-heading { margin-bottom:22px; }
 .studio-feature { min-height:260px; }

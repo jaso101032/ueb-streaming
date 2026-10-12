@@ -9,8 +9,8 @@ export default function UebtvMark({ className = "" }) {
             <img
                 src={tvLogo}
                 alt="Logotipo de UEBTV"
-                width="691"
-                height="691"
+                width="1774"
+                height="887"
             />
         </span>
     );

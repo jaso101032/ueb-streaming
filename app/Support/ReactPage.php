@@ -64,7 +64,10 @@ class ReactPage
             'channel' => route('channel.index'), 'catalog' => route('eventos.index'),
             'logo' => asset('images/brand/ueb-wordmark.png'),
             'mascot' => asset('images/brand/mascota-ueb.webp'),
-            'tvLogo' => asset('images/brand/uebtv-logo-transparent.webp'), 'csrf' => csrf_token(),
+            // UEBTV identifica el producto y la señal; la marca UEB oficial
+            // se entrega por separado como firma institucional.
+            'tvLogo' => asset('images/brand/uebtv-logo-final.png'),
+            'csrf' => csrf_token(),
             'errors' => session('errors')?->all() ?? [], 'success' => session('success'), 'status' => session('status'), 'year' => now()->year];
     }
 }

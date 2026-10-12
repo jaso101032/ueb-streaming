@@ -29,6 +29,19 @@ html[data-theme="dark"] .uebtv-watch-breadcrumb a { border-color:#365474; backgr
 html[data-theme="dark"] .uebtv-watch-category { background:#173554; color:#9fc9ff; }
 html[data-theme="dark"] :is(.studio-panel,.react-panel,.uebtv-watch-broadcast-card,.uebtv-watch-title-block,.uebtv-watch-player-info,.schedule-section,.schedule-totals article,.uebtv-live-chat__form,.uebtv-live-chat__note,.uebtv-live-chat__login,.uebtv-live-chat__closed,.uebtv-catalog-card,.uebtv-video-card,.uebtv-library-empty) { background:#10223b; border-color:#29425f; box-shadow:0 14px 32px -22px #000b; }
 html[data-theme="dark"] .uebtv-watch-player-info__brand { color:#9fc9ff; }
+/* La marca conserva su color institucional: en oscuro se le da una base
+   luminosa y discreta, en vez de invertir el PNG o perder el azul marino. */
+html[data-theme="dark"] :is(.uebtv-brand-logo--auth,.uebtv-brand-logo--dashboard,.uebtv-brand-logo--channel,.uebtv-brand-logo--watch-cover,.uebtv-brand-logo--schedule) {
+    padding:0;
+    border:0;
+    border-radius:0;
+    background:transparent;
+    box-shadow:none;
+    filter:none;
+}
+html[data-theme="dark"] .uebtv-player-mark {
+    background:transparent;
+}
 html[data-theme="dark"] .uebtv-watch-player-info__viewers { background:#351623; border-color:#8e3447; color:#ffc3cd; }
 html[data-theme="dark"] .uebtv-watch-player-info__viewers strong { color:#ff6680; }
 html[data-theme="dark"] .uebtv-live-chat { background:#0d1d33; border-color:#29425f; }
@@ -193,8 +206,8 @@ html[data-theme="dark"] .watch-experience .uebtv-chat-message__meta strong { col
 
 /* Phone-first refinement: preserve the important action, avoid compressed desktop rows. */
 @media (max-width:640px) {
-    .studio-header-inner { min-height:64px; padding-inline:14px; gap:10px; }
-    .uebtv-brand-logo--header { width:90px; height:48px; padding:4px 6px; border-radius:7px; }
+    .studio-header-inner { min-height:82px; padding-inline:14px; gap:10px; }
+    .uebtv-brand-logo--header { width:138px; height:73px; padding:0; border-radius:0; }
     .studio-account { gap:6px; }
     .studio-theme-toggle { width:34px; height:34px; }
     .studio-signout { min-height:38px; padding-inline:9px; font-size:11px; border-radius:8px; }
