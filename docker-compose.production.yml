@@ -1,0 +1,133 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    init: true
+    depends_on:
+      db:
+        condition: service_healthy
+      rtmp:
+        condition: service_started
+    environment: &app-environment
+      APP_NAME: UEBTV
+      APP_ENV: production
+      APP_DEBUG: "false"
+      APP_KEY: ${APP_KEY:?Define una APP_KEY segura en las variables de Dokploy}
+      APP_URL: ${APP_URL:?Define APP_URL con https y tu dominio}
+      LOG_CHANNEL: stderr
+      LOG_LEVEL: warning
+      DB_CONNECTION: pgsql
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_DATABASE: ${DB_DATABASE:-uebtv}
+      DB_USERNAME: ${DB_USERNAME:-uebtv}
+      DB_PASSWORD: ${DB_PASSWORD:?Define DB_PASSWORD en las variables de Dokploy}
+      SESSION_DRIVER: database
+      SESSION_SECURE_COOKIE: "true"
+      SESSION_SAME_SITE: lax
+      CACHE_STORE: database
+      QUEUE_CONNECTION: database
+      FILESYSTEM_DISK: public
+      STREAMING_RTMP_URL: ${STREAMING_RTMP_URL:?Define rtmp://tu-dominio:1935/live}
+      STREAMING_HLS_BASE_URL: ${APP_URL:?}/hls
+      STREAMING_CALLBACK_TOKEN: ${STREAMING_CALLBACK_TOKEN:?Define un token aleatorio de 64 caracteres hexadecimales}
+      STREAMING_CONTROL_URL: http://rtmp:8080/control
+      STREAMING_RECORDINGS_ROOT: /var/lib/uebtv/recordings
+      STREAMING_FFMPEG: /usr/bin/ffmpeg
+      STREAMING_FFPROBE: /usr/bin/ffprobe
+    volumes:
+      - app_storage:/var/www/html/storage
+      - recordings:/var/lib/uebtv/recordings
+      - hls:/tmp/hls
+    expose:
+      - "8080"
+    healthcheck:
+      test: ["CMD-SHELL", "php -r '$$s=@fsockopen(\"127.0.0.1\",8080); exit($$s ? 0 : 1);'"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 90s
+
+  queue:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    init: true
+    command: ["queue"]
+    depends_on:
+      app:
+        condition: service_healthy
+    environment: *app-environment
+    volumes:
+      - app_storage:/var/www/html/storage
+      - recordings:/var/lib/uebtv/recordings
+      - hls:/tmp/hls
+
+  scheduled-videos:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    init: true
+    command: ["scheduled"]
+    depends_on:
+      app:
+        condition: service_healthy
+    environment: *app-environment
+    volumes:
+      - app_storage:/var/www/html/storage
+      - recordings:/var/lib/uebtv/recordings
+      - hls:/tmp/hls
+
+  recordings-processor:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    init: true
+    command: ["recordings"]
+    depends_on:
+      app:
+        condition: service_healthy
+    environment: *app-environment
+    volumes:
+      - app_storage:/var/www/html/storage
+      - recordings:/var/lib/uebtv/recordings
+      - hls:/tmp/hls
+
+  rtmp:
+    image: alfg/nginx-rtmp:latest
+    restart: unless-stopped
+    init: true
+    environment:
+      STREAMING_CALLBACK_TOKEN: ${STREAMING_CALLBACK_TOKEN:?Define un token aleatorio de 64 caracteres hexadecimales}
+    ports:
+      - "1935:1935/tcp"
+    volumes:
+      - ./docker/rtmp.conf.template:/etc/nginx/nginx.conf.template:ro
+      - recordings:/var/lib/uebtv/recordings
+      - hls:/tmp/hls
+
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-uebtv}
+      POSTGRES_USER: ${DB_USERNAME:-uebtv}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Define DB_PASSWORD en las variables de Dokploy}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  app_storage:
+  recordings:
+  hls:
+  postgres_data:

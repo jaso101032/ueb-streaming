@@ -11,6 +11,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        // Dokploy terminates TLS at its reverse proxy; honor forwarded HTTPS headers.
+        $middleware->trustProxies(at: '*');
+
         // Registrar el alias del middleware de roles
         $middleware->alias([
             'role' => \App\Http\Middleware\CheckRole::class,

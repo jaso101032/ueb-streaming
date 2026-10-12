@@ -1,0 +1,54 @@
+worker_processes 1;
+daemon off;
+
+events { worker_connections 2048; }
+
+rtmp {
+    server {
+        listen 1935;
+        application live {
+            live on;
+            record all;
+            record_path /var/lib/uebtv/recordings/raw;
+            record_suffix .flv;
+            record_unique off;
+            record_append on;
+            record_lock on;
+            hls on;
+            hls_path /tmp/hls;
+            hls_fragment 2s;
+            hls_playlist_length 90s;
+            on_publish http://app:8080/streaming/hooks/authorize?token=${STREAMING_CALLBACK_TOKEN};
+            on_update http://app:8080/streaming/hooks/authorize?token=${STREAMING_CALLBACK_TOKEN};
+            on_publish_done http://app:8080/streaming/hooks/disconnected?token=${STREAMING_CALLBACK_TOKEN};
+            notify_update_timeout 3s;
+            notify_update_strict on;
+        }
+    }
+}
+
+http {
+    include mime.types;
+    default_type application/octet-stream;
+    sendfile on;
+    server {
+        listen 8080;
+        server_name _;
+        location /hls/ {
+            alias /tmp/hls/;
+            add_header Cache-Control no-cache;
+            add_header Access-Control-Allow-Origin *;
+            types {
+                application/vnd.apple.mpegurl m3u8;
+                video/mp2t ts;
+            }
+        }
+        location /control {
+            allow 172.16.0.0/12;
+            allow 10.0.0.0/8;
+            allow 192.168.0.0/16;
+            deny all;
+            rtmp_control all;
+        }
+    }
+}

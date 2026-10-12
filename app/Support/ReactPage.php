@@ -26,9 +26,8 @@ class ReactPage
             // abrió la sala. Así funcionan tanto en 127.0.0.1 como desde un
             // teléfono conectado mediante el proxy local del puerto 8080.
             'recordingStatus' => $recording?->recording_status, 'viewers' => $recording?->espectadores_activos ?? 0, 'viewersUrl' => '/eventos/'.$e->id.'/espectadores', 'playbackUrl' => '/eventos/'.$e->id.'/estado',
-            // HLS is served by the local streaming proxy. Laravel itself lives on 8000,
-            // so using the current request origin here makes the player look in the wrong place.
-            'hlsUrl' => $recording ? request()->getScheme().'://'.request()->getHost().':8080/hls/'.$recording->stream_key.'.m3u8' : null,
+            // HLS can be served on the same HTTPS domain by the production reverse proxy.
+            'hlsUrl' => $recording ? (config('streaming.hls_base_url') ?: request()->getScheme().'://'.request()->getHost().':8080/hls').'/'.$recording->stream_key.'.m3u8' : null,
             'chatUrl' => route('eventos.chat.index', $e)];
         if ($manage) {
             $data += ['editUrl' => $scheduled ? null : route('admin.eventos.edit', $e), 'detailUrl' => route('admin.eventos.show', $e),
@@ -37,7 +36,7 @@ class ReactPage
                 'retryUrl' => $recording?->recording_status === 'failed' ? route('streaming.recording.retry', $e) : null,
                 'downloadUrl' => auth()->user()?->role === 'admin' && $recording?->recordingPath() ? route('admin.recording.download', $e) : null,
                 'generateUrl' => ! $scheduled && ! $recording?->iniciado_en && ! in_array($e->estado, ['finalizado', 'cancelado']) ? route('streaming.generar.clave', $e) : null,
-                'streamKey' => $recording?->stream_key, 'server' => 'rtmp://'.request()->getHost().':1935/live', 'statusUrl' => route('streaming.estado', $e)];
+                'streamKey' => $recording?->stream_key, 'server' => config('streaming.rtmp_url') ?: 'rtmp://'.request()->getHost().':1935/live', 'statusUrl' => route('streaming.estado', $e)];
         }
 
         return $data;

@@ -4,6 +4,8 @@ Plataforma institucional de transmisiones de la Universidad Estatal de Bolívar.
 
 > Estado de entrega: consulta [la guía de entrega del 12 de octubre de 2026](docs/ENTREGA_2026-10-12.md) antes de continuar el desarrollo. Resume lo implementado, los límites conocidos y el arranque local para PC, OBS y teléfono.
 
+Para desplegar en Dokploy, sigue [la guía de producción](docs/despliegue-dokploy.md).
+
 ## Tecnologías
 
 - Laravel 13 y PHP 8.3 o superior.
