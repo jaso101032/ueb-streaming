@@ -13,8 +13,8 @@ COPY . .
 RUN composer dump-autoload --no-dev --optimize --no-interaction
 
 FROM php:8.4-fpm-alpine AS runtime
-RUN apk add --no-cache nginx supervisor su-exec ffmpeg python3 icu-libs libzip libpng libjpeg-turbo freetype \
-    && apk add --no-cache --virtual .build-deps $PHPIZE_DEPS icu-dev libzip-dev libpng-dev libjpeg-turbo-dev freetype-dev libxml2-dev oniguruma-dev \
+RUN apk add --no-cache nginx supervisor su-exec ffmpeg python3 icu-libs libpq libzip libpng libjpeg-turbo freetype \
+    && apk add --no-cache --virtual .build-deps $PHPIZE_DEPS icu-dev libzip-dev libpng-dev libjpeg-turbo-dev freetype-dev libxml2-dev oniguruma-dev postgresql-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j"$(nproc)" bcmath exif gd intl mbstring opcache pcntl pdo_pgsql xml zip \
     && apk del .build-deps
