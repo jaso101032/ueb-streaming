@@ -4,6 +4,47 @@
 .studio-theme-toggle:focus-visible { outline:3px solid #9bc7ff; outline-offset:3px; }
 .studio-theme-toggle svg { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
 
+/* Day palette: separate the canvas, cards, inset sections and editable fields. */
+html:not([data-theme="dark"]) {
+    color-scheme:light;
+    --studio-border:#bdcee1;
+    --ui-line:#bdcee1;
+    --uebtv-line:#bdcee1;
+}
+html:not([data-theme="dark"]) body { background:#e9eff6; }
+html:not([data-theme="dark"]) :is(.uebtv-form-page,.uebtv-event-editor.uebtv-form-page,.react-auth-content,.access-entry,.uebtv-login-form-panel) { background:#e9eff6; }
+html:not([data-theme="dark"]) .watch-experience { background:radial-gradient(ellipse at 50% 0%,#d8e7f8 0,transparent 54%),#e9eff6; }
+html:not([data-theme="dark"]) :is(.studio-panel,.studio-metric,.schedule-form,.schedule-preview,.schedule-progress,.uebtv-form-section,.uebtv-catalog-search,.uebtv-catalog-card,.uebtv-upcoming-card,.event-preview,.react-auth-card,.access-card,.uebtv-login-form-wrap,.uebtv-watch-broadcast-card,.uebtv-video-card,.uebtv-library-empty,.channel-main,.channel-next) {
+    border-color:#bdcee1;
+    background-color:#f9fbfe;
+    box-shadow:0 12px 30px -24px #173c6580,0 1px 3px #173c6512;
+}
+html:not([data-theme="dark"]) .studio-dashboard .studio-metric { border-color:#bdcee1; background:linear-gradient(145deg,#fbfdff,#f2f6fb); }
+html:not([data-theme="dark"]) .studio-dashboard .studio-metric-live { border-color:#9fc1e9; background:linear-gradient(145deg,#e8f2ff,#dfeeff); }
+html:not([data-theme="dark"]) .studio-dashboard .studio-panel-heading { border-bottom:1px solid #c8d7e7; background:linear-gradient(180deg,#f7faff,#edf3fa); }
+html:not([data-theme="dark"]) :is(.studio-filter-group,.studio-event-row,.studio-shortcuts > a,.schedule-section + .schedule-section,.schedule-guide,.schedule-submit) { border-color:#c8d7e7; }
+html:not([data-theme="dark"]) .schedule-section:nth-child(even) { background:#f1f6fc; }
+html:not([data-theme="dark"]) :is(.schedule-progress,.schedule-submit,.schedule-guide) { background:#edf3fa; }
+html:not([data-theme="dark"]) .schedule-preview-body { background:#f9fbfe; }
+html:not([data-theme="dark"]) .react-stack > .react-stream-card { border-color:#b7cbe2; background:linear-gradient(145deg,#fbfdff,#f3f7fc); }
+html:not([data-theme="dark"]) .react-stream-card .react-credentials { border-color:#b4cce7; background:linear-gradient(120deg,#e6f0fb,#edf5fd); }
+html:not([data-theme="dark"]) .react-stream-card .react-credentials code { border-color:#b6cbe3; background:#fbfdff; }
+html:not([data-theme="dark"]) .uebtv-catalog-search { background:#f2f6fb; }
+html:not([data-theme="dark"]) .channel-now { background:#f9fbfe; }
+html:not([data-theme="dark"]) .channel-next-heading { border-color:#c8d7e7; background:linear-gradient(130deg,#f3f7fc,#eaf1f9); }
+html:not([data-theme="dark"]) .watch-experience .uebtv-watch-player-info { border-color:#bdcee1; background:#edf3fa; }
+html:not([data-theme="dark"]) .watch-experience .uebtv-live-chat { border-color:#bdcee1; }
+html:not([data-theme="dark"]) .watch-experience .uebtv-live-chat__form { border-color:#bdcee1; background:#edf3fa; }
+html:not([data-theme="dark"]) .watch-experience .uebtv-live-chat__note { background:#edf3fa; }
+html:not([data-theme="dark"]) :is(.schedule-form .uebtv-form-field,.uebtv-event-editor .uebtv-form-field,.react-form,.uebtv-catalog-search,.watch-experience .uebtv-live-chat__form) :is(input:not([type="file"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]),select,textarea) {
+    border-color:#aabed6;
+    background:#eef4fa;
+    color:#102b4c;
+}
+html:not([data-theme="dark"]) :is(.schedule-form .uebtv-form-field,.uebtv-event-editor .uebtv-form-field,.react-form,.uebtv-catalog-search,.watch-experience .uebtv-live-chat__form) :is(input,textarea)::placeholder { color:#637993; opacity:1; }
+html:not([data-theme="dark"]) :is(.schedule-form .uebtv-form-field,.uebtv-event-editor .uebtv-form-field,.react-form,.uebtv-catalog-search,.watch-experience .uebtv-live-chat__form) :is(input,select,textarea):focus { border-color:#3479c4; background:#fff; box-shadow:0 0 0 3px #3479c426; }
+html:not([data-theme="dark"]) .schedule-upload { border-color:#8eafd4; background:linear-gradient(130deg,#e8f1fc,#f2f7fd); }
+
 html[data-theme="dark"] { color-scheme:dark; --uebtv-line:#263c59; --uebtv-ink:#edf4ff; --uebtv-navy:#edf4ff; --uebtv-blue:#8fc2ff; }
 html[data-theme="dark"] body { background:#081426; color:#dce8f7; }
 html[data-theme="dark"] .min-h-screen, html[data-theme="dark"] .studio-workspace { background:#081426; }
