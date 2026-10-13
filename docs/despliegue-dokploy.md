@@ -26,6 +26,7 @@ Git ni las pegues en chats:
 | --- | --- |
 | `APP_KEY` | Salida de `php artisan key:generate --show`, generada localmente. |
 | `APP_URL` | URL HTTPS del dominio, por ejemplo `https://tv.ejemplo.edu.ec`. |
+| `APP_TIMEZONE` | Zona horaria institucional; para Ecuador, `America/Guayaquil` (predeterminada). |
 | `STREAMING_RTMP_URL` | `rtmp://tv.ejemplo.edu.ec:1935/live` (usa el host/IP público). |
 | `STREAMING_CALLBACK_TOKEN` | `openssl rand -hex 32` (64 caracteres hexadecimales). |
 | `DB_PASSWORD` | Contraseña aleatoria fuerte; puedes generar una con `openssl rand -hex 32`. |

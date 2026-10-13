@@ -48,7 +48,7 @@ class ScheduledVideoTest extends TestCase {
             $process = new \Symfony\Component\Process\Process(['/usr/bin/ffmpeg','-y','-f','lavfi','-i','color=c=blue:s=64x64:r=10','-t','2','-c:v','libx264','-pix_fmt','yuv420p','-f','mp4',$path]);
             $process->mustRun();
             $file = new \Illuminate\Http\UploadedFile($path, 'programa.mp4', 'video/mp4', null, true);
-            $this->post(route('admin.scheduled.store'), ['titulo'=>'Video subido','categoria_id'=>$event->categoria_id,'fecha_inicio'=>now()->addDay()->format('Y-m-d\TH:i'),'video'=>$file])->assertSessionHasNoErrors()->assertRedirect(route('admin.scheduled.index'));
+            $this->post(route('admin.scheduled.store'), ['titulo'=>'Video subido','categoria_id'=>$event->categoria_id,'fecha_inicio'=>now()->addMinutes(10)->format('Y-m-d\TH:i'),'video'=>$file])->assertSessionHasNoErrors()->assertRedirect(route('admin.scheduled.index'));
             $created = Evento::where('titulo','Video subido')->firstOrFail();
             $this->assertNotNull($created->scheduledVideo);
             $this->assertNull($created->transmision);
