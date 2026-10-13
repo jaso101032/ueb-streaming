@@ -22,6 +22,7 @@
                 'state' => $event->scheduledVideo->processing_status !== 'ready' ? $event->scheduledVideo->processing_status : ($timeline[$event->id]['state'] ?? 'cancelled'),
                 'error' => $event->scheduledVideo->processing_error,
                 'retryUrl' => route('admin.scheduled.retry', $event),
+                'stateUrl' => route('scheduled.state', $event),
                 'sourceBytes' => $event->scheduledVideo->source_bytes, 'optimizedBytes' => $event->scheduledVideo->optimized_bytes, 'url' => route('eventos.show', $event),
             ])->values(),
             'pagination' => ['total' => $events->total(), 'current' => $events->currentPage(), 'last' => $events->lastPage(),

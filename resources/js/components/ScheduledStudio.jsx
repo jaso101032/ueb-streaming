@@ -76,11 +76,64 @@ function InstitutionalAds({ action, csrf, ads, old, uploadLimits }) {
     const [title, setTitle] = useState(old.ad_title || "");
     const [fileError, setFileError] = useState("");
     const [submitting, setSubmitting] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
+    const [submitError, setSubmitError] = useState("");
+    const [eventStates, setEventStates] = useState(() => Object.fromEntries(events.map((event) => [event.id, event.state])));
     useEffect(() => {
         const reset = () => setSubmitting(false);
         window.addEventListener("pageshow", reset);
         return () => window.removeEventListener("pageshow", reset);
     }, []);
+    useEffect(() => {
+        let stopped = false, timer;
+        const poll = async () => {
+            const pending = events.filter((event) => ["pending", "processing"].includes(eventStates[event.id]));
+            if (!pending.length) return;
+            const results = await Promise.all(pending.map(async (event) => {
+                try {
+                    const response = await fetch(event.stateUrl, { cache: "no-store", headers: { Accept: "application/json" } });
+                    if (!response.ok) return null;
+                    return { id: event.id, state: (await response.json()).state };
+                } catch { return null; }
+            }));
+            if (stopped) return;
+            const completed = results.filter((item) => item && item.state !== "processing");
+            if (completed.length) {
+                setEventStates((current) => ({ ...current, ...Object.fromEntries(completed.map(({ id, state }) => [id, state])) }));
+                if (!title.trim() && !date && !file) window.setTimeout(() => window.location.reload(), 800);
+            }
+            timer = window.setTimeout(poll, 3000);
+        };
+        timer = window.setTimeout(poll, 2000);
+        return () => { stopped = true; window.clearTimeout(timer); };
+    }, [events, eventStates, title, date, file]);
+    const submitScheduled = (event) => {
+        event.preventDefault();
+        if (submitting) return;
+        setSubmitting(true);
+        setUploadProgress(0);
+        setSubmitError("");
+        const request = new XMLHttpRequest();
+        request.open("POST", action);
+        request.upload.addEventListener("progress", (progress) => {
+            if (!progress.lengthComputable) return;
+            const percent = Math.round((progress.loaded / progress.total) * 100);
+            setUploadProgress(percent);
+        });
+        request.addEventListener("load", () => {
+            if (request.status >= 500) {
+                setSubmitError("El servidor no pudo procesar la carga. Inténtalo de nuevo en un momento.");
+                setSubmitting(false);
+                return;
+            }
+            window.location.assign(request.responseURL || action);
+        });
+        request.addEventListener("error", () => {
+            setSubmitError("Se interrumpió la subida. Revisa tu conexión e inténtalo de nuevo.");
+            setSubmitting(false);
+        });
+        request.send(new FormData(event.currentTarget));
+    };
     const choose = (event) => {
         const file = event.target.files[0];
         const error = file && (!/\.(mp4|m4v|mov|mkv|webm|avi|wmv|mpeg|mpg)$/i.test(file.name)
@@ -289,7 +342,7 @@ export default function ScheduledStudio({
                     method="POST"
                     action={action}
                     encType="multipart/form-data"
-                    onSubmit={() => setSubmitting(true)}
+                    onSubmit={submitScheduled}
                     aria-busy={submitting}
                 >
                     <input type="hidden" name="_token" value={csrf} />
@@ -416,7 +469,11 @@ export default function ScheduledStudio({
                     <div className="schedule-submit">
                         <p role="status">
                             {submitting ? (
-                                "Subiendo y verificando el video. No cierres esta página…"
+                                uploadProgress < 100
+                                    ? `Subiendo video al servidor: ${uploadProgress}%. No cierres esta página…`
+                                    : "Subida completa; verificando el video y registrando la programación…"
+                            ) : submitError ? (
+                                submitError
                             ) : (
                                 <>
                                     Tu contenido se mostrará como{" "}
@@ -434,6 +491,7 @@ export default function ScheduledStudio({
                                 : "Subir y programar emisión"}
                             <Icon name="arrow" size={17} />
                         </button>
+                        {submitting && <progress className="schedule-upload-progress" max="100" value={uploadProgress} aria-label="Progreso de subida" />}
                     </div>
                 </form>
                 <aside
@@ -552,7 +610,8 @@ export default function ScheduledStudio({
                     </span>
                 </div>
                 {events.length ? (
-                    events.map((event) => (
+                        events.map((event) => (
+                            (() => { const state = eventStates[event.id] || event.state; return (
                         <div className="schedule-event" key={event.id}>
                             <div className="schedule-date">
                                 <strong>{event.day}</strong>
@@ -585,16 +644,17 @@ export default function ScheduledStudio({
                                 </small>
                             )}
                             {event.error && <p role="status">{event.error}</p>}
-                            {event.state === "failed" && (
+                            {state === "failed" && (
                                 <Action url={event.retryUrl}>Reintentar</Action>
                             )}
                             <span className="schedule-pill">
-                                {stateLabels[event.state]}
+                                {stateLabels[state]}
                             </span>
                             <a className="studio-text-link" href={event.url}>
                                 Abrir sala ↗
                             </a>
                         </div>
+                            ); })()
                     ))
                 ) : (
                     <div className="schedule-empty">

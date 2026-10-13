@@ -28,6 +28,7 @@
 .schedule-submit { padding:22px 30px; background:#f9fbfe; border-top:1px solid #e5edf7; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:15px; }
 .schedule-submit p { color:#6c819d; font-size:10px; }
 .schedule-submit .studio-button { font-size:12px; }
+.schedule-upload-progress { flex: 0 0 100%; width: 100%; height: 8px; accent-color: #2563eb; }
 .schedule-preview { min-width:0; border-radius:18px; overflow:hidden; background:#fff; border:1px solid #dbe6f3; }
 .schedule-preview-art { position:relative; display:flex; flex-direction:column; align-items:center; justify-content:space-between; min-height:230px; padding:22px; color:white; background:radial-gradient(ellipse at 100% 100%,#245c9a,transparent 75%),#071a35; }
 .schedule-preview-brand { align-self:start; font-weight:700; font-size:18px; letter-spacing:-.05em; }
