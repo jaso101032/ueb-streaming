@@ -2,6 +2,13 @@
 
 Plataforma institucional de transmisiones de la Universidad Estatal de Bolívar. Permite programar eventos, emitir desde OBS mediante RTMP, reproducir la señal en HLS y publicar videos archivados en un catálogo tipo YouTube.
 
+La sección administrativa **Parrilla 24/7** separa programas con horario de
+publicidad institucional. Los anuncios activos y convertidos cubren los huecos
+de `/senal` en rotación y muestran una «P»; el directo y la programación tienen
+prioridad. Se necesitan piezas oficiales autorizadas: sin ellas, el canal
+mantiene la pantalla de espera. Detalles en
+[contenido programado](docs/contenido-programado.md).
+
 > Estado de entrega: consulta [la guía de entrega del 12 de octubre de 2026](docs/ENTREGA_2026-10-12.md) antes de continuar el desarrollo. Resume lo implementado, los límites conocidos y el arranque local para PC, OBS y teléfono.
 
 Para desplegar en Dokploy, sigue [la guía de producción](docs/despliegue-dokploy.md).
@@ -253,6 +260,13 @@ El catálogo `/eventos` permite combinar `q` (título), `facultad_id`, `categori
 Administradores y operadores pueden pulsar **Retirar** junto a un mensaje en la sala. La eliminación es lógica: se guardan la fecha y el usuario moderador; no se muestra el mensaje a los espectadores. Los usuarios normales no pueden moderar y cada mensaje se valida contra su evento.
 
 El chat conserva un máximo de 80 mensajes en cada respuesta. Usa una caché compartida de 3 segundos por evento y ETag para responder sin cuerpo si no cambió. Los envíos y la moderación invalidan esa caché. El navegador consulta cada 5 segundos, pausa las consultas al ocultar la pestaña y aumenta la espera hasta 30 segundos ante fallos. Las retiradas también se reflejan en las otras sesiones durante sus actualizaciones. No utiliza WebSockets y no se ha realizado una prueba de carga concurrente; estos cambios reducen consultas y transferencia, pero no certifican una capacidad de espectadores.
+
+La sala muestra **espectadores conectados** únicamente en un directo. En una
+grabación o video programado muestra **visualizaciones**: se registra una tras
+3 segundos de reproducción real, como máximo una por navegador y video al día.
+La visita a la página por sí sola no incrementa este contador. La migración
+`2026_10_12_200000_create_event_video_views_table.php` debe aplicarse antes de
+publicar esta versión.
 
 El formulario conserva el borrador ante errores y explica límites de envío, sesión vencida y fallos de conexión. No reintenta automáticamente los envíos para evitar duplicados.
 

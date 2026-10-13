@@ -358,6 +358,16 @@ button:disabled {
     gap: 8px;
 }
 .studio-brand--uebtv { gap:0; }
+/* On desktop the channel identity starts at the viewport edge, while the
+   account controls retain their previous right-hand alignment. */
+@media (min-width:1101px) {
+    .studio-header-inner {
+        width:100%;
+        max-width:none;
+        padding-left:28px;
+        padding-right:max(24px, calc((100vw - 1360px) / 2 + 32px));
+    }
+}
 .studio-brand-mascot {
     display:block;
     position:relative;
@@ -373,7 +383,7 @@ button:disabled {
 }
 .studio-sidebar-footer .university-mark { display:flex; justify-content:center; width:100%; }
 .studio-sidebar-footer .university-mark__logo {
-    width:min(180px,100%);
+    width:min(210px,100%);
     height:auto;
     padding:0;
     border:0;
@@ -383,8 +393,8 @@ button:disabled {
 }
 .uebtv-brand-logo--header {
     box-sizing:border-box;
-    width:220px;
-    height:110px;
+    width:210px;
+    height:105px;
     padding:0;
     overflow:visible;
     border-radius:0;
@@ -791,6 +801,7 @@ button:disabled {
 .channel-layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 24px; align-items: start; }
 .channel-screen { position: relative; aspect-ratio: 16 / 9; background: #061327; border-radius: 24px; overflow: hidden; box-shadow: 0 20px 50px #071a3520; }
 .channel-screen .uebtv-video { width: 100%; height: 100%; object-fit: contain; }
+.channel-ad-indicator { position:absolute; z-index:5; top:16px; left:16px; display:grid; place-items:center; width:30px; height:30px; border:1px solid #ffffffc9; border-radius:6px; background:#071a35d9; color:#fff; font-size:20px; font-weight:800; line-height:1; box-shadow:0 3px 12px #0007; pointer-events:none; }
 .channel-screen .uebtv-player-empty { height: 100%; min-height: 0; }
 .channel-now { margin-top: 22px; padding: 26px; }
 .channel-now h2 { font-size: clamp(24px, 3vw, 34px); margin: 16px 0 10px; letter-spacing: -.035em; }
@@ -812,6 +823,7 @@ button:disabled {
 .schedule-totals p { color: #6a809d; font-size: 12px; }
 @media(max-width: 1000px) { .channel-layout { grid-template-columns: minmax(0,1fr); } }
 @media(max-width: 600px) { .schedule-totals { grid-template-columns: minmax(0,1fr); } .channel-screen { border-radius: 14px; } }
+@media(max-width:600px) { .channel-ad-indicator { top:9px; left:9px; width:25px; height:25px; font-size:17px; } }
 
 /* Broadcast identity: contained to the continuous channel. */
 .channel-page { max-width: 1500px; padding-top: 38px; padding-bottom: 56px; }
@@ -842,7 +854,7 @@ button:disabled {
 .channel-heading h1 em { font-style:normal; color:#2864ad; }
 .channel-heading > div > p:last-child { color:#637892; font-size:15px; }
 .channel-heading-actions { display:flex; align-items:center; justify-content:flex-end; gap:20px; }
-.channel-institution-mark { display:block; width:clamp(145px,14vw,220px); height:auto; object-fit:contain; }
+.channel-institution-mark { display:block; width:clamp(180px,17vw,210px); height:auto; object-fit:contain; }
 .channel-catalog { display:flex; align-items:center; gap:12px; border:1px solid #4c7fb8; padding:11px 14px; border-radius:10px; color:#174f90; font-size:12px; font-weight:750; background:#f8fbffcc; transition:background .2s,transform .2s; white-space:nowrap; }
 .channel-catalog:hover { color:#123e70; background:#fff; transform:translateY(-2px); }
 .channel-layout { grid-template-columns:minmax(0,1fr) 330px; gap:26px; }

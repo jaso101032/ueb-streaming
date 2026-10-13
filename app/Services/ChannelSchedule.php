@@ -3,9 +3,11 @@
 namespace App\Services;
 
 use App\Models\Evento;
+use App\Models\InstitutionalAd;
 use App\Models\ScheduledVideo;
 use App\Models\Transmision;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Storage;
 
 class ChannelSchedule
 {
@@ -70,6 +72,28 @@ class ChannelSchedule
             ->where('last_signal_at', '>', now()->subSeconds(ChannelClock::SIGNAL_TTL))
             ->whereHas('evento', fn ($q) => $q->where('estado', 'en_vivo')->whereDoesntHave('scheduledVideo'))
             ->orderBy('iniciado_en')->orderBy('id')->first();
+    }
+
+    public function advertisement(): ?array
+    {
+        $ads = InstitutionalAd::where('is_active', true)->where('processing_status', 'ready')
+            ->whereNotNull('path')->where('duration', '>', 0)->orderBy('id')->get()
+            ->filter(fn ($ad) => Storage::disk('local')->exists($ad->path));
+        $total = $ads->sum('duration');
+        if ($total <= 0) return null;
+
+        // A shared clock keeps every viewer on the same advertisement and
+        // automatically loops the available institutional material in gaps.
+        $anchor = $ads->first()->ready_at?->timestamp ?? $ads->first()->created_at?->timestamp ?? 0;
+        $offset = max(0, now()->timestamp - $anchor) % $total;
+        foreach ($ads as $ad) {
+            if ($offset < $ad->duration) {
+                return ['ad' => $ad, 'position' => $offset, 'duration' => $ad->duration, 'state' => 'playing'];
+            }
+            $offset -= $ad->duration;
+        }
+
+        return null;
     }
 
     public function summary(?array $items = null): array

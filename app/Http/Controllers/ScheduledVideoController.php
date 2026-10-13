@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Categoria;
 use App\Models\Evento;
+use App\Models\InstitutionalAd;
 use App\Services\ChannelSchedule;
 use App\Services\ScheduledVideoProcessor;
 use Carbon\Carbon;
@@ -17,7 +18,9 @@ class ScheduledVideoController extends Controller
 {
     public function index()
     {
-        return view('admin.scheduled.index', ['events' => Evento::whereHas('scheduledVideo')->with('scheduledVideo')->latest()->paginate(12), 'categories' => Categoria::orderBy('nombre')->get(), 'timeline' => ($timeline = app(ChannelSchedule::class)->timeline()), 'summary' => app(ChannelSchedule::class)->summary($timeline)]);
+        return view('admin.scheduled.index', ['events' => Evento::whereHas('scheduledVideo')->with('scheduledVideo')->latest()->paginate(12),
+            'ads' => InstitutionalAd::latest()->get(), 'categories' => Categoria::orderBy('nombre')->get(),
+            'timeline' => ($timeline = app(ChannelSchedule::class)->timeline()), 'summary' => app(ChannelSchedule::class)->summary($timeline)]);
     }
 
     public function store(Request $request)

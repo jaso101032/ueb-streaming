@@ -22,7 +22,9 @@ y reproducción bajo demanda.
 
 La fecha elegida es el inicio mínimo: los videos se ordenan por fecha e ID y se
 reproducen de uno en uno. No se repiten automáticamente al agotarse la lista.
-Si hay un hueco entre horarios, se anuncia la próxima emisión. Un directo con
+Si hay un hueco entre horarios, se reproducen en bucle los anuncios
+institucionales activos que estén convertidos; si no hay ninguno, se anuncia
+la próxima emisión o se muestra la pantalla de espera. Un directo con
 publicador activo interrumpe el contenido; al desconectarse o finalizar, el video
 continúa desde el segundo interrumpido y se desplazan las emisiones siguientes.
 Si hay varios directos, permanece el que empezó primero hasta que termine.
@@ -34,6 +36,33 @@ a los 30 segundos para evitar un canal bloqueado por una desconexión abrupta.
 El navegador consulta cada 3 segundos y corrige su posición con el reloj del
 servidor. El autoplay empieza silenciado por las restricciones del navegador.
 No es una nueva salida RTMP: es un canal sincronizado para los espectadores web.
+
+## Publicidad institucional
+
+En **Parrilla 24/7 → Publicidad institucional**, el administrador sube piezas
+oficiales/autorizadas sin asignarles fecha ni categoría. Este formulario está
+separado del de **Programación con horario**: los anuncios no son eventos ni
+aparecen en el catálogo. Se convierten al mismo MP4 H.264/AAC optimizado mediante
+`php artisan scheduled:process --watch`. El panel permite activar/desactivar
+cada pieza y reintentar conversiones fallidas. Desactivar conserva el archivo,
+pero lo retira de la señal y bloquea su URL de reproducción.
+
+Prioridad de `/senal`: **directo → programa programado → publicidad → espera**.
+Los anuncios activos rotan con el reloj compartido del servidor cuando no hay
+una emisión de mayor prioridad. En pantalla se muestra una **P** durante la
+publicidad, nunca durante un programa o directo. La señal no presenta barra de
+avance para anuncios ni programas en curso: las posiciones se corrigen con el
+reloj del servidor. El usuario sí puede ajustar volumen o pantalla completa.
+El inicio automático se intenta silenciado para respetar las restricciones del
+navegador; cuando el usuario habilita sonido, la preferencia se conserva en
+las transiciones dentro de la página. No es DRM: cualquier archivo reproducible
+en la web puede ser guardado por un usuario con herramientas externas.
+
+**La continuidad 24/7 depende de cargar al menos una pieza autorizada y de
+mantener el procesador y el servidor disponibles.** La instalación no incluye
+anuncios de ejemplo ni videos institucionales no autorizados. La migración
+`2026_10_12_210000_create_institutional_ads_table.php` debe aplicarse en cada
+entorno antes de usar la nueva sección.
 
 El panel suma la duración verificada con FFprobe de todos los videos disponibles
 (no solo la página actual) y muestra el tiempo de video pendiente. Excluye los

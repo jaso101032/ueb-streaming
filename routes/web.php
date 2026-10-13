@@ -14,6 +14,7 @@ use App\Models\Evento;
 Route::get('/', fn () => redirect()->route('channel.index'));
 Route::get('/senal', [\App\Http\Controllers\ChannelController::class, 'index'])->name('channel.index');
 Route::get('/senal/estado', [\App\Http\Controllers\ChannelController::class, 'state'])->name('channel.state');
+Route::get('/senal/publicidad/{ad}/video', [\App\Http\Controllers\InstitutionalAdController::class, 'media'])->name('channel.ad.media');
 
 Route::get('/eventos', [EventoPublicoController::class, 'index'])->name('eventos.index');
 Route::get('/eventos/{evento}/reproduccion', [\App\Http\Controllers\RecordingController::class, 'state'])->name('eventos.playback-state');
@@ -25,6 +26,11 @@ Route::post('/eventos/{evento}/espectadores', [TransmisionController::class, 'vi
     ->middleware('throttle:30,1')
     ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\PreventRequestForgery::class])
     ->name('eventos.viewers');
+// A view is recorded only after the browser has actually played a video.
+Route::post('/eventos/{evento}/visualizaciones', [\App\Http\Controllers\VideoViewController::class, 'store'])
+    ->middleware('throttle:120,1')
+    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\PreventRequestForgery::class])
+    ->name('eventos.video-views');
 Route::get('/eventos/{evento}', [EventoPublicoController::class, 'show'])->name('eventos.show');
 Route::get('/eventos/{evento}/chat', [ChatMessageController::class, 'index'])->name('eventos.chat.index');
 Route::post('/eventos/{evento}/chat', [ChatMessageController::class, 'store'])->middleware(['auth', 'throttle:30,1'])->name('eventos.chat.store');
@@ -87,6 +93,9 @@ Route::post('/streaming/hooks/authorize', \App\Http\Controllers\StreamAuthorizat
 
 require __DIR__.'/auth.php';
 Route::middleware(['auth', 'role:admin'])->prefix('admin/contenido-programado')->group(function () {
+    Route::post('/publicidad', [\App\Http\Controllers\InstitutionalAdController::class, 'store'])->middleware('throttle:10,1')->name('admin.ads.store');
+    Route::post('/publicidad/{ad}/estado', [\App\Http\Controllers\InstitutionalAdController::class, 'toggle'])->name('admin.ads.toggle');
+    Route::post('/publicidad/{ad}/reintentar', [\App\Http\Controllers\InstitutionalAdController::class, 'retry'])->middleware('throttle:5,1')->name('admin.ads.retry');
     Route::post('/{evento}/reintentar', [\App\Http\Controllers\ScheduledVideoController::class, 'retry'])->middleware('throttle:5,1')->name('admin.scheduled.retry');
     Route::get('/', [\App\Http\Controllers\ScheduledVideoController::class, 'index'])->name('admin.scheduled.index');
     Route::post('/', [\App\Http\Controllers\ScheduledVideoController::class, 'store'])->middleware('throttle:10,1')->name('admin.scheduled.store');

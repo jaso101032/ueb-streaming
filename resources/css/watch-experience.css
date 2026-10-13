@@ -10,6 +10,8 @@
 .watch-experience .uebtv-watch-player-info { display:flex; align-items:center; gap:14px; min-height:50px; padding:0 16px; border:1px solid #d8e4f2; border-top:0; background:#fff; color:#627790; font-size:11px; }
 .watch-experience .uebtv-watch-player-info__viewers { display:inline-flex; align-items:center; gap:8px; padding:7px 11px; border:1px solid #ffb3bf; border-radius:999px; background:#fff0f3; color:#c91d3d; font-size:12px; font-weight:800; letter-spacing:.01em; }
 .watch-experience .uebtv-watch-player-info__viewers strong { color:#ef2047; font-size:15px; line-height:1; }
+.watch-experience .uebtv-watch-player-info__viewers.is-video-views { border-color:#8db7e2; background:#dfedfc; color:#174c83; }
+.watch-experience .uebtv-watch-player-info__viewers.is-video-views strong { color:#155ca4; }
 .watch-experience .uebtv-watch-player-info__viewers svg { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
 .watch-experience .uebtv-watch-player-info__brand { margin-left:auto; color:#173d6c; font-size:10px; font-weight:800; letter-spacing:.12em; }
 .watch-experience .uebtv-watch-badge { border-radius:6px; }

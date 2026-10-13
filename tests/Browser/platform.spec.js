@@ -47,6 +47,20 @@ test("public catalog, empty search, room and mobile layout render without React 
     });
     expect(errors).toEqual([]);
 });
+test("archived video shows views instead of connected spectators and counts playback", async ({ page }) => {
+    await page.route("**/test-video.mp4", (route) => route.fulfill({
+        body: readFileSync("/tmp/uebtv-react-test.mp4"),
+        contentType: "video/mp4",
+        headers: { "Accept-Ranges": "bytes" },
+    }));
+    await page.goto("/eventos/1");
+    await expect(page.getByLabel("0 visualizaciones")).toBeVisible();
+    await expect(page.getByText(/espectadores? conectados?/)).toHaveCount(0);
+    await page.getByRole("button", { name: "Reproducir", exact: true }).click();
+    await expect(page.getByLabel("1 visualización")).toBeVisible({ timeout: 15000 });
+    await page.reload();
+    await expect(page.getByLabel("1 visualización")).toBeVisible();
+});
 test("access, profile, administration, event form preview and mobile navigation", async ({
     page,
 }) => {
@@ -91,7 +105,7 @@ test("access, profile, administration, event form preview and mobile navigation"
     });
     await page.goto("/admin/eventos");
     await expect(
-        page.getByRole("button", { name: "Eliminar", exact: true }),
+        page.getByRole("button", { name: "Eliminar", exact: true }).first(),
     ).toBeVisible();
     await page.goto("/admin/eventos/1");
     await expect(
@@ -99,7 +113,7 @@ test("access, profile, administration, event form preview and mobile navigation"
     ).toBeVisible();
     await page.goto("/streaming/control");
     await expect(
-        page.getByRole("heading", { name: "Control de streaming." }),
+        page.getByRole("heading", { name: "Emitir con OBS." }),
     ).toBeVisible();
     await page.goto("/admin/contenido-programado");
     await expect(
@@ -130,7 +144,7 @@ test("chat sends and moderates safely; regular user has no destructive controls"
 }) => {
     const text = "Mensaje de prueba React " + Date.now();
     await login(page);
-    await page.goto("/eventos/1");
+    await page.goto("/eventos/2");
     await page.getByRole("textbox", { name: "Tu mensaje" }).fill(text);
     await page.getByRole("button", { name: "Enviar mensaje" }).click();
     await expect(
@@ -149,7 +163,7 @@ test("chat sends and moderates safely; regular user has no destructive controls"
         .getByRole("button", { name: "Cerrar sesión", exact: true })
         .click();
     await login(page, "student@ui.test");
-    await page.goto("/eventos/1");
+    await page.goto("/eventos/2");
     await expect(
         page.getByRole("button", { name: /Retirar mensaje/ }),
     ).toHaveCount(0);
@@ -167,7 +181,7 @@ test("chat preserves drafts on rejected sends, escapes content and reconnects", 
     let code = 429,
         offline = false,
         polls = 0;
-    await page.route("**/eventos/1/chat", async (route) => {
+    await page.route("**/eventos/2/chat", async (route) => {
         if (route.request().method() === "POST") {
             if (offline) return route.abort();
             return route.fulfill({
@@ -188,7 +202,7 @@ test("chat preserves drafts on rejected sends, escapes content and reconnects", 
             headers: { ETag: '"mock-feed"' },
         });
     });
-    await page.goto("/eventos/1");
+    await page.goto("/eventos/2");
     await expect(
         page.locator(".uebtv-chat-message").filter({ hasText: "<script>" }),
     ).toBeVisible();
@@ -452,7 +466,7 @@ test("continuous channel switches from schedule to live and resumes before the n
     await expect(
         page.getByRole("heading", { name: "Encuentro en directo" }),
     ).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText("● En directo", { exact: true })).toBeVisible();
+    await expect(page.locator(".uebtv-player-live")).toBeVisible();
     mode = "scheduled";
     position = 18;
     await expect(
@@ -472,6 +486,58 @@ test("continuous channel switches from schedule to live and resumes before the n
     await page.setViewportSize({ width: 390, height: 844 });
     await expect(page.locator("body")).toHaveJSProperty("scrollWidth", 390);
     expect(errors).toEqual([]);
+});
+
+test("institutional advertising fills a channel gap with a P and no seek control", async ({ page }) => {
+    const errors = [];
+    page.on("pageerror", (error) => errors.push(error.message));
+    await page.route("**/senal/estado", (route) => route.fulfill({ json: {
+        mode: "advertisement", event: null,
+        advertisement: { id: 7, title: "Campaña institucional", mediaUrl: "/mock-ad.mp4" },
+        playback: { state: "playing", position: 1, duration: 60 },
+        next: [], summary: { count: 0, totalSeconds: 0, remainingSeconds: 0 },
+    } }));
+    const bytes = readFileSync("/tmp/uebtv-react-test.mp4");
+    await page.route("**/mock-ad.mp4", (route) => {
+        const range = route.request().headers()["range"];
+        const start = range ? Number(range.match(/bytes=(\d+)/)?.[1] || 0) : 0;
+        return route.fulfill({ status: range ? 206 : 200, contentType: "video/mp4",
+            headers: { "Accept-Ranges": "bytes", ...(range ? { "Content-Range": `bytes ${start}-${bytes.length - 1}/${bytes.length}` } : {}) },
+            body: bytes.subarray(start) });
+    });
+    await page.goto("/senal");
+    await expect(page.getByLabel("Publicidad institucional")).toBeVisible();
+    await expect(page.getByText("P · Publicidad institucional")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Campaña institucional" })).toBeVisible();
+    await expect(page.getByRole("slider", { name: "Posición del video" })).toHaveCount(0);
+    expect(errors).toEqual([]);
+});
+
+test("admin sees separate programming and institutional advertising forms on mobile", async ({ page }) => {
+    await login(page);
+    await page.goto("/admin/contenido-programado");
+    await expect(page.getByRole("link", { name: "Programación con horario" })).toBeVisible();
+    await page.getByRole("link", { name: "Publicidad institucional" }).click();
+    await expect(page.getByRole("heading", { name: "Publicidad institucional" })).toBeVisible();
+    await expect(page.getByLabel("Nombre del anuncio")).toBeVisible();
+    await expect(page.getByLabel("Archivo de video")).toBeVisible();
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect(page.locator("body")).toHaveJSProperty("scrollWidth", 390);
+});
+
+test("desktop header places UEBTV and mascot near the left edge without changing mobile layout", async ({ page }) => {
+    await page.setViewportSize({ width: 1863, height: 900 });
+    await login(page);
+    await page.goto("/eventos");
+    const brand = page.locator(".studio-header .studio-brand--uebtv");
+    const desktop = await brand.boundingBox();
+    expect(desktop).not.toBeNull();
+    expect(desktop.x).toBeLessThanOrEqual(36);
+    expect(desktop.x).toBeGreaterThanOrEqual(20);
+    await expect(brand.locator(".studio-brand-mascot")).toBeVisible();
+    await expect(brand.locator(".uebtv-brand-logo--header")).toBeVisible();
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect(page.locator("body")).toHaveJSProperty("scrollWidth", 390);
 });
 
 test("scheduled upload accepts a real MP4 larger than the old 8 MB POST limit", async ({

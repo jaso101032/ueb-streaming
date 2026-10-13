@@ -3,9 +3,28 @@ import { useShell, statusLabel } from "./shared";
 import Player from "./Player";
 import Chat from "./Chat";
 import UebtvMark from "./UebtvMark";
+
+function browserViewerKey() {
+    const storageKey = "uebtv-viewer-id";
+    let viewer;
+    try { viewer = localStorage.getItem(storageKey); } catch {}
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(viewer || "")) {
+        const bytes = new Uint8Array(16);
+        if (globalThis.crypto?.getRandomValues) globalThis.crypto.getRandomValues(bytes);
+        else for (let i = 0; i < bytes.length; i++) bytes[i] = Math.floor(Math.random() * 256);
+        bytes[6] = (bytes[6] & 0x0f) | 0x40;
+        bytes[8] = (bytes[8] & 0x3f) | 0x80;
+        const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
+        viewer = `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+        try { localStorage.setItem(storageKey, viewer); } catch {}
+    }
+    return viewer;
+}
+
 export default function Watch({
     event: e,
     initialReady,
+    videoViews = 0,
     messages,
     canModerate,
     related,
@@ -16,9 +35,11 @@ export default function Watch({
         left = useRef(),
         chat = useRef(),
         draft = useRef(""),
+        viewProgress = useRef({ last: null, seconds: 0, sent: false, working: false, retryAt: 0 }),
         [feedback, setFeedback] = useState(""),
         [scheduledState, setScheduledState] = useState(e.scheduled?.state),
         [viewerCount, setViewerCount] = useState(e.viewers ?? 0),
+        [viewCount, setViewCount] = useState(videoViews),
         [detailsOpen, setDetailsOpen] = useState(false);
     useEffect(() => {
         const resize = () => {
@@ -82,12 +103,7 @@ export default function Watch({
     }, [e.playbackUrl, e.status, initialReady, e.scheduled]);
     useEffect(() => {
         if (e.status !== "en_vivo" || !e.viewersUrl) return;
-        const storageKey = "uebtv-viewer-id";
-        let viewer = localStorage.getItem(storageKey);
-        if (!viewer) {
-            viewer = crypto.randomUUID?.() || `${Date.now()}-${Math.random()}`;
-            localStorage.setItem(storageKey, viewer);
-        }
+        const viewer = browserViewerKey();
         let stopped = false, timer, controller;
         async function heartbeat() {
             controller?.abort();
@@ -110,6 +126,36 @@ export default function Watch({
         document.addEventListener("visibilitychange", resume);
         return () => { stopped = true; clearTimeout(timer); controller?.abort(); document.removeEventListener("visibilitychange", resume); };
     }, [e.status, e.viewersUrl, shell.csrf]);
+    function onVideoProgress(event) {
+        const video = event.currentTarget;
+        const progress = viewProgress.current;
+        const current = video.currentTime;
+        if (video.paused || video.seeking || !Number.isFinite(current)) {
+            progress.last = current;
+            return;
+        }
+        if (progress.last !== null) {
+            const elapsed = current - progress.last;
+            if (elapsed > 0 && elapsed <= 1.5) progress.seconds += elapsed;
+        }
+        progress.last = current;
+        if (progress.seconds < 3 || progress.sent || progress.working || Date.now() < progress.retryAt || !e.videoViewsUrl) return;
+        progress.working = true;
+        fetch(e.videoViewsUrl, {
+            method: "POST",
+            credentials: "same-origin",
+            headers: { Accept: "application/json", "Content-Type": "application/json" },
+            body: JSON.stringify({ viewer: browserViewerKey() }),
+        }).then(async (response) => {
+            if (!response.ok) throw Error("No se pudo registrar la visualización");
+            const data = await response.json();
+            if (Number.isInteger(data.views)) setViewCount(data.views);
+            progress.sent = true;
+        }).catch(() => { progress.retryAt = Date.now() + 10000; })
+            .finally(() => { progress.working = false; });
+    }
+    const showLiveViewers = e.status === "en_vivo" && !e.scheduled;
+    const showVideoViews = !showLiveViewers && (Boolean(e.videoUrl) || ["playing", "ended"].includes(scheduledState));
     async function share(native = false) {
         try {
             if (native && navigator.share)
@@ -177,13 +223,18 @@ export default function Watch({
                                     event={e}
                                     onScheduledState={setScheduledState}
                                     recordingRef={recordingVideo}
+                                    onVideoProgress={onVideoProgress}
                                 />
                             </div>
                             <div className="uebtv-watch-player-info" aria-label="Información de la transmisión">
-                                <span className="uebtv-watch-player-info__viewers" title={`${viewerCount} ${viewerCount === 1 ? "espectador conectado" : "espectadores conectados"}`} aria-label={`${viewerCount} ${viewerCount === 1 ? "espectador conectado" : "espectadores conectados"}`}>
+                                {showLiveViewers && <span className="uebtv-watch-player-info__viewers" title={`${viewerCount} ${viewerCount === 1 ? "espectador conectado" : "espectadores conectados"}`} aria-label={`${viewerCount} ${viewerCount === 1 ? "espectador conectado" : "espectadores conectados"}`}>
                                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 19v-1.3c0-2-1.8-3.7-4-3.7s-4 1.7-4 3.7V19m4-5a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm5-5.2a2.5 2.5 0 0 1 0 4.7m1 5.5v-.7c0-1.5-1-2.8-2.5-3.4M7 8.8a2.5 2.5 0 0 0 0 4.7m-1 1.4a3.8 3.8 0 0 0-2 3.4v.7" /></svg>
                                     <strong>{viewerCount}</strong><span className="uebtv-watch-player-info__viewers-label">{viewerCount === 1 ? "espectador conectado" : "espectadores conectados"}</span>
-                                </span>
+                                </span>}
+                                {showVideoViews && <span className="uebtv-watch-player-info__viewers is-video-views" title={`${viewCount} ${viewCount === 1 ? "visualización" : "visualizaciones"}`} aria-label={`${viewCount} ${viewCount === 1 ? "visualización" : "visualizaciones"}`}>
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-5 9.5-5 9.5 5 9.5 5-3.5 5-9.5 5-9.5-5-9.5-5Z" /><circle cx="12" cy="12" r="2.5" /></svg>
+                                    <strong>{viewCount}</strong><span className="uebtv-watch-player-info__viewers-label">{viewCount === 1 ? "visualización" : "visualizaciones"}</span>
+                                </span>}
                                 <span className="uebtv-watch-player-info__brand">UEBTV</span>
                             </div>
                             <div className="uebtv-watch-title-block">

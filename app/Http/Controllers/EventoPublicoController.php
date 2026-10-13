@@ -7,6 +7,7 @@ use App\Models\Evento;
 use App\Models\Facultad;
 use App\Services\ChatFeed;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class EventoPublicoController extends Controller
@@ -83,7 +84,8 @@ class EventoPublicoController extends Controller
 
         $chatMessages = $feed->messages($evento);
         $canModerate = in_array(auth()->user()?->role, ['admin', 'operador'], true);
+        $videoViews = DB::table('event_video_views')->where('evento_id', $evento->id)->count();
 
-        return view('eventos.show', compact('evento', 'eventosRelacionados', 'chatMessages', 'canModerate'));
+        return view('eventos.show', compact('evento', 'eventosRelacionados', 'chatMessages', 'canModerate', 'videoViews'));
     }
 }

@@ -9,7 +9,9 @@ export function durationLabel(seconds = 0) {
 }
 
 // The server owns the clock. Refreshes and late arrivals use the same position.
-function ChannelVideo({ snapshot, received }) {
+function ChannelVideo({ snapshot, received, startMuted, onMuteChange }) {
+    const isAd = snapshot.mode === "advertisement";
+    const media = isAd ? snapshot.advertisement : snapshot.event.scheduled;
     const video = useRef(null);
     const latest = useRef({ snapshot, received });
     latest.current = { snapshot, received };
@@ -44,9 +46,11 @@ function ChannelVideo({ snapshot, received }) {
         <>
             <BrandedVideo
                 videoRef={video}
-                src={snapshot.event.scheduled.mediaUrl}
-                mediaTitle={snapshot.event.title}
-                live={snapshot.event.status === "en_vivo" && !snapshot.event.scheduled}
+                src={media.mediaUrl}
+                mediaTitle={isAd ? `Publicidad institucional · ${media.title}` : snapshot.event.title}
+                live={false}
+                startMuted={startMuted}
+                onMuteChange={onMuteChange}
                 onLoadedMetadata={play}
                 onSeeking={align}
                 onError={() =>
@@ -55,6 +59,7 @@ function ChannelVideo({ snapshot, received }) {
                     )
                 }
             >
+                {isAd && <span className="channel-ad-indicator" title="Publicidad institucional" aria-label="Publicidad institucional">P</span>}
                 {notice && (
                     <div className="react-player-notice" role="status">
                         <p>{notice}</p>
@@ -73,6 +78,7 @@ export default function Channel({ stateUrl }) {
     const [data, setData] = useState(null);
     const [received, setReceived] = useState(0);
     const [error, setError] = useState("");
+    const [channelMuted, setChannelMuted] = useState(true);
     useEffect(() => {
         let stopped = false,
             timer,
@@ -111,7 +117,8 @@ export default function Channel({ stateUrl }) {
         };
     }, [stateUrl]);
     const live = data?.mode === "live";
-    const playing = live || data?.mode === "scheduled";
+    const advertising = data?.mode === "advertisement";
+    const playing = live || data?.mode === "scheduled" || advertising;
     const next = data?.next?.[0];
     return (
         <div className="studio-page channel-page">
@@ -150,7 +157,7 @@ export default function Channel({ stateUrl }) {
                                 <small>PROGRAMACIÓN CONTINUA</small>
                             </span>
                             <span className="channel-screen-status">
-                                {playing ? "PREGRABADO" : data ? "ENTRE EMISIONES" : "CONECTANDO"}
+                                {advertising ? "PUBLICIDAD INSTITUCIONAL" : playing ? "PREGRABADO" : data ? "ENTRE EMISIONES" : "CONECTANDO"}
                             </span>
                         </div>}
                         <div
@@ -160,12 +167,16 @@ export default function Channel({ stateUrl }) {
                                 <Player
                                     key={`live-${data.event.id}`}
                                     event={data.event}
+                                    startMuted={channelMuted}
+                                    onMuteChange={setChannelMuted}
                                 />
-                            ) : data?.mode === "scheduled" ? (
+                            ) : data?.mode === "scheduled" || advertising ? (
                                 <ChannelVideo
-                                    key={`video-${data.event.id}`}
+                                    key={advertising ? `ad-${data.advertisement.id}` : `video-${data.event.id}`}
                                     snapshot={data}
                                     received={received}
+                                    startMuted={channelMuted}
+                                    onMuteChange={setChannelMuted}
                                 />
                             ) : (
                                 <div className="channel-idle">
@@ -235,7 +246,9 @@ export default function Channel({ stateUrl }) {
                             >
                                 {live
                                     ? "● En directo"
-                                    : playing
+                                    : advertising
+                                      ? "P · Publicidad institucional"
+                                      : playing
                                       ? "Pregrabado · Emisión sincronizada"
                                       : "Nuestra señal"}
                             </span>
@@ -244,13 +257,15 @@ export default function Channel({ stateUrl }) {
                             </span>
                         </div>}
                         <h2>
-                            {data?.event?.title ||
+                            {data?.event?.title || data?.advertisement?.title ||
                                 "Un espacio para encontrarnos"}
                         </h2>
                         <p>
                             {live
                                 ? data.resumeTitle ? `Al finalizar esta transmisión, continuamos con «${data.resumeTitle}».` : "Al finalizar esta transmisión, la programación continuará automáticamente."
-                                : playing
+                                : advertising
+                                  ? "Mensaje institucional de la Universidad Estatal de Bolívar. Al comenzar una emisión, la señal continuará automáticamente."
+                                  : playing
                                   ? "Estás viendo el mismo momento que nuestra comunidad. Al terminar, continuamos con la siguiente emisión."
                                   : "Conferencias, encuentros y momentos de la UEB. En directo cuando sucede; disponibles para volver a disfrutarlos."}
                         </p>

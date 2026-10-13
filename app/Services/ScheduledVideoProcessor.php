@@ -23,6 +23,17 @@ class ScheduledVideoProcessor
         return ['duration' => (int) ceil($duration)];
     }
 
+    public function transcode(string $source, string $output): void
+    {
+        $process = new Process([config('streaming.ffmpeg'), '-nostdin', '-hide_banner', '-loglevel', 'error', '-y',
+            '-protocol_whitelist', 'file', '-i', $source,
+            '-map', '0:v:0', '-map', '0:a:0?', '-sn', '-dn', '-map_metadata', '-1',
+            '-vf', "scale=w='min(1920,iw)':h='min(1080,ih)':force_original_aspect_ratio=decrease:force_divisible_by=2,setsar=1",
+            '-c:v', 'libx264', '-preset', 'fast', '-crf', '23', '-pix_fmt', 'yuv420p', '-threads', '2',
+            '-c:a', 'aac', '-b:a', '128k', '-ac', '2', '-movflags', '+faststart', $output]);
+        $process->setTimeout(3600)->mustRun();
+    }
+
     public function process(int $id): void
     {
         $claimed = ScheduledVideo::whereKey($id)->where('processing_status', 'pending')
@@ -38,13 +49,7 @@ class ScheduledVideoProcessor
                 throw new \RuntimeException('Evento no disponible.');
             }
             $disk->makeDirectory('scheduled-videos');
-            $process = new Process([config('streaming.ffmpeg'), '-nostdin', '-hide_banner', '-loglevel', 'error', '-y',
-                '-protocol_whitelist', 'file', '-i', $disk->path($video->source_path),
-                '-map', '0:v:0', '-map', '0:a:0?', '-sn', '-dn', '-map_metadata', '-1',
-                '-vf', "scale=w='min(1920,iw)':h='min(1080,ih)':force_original_aspect_ratio=decrease:force_divisible_by=2,setsar=1",
-                '-c:v', 'libx264', '-preset', 'fast', '-crf', '23', '-pix_fmt', 'yuv420p', '-threads', '2',
-                '-c:a', 'aac', '-b:a', '128k', '-ac', '2', '-movflags', '+faststart', $disk->path($output)]);
-            $process->setTimeout(3600)->mustRun();
+            $this->transcode($disk->path($video->source_path), $disk->path($output));
             $metadata = $this->probe($disk->path($output));
             $video->update(['path' => $output, 'duration' => $metadata['duration'], 'optimized_bytes' => $disk->size($output),
                 'processing_status' => 'ready', 'ready_at' => now(), 'processing_error' => null]);

@@ -4,6 +4,14 @@
             'uploadLimits' => \App\Support\UploadLimits::scheduled(),
             'summary' => $summary, 'channelUrl' => route('channel.index'),
             'action' => route('admin.scheduled.store'), 'csrf' => csrf_token(),
+            'adAction' => route('admin.ads.store'),
+            'ads' => $ads->map(fn ($ad) => [
+                'id' => $ad->id, 'title' => $ad->title, 'duration' => $ad->duration,
+                'status' => $ad->processing_status, 'active' => $ad->is_active,
+                'error' => $ad->processing_error,
+                'toggleUrl' => route('admin.ads.toggle', $ad),
+                'retryUrl' => route('admin.ads.retry', $ad),
+            ])->values(),
             'timezone' => config('app.timezone'), 'categories' => $categories->map->only(['id', 'nombre'])->values(),
             'old' => session()->getOldInput(), 'errors' => $errors->all(), 'success' => session('success'),
             'events' => $events->map(fn ($event) => [

@@ -25,7 +25,7 @@ class ReactPage
             // Estas consultas deben mantener el mismo origen desde el que se
             // abrió la sala. Así funcionan tanto en 127.0.0.1 como desde un
             // teléfono conectado mediante el proxy local del puerto 8080.
-            'recordingStatus' => $recording?->recording_status, 'viewers' => $recording?->espectadores_activos ?? 0, 'viewersUrl' => '/eventos/'.$e->id.'/espectadores', 'playbackUrl' => '/eventos/'.$e->id.'/estado',
+            'recordingStatus' => $recording?->recording_status, 'viewers' => $recording?->espectadores_activos ?? 0, 'viewersUrl' => '/eventos/'.$e->id.'/espectadores', 'videoViewsUrl' => route('eventos.video-views', $e), 'playbackUrl' => '/eventos/'.$e->id.'/estado',
             // HLS can be served on the same HTTPS domain by the production reverse proxy.
             'hlsUrl' => $recording ? (config('streaming.hls_base_url') ?: request()->getScheme().'://'.request()->getHost().':8080/hls').'/'.$recording->stream_key.'.m3u8' : null,
             'chatUrl' => route('eventos.chat.index', $e)];

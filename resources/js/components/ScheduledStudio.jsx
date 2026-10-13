@@ -72,8 +72,63 @@ const stateLabels = {
     paused: "Pausado por directo",
 };
 
+function InstitutionalAds({ action, csrf, ads, old, uploadLimits }) {
+    const [title, setTitle] = useState(old.ad_title || "");
+    const [fileError, setFileError] = useState("");
+    const [submitting, setSubmitting] = useState(false);
+    useEffect(() => {
+        const reset = () => setSubmitting(false);
+        window.addEventListener("pageshow", reset);
+        return () => window.removeEventListener("pageshow", reset);
+    }, []);
+    const choose = (event) => {
+        const file = event.target.files[0];
+        const error = file && (!/\.(mp4|m4v|mov|mkv|webm|avi|wmv|mpeg|mpg)$/i.test(file.name)
+            ? "Selecciona MP4, MOV, MKV, WebM, AVI, WMV o MPEG."
+            : file.size > uploadLimits.maxBytes ? `El video supera el límite de ${uploadLimits.maxMb} MB.` : "");
+        event.target.setCustomValidity(error || "");
+        setFileError(error || "");
+    };
+    return <section id="schedule-ads" className="ad-studio" aria-labelledby="ad-studio-title">
+        <div className="ad-studio-heading">
+            <div><p className="studio-eyebrow">CONTINUIDAD DE LA SEÑAL</p><h2 id="ad-studio-title">Publicidad institucional</h2>
+                <p>Estos videos cubren los huecos de la señal continua. Un directo o un programa siempre tiene prioridad. La audiencia verá una «P» y no podrá adelantarlos.</p></div>
+            <span className="schedule-pill">{ads.filter((ad) => ad.active && ad.status === "ready").length} anuncios activos</span>
+        </div>
+        <div className="ad-studio-grid">
+            <form className="schedule-form ad-studio-form" method="POST" action={action} encType="multipart/form-data" onSubmit={() => setSubmitting(true)} aria-busy={submitting}>
+                <input type="hidden" name="_token" value={csrf} />
+                <Section number="P" title="Añadir anuncio oficial" subtitle="Solo utiliza piezas institucionales autorizadas por la UEB.">
+                    <Field id="ad-title" label="Nombre del anuncio">
+                        <input id="ad-title" name="ad_title" maxLength={255} required value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ej. Campaña institucional UEB" />
+                    </Field>
+                    <Field id="ad-video" label="Archivo de video">
+                        <input id="ad-video" name="ad_video" type="file" accept=".mp4,.m4v,.mov,.mkv,.webm,.avi,.wmv,.mpeg,.mpg" required onChange={choose} aria-describedby="ad-file-help ad-file-error" />
+                    </Field>
+                    <p id="ad-file-help" className="schedule-help">Hasta {uploadLimits.maxMb} MB. El archivo se optimiza antes de emitirse y se repetirá con los otros anuncios durante los huecos.</p>
+                    {fileError && <p id="ad-file-error" className="schedule-file-error" role="alert">{fileError}</p>}
+                </Section>
+                <div className="schedule-submit"><button type="submit" className="studio-button" disabled={submitting}>{submitting ? "Subiendo…" : "Subir publicidad"}<Icon name="upload" size={17} /></button></div>
+            </form>
+            <div className="studio-panel ad-studio-list">
+                <div className="studio-panel-heading"><div><p className="studio-eyebrow">BIBLIOTECA INSTITUCIONAL</p><h3>Anuncios disponibles</h3></div><strong>{ads.length}</strong></div>
+                {ads.length ? ads.map((ad) => <article className="ad-studio-item" key={ad.id}>
+                    <div className="ad-studio-item__mark" aria-hidden="true">P</div>
+                    <div className="ad-studio-item__body"><h4>{ad.title}</h4><p>{stateLabels[ad.status] || ad.status}{ad.status === "ready" ? ` · ${durationLabel(ad.duration)}` : ""}{ad.status === "ready" && !ad.active ? " · Fuera del aire" : ""}</p>{ad.error && <small role="status">{ad.error}</small>}</div>
+                    <div className="ad-studio-item__actions">
+                        {ad.status === "failed" && <Action url={ad.retryUrl} className="studio-button">Reintentar</Action>}
+                        <Action url={ad.toggleUrl} className="studio-button" confirm={ad.active ? "¿Quitar este anuncio de la señal continua?" : undefined}>{ad.active ? "Desactivar" : "Activar"}</Action>
+                    </div>
+                </article>) : <div className="schedule-empty"><h4>Aún no hay anuncios</h4><p>Mientras no haya programación ni directo, la señal mostrará la pantalla de espera.</p></div>}
+            </div>
+        </div>
+    </section>;
+}
+
 export default function ScheduledStudio({
     action,
+    adAction,
+    ads = [],
     csrf,
     timezone,
     categories,
@@ -146,6 +201,10 @@ export default function ScheduledStudio({
                     <Icon name="clock" size={14} /> Emisiones pregrabadas
                 </span>
             </div>
+            <nav className="schedule-content-switch" aria-label="Tipos de contenido">
+                <a href="#schedule-program-form"><Icon name="clock" size={17} /> Programación con horario</a>
+                <a href="#schedule-ads"><span aria-hidden="true">P</span> Publicidad institucional</a>
+            </nav>
             {success && (
                 <p className="studio-alert" role="status">
                     {success}
@@ -225,6 +284,7 @@ export default function ScheduledStudio({
             )}
             <div className="schedule-layout">
                 <form
+                    id="schedule-program-form"
                     className="schedule-form"
                     method="POST"
                     action={action}
@@ -565,6 +625,7 @@ export default function ScheduledStudio({
                     </nav>
                 )}
             </section>
+            <InstitutionalAds action={adAction} csrf={csrf} ads={ads} old={old} uploadLimits={uploadLimits} />
         </div>
     );
 }

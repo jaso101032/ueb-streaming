@@ -30,6 +30,8 @@ La meta operativa es una latencia de hasta cinco segundos, pero no debe declarar
 
 La ventana HLS larga se usa para permitir retroceso temporal. Si la prioridad institucional es estrictamente menor o igual a cinco segundos, se debe limitar o desactivar ese DVR y ajustar fragmentos/lista HLS después de las pruebas. Una calidad automática tipo YouTube requiere una salida HLS multicalidad generada por FFmpeg; todavía no está implementada.
 
+La selección de calidad tampoco existe para grabaciones o videos programados: se genera un solo MP4 optimizado por archivo. Para ofrecer «Automática», 1080p, 720p, etc., habría que producir varias representaciones (sin ampliar la resolución original), una lista maestra HLS y controles manuales. En directo, cada representación adicional consume CPU y puede aumentar la latencia; primero se medirá el sistema real y luego se elegirán perfiles sostenibles. No se debe prometer una resolución concreta si el video fuente o el ancho de banda no la permiten.
+
 ## Perfil OBS institucional provisional
 
 Mientras no exista transcodificación multicalidad en servidor, OBS debe emitir H.264 + AAC, 48 kHz, estéreo, 30 fps y una resolución/bitrate validada contra el ancho de banda de subida real. La emisión no debe cambiar resolución ni códec durante un directo, porque afectaría HLS y a la grabación.

@@ -29,7 +29,7 @@ html:not([data-theme="dark"]) :is(.schedule-progress,.schedule-submit,.schedule-
 html:not([data-theme="dark"]) .schedule-preview-body { background:#f0f5fb; }
 html:not([data-theme="dark"]) .react-stack > .react-stream-card { border-color:#a4bdd8; background:linear-gradient(145deg,#f2f7fc,#e8f1fa); }
 html:not([data-theme="dark"]) .react-stream-card .react-credentials { border-color:#9dbbda; background:linear-gradient(120deg,#d7e8f8,#e1eefb); }
-html:not([data-theme="dark"]) .react-stream-card .react-credentials code { border-color:#a8c1dc; background:#fff; }
+html:not([data-theme="dark"]) .react-stream-card .react-credentials code { border-color:#99b8d9; background:#eaf3fc; }
 html:not([data-theme="dark"]) .uebtv-catalog-search { background:#e3edf7; }
 html:not([data-theme="dark"]) .channel-now { background:#f0f5fb; }
 html:not([data-theme="dark"]) .channel-next-heading { border-color:#b5c9df; background:linear-gradient(130deg,#e5eff9,#dbe9f6); }
@@ -45,9 +45,30 @@ html:not([data-theme="dark"]) :is(.schedule-form .uebtv-form-field,.uebtv-event-
 html:not([data-theme="dark"]) :is(.schedule-form .uebtv-form-field,.uebtv-event-editor .uebtv-form-field,.react-form,.uebtv-catalog-search,.watch-experience .uebtv-live-chat__form) :is(input,textarea)::placeholder { color:#637993; opacity:1; }
 html:not([data-theme="dark"]) :is(.schedule-form .uebtv-form-field,.uebtv-event-editor .uebtv-form-field,.react-form,.uebtv-catalog-search,.watch-experience .uebtv-live-chat__form) :is(input,select,textarea):focus { border-color:#3479c4; background:#fff; box-shadow:0 0 0 3px #3479c426; }
 html:not([data-theme="dark"]) .schedule-upload { border-color:#83a7cf; background:linear-gradient(130deg,#dbeaf9,#ebf4fd); }
+/* Secondary actions are recognisable controls, not white patches on pale cards. */
+html:not([data-theme="dark"]) :is(.studio-text-link,.studio-button-soft,.studio-row-actions :is(a,button):not(.studio-delete),.react-credentials button,.uebtv-catalog-search > a,.channel-catalog,.watch-experience .uebtv-watch-breadcrumb a,.watch-experience .uebtv-watch-actions :is(a,button)) {
+    border-color:#4f88c6;
+    background:#a9cff3;
+    color:#103a6c;
+    box-shadow:0 3px 8px #16518d33;
+}
+html:not([data-theme="dark"]) :is(.studio-text-link,.studio-button-soft,.studio-row-actions :is(a,button):not(.studio-delete),.react-credentials button,.uebtv-catalog-search > a,.channel-catalog,.watch-experience .uebtv-watch-breadcrumb a,.watch-experience .uebtv-watch-actions :is(a,button)):hover {
+    border-color:#2768ad;
+    background:#83b9ec;
+    color:#082e5a;
+}
+html:not([data-theme="dark"]) :is(.studio-filter-group button:not([aria-pressed="true"]),.uebtv-catalog-filters a.is-active) { border-color:#6e9dce; background:#bfdcf7; color:#164777; }
+html:not([data-theme="dark"]) .studio-filter-group button:not([aria-pressed="true"]):hover { border-color:#3f7fbe; background:#9fc9ef; }
+html:not([data-theme="dark"]) .schedule-upload input::file-selector-button { border-color:#4f88c6; background:#a9cff3; color:#103a6c; }
+html:not([data-theme="dark"]) .studio-signout { border-color:#4f88c6; background:#a9cff3; color:#103a6c; }
+html:not([data-theme="dark"]) .studio-signout:hover { border-color:#2768ad; background:#83b9ec; color:#082e5a; }
 
 html[data-theme="dark"] { color-scheme:dark; --uebtv-line:#263c59; --uebtv-ink:#edf4ff; --uebtv-navy:#edf4ff; --uebtv-blue:#8fc2ff; }
 html[data-theme="dark"] body { background:#081426; color:#dce8f7; }
+html[data-theme="dark"] :is(.studio-text-link,.studio-button-soft,.studio-row-actions :is(a,button):not(.studio-delete),.react-credentials button) { border-color:#6aa6e4; background:#205b95; color:#f3f9ff; box-shadow:0 2px 8px #0005; }
+html[data-theme="dark"] :is(.studio-text-link,.studio-button-soft,.studio-row-actions :is(a,button):not(.studio-delete),.react-credentials button):hover { border-color:#a5d0f7; background:#3175b5; color:#fff; }
+html[data-theme="dark"] .studio-signout { border-color:#6aa6e4; background:#205b95; color:#f3f9ff; }
+html[data-theme="dark"] .studio-signout:hover { border-color:#a5d0f7; background:#3175b5; color:#fff; }
 html[data-theme="dark"] .min-h-screen, html[data-theme="dark"] .studio-workspace { background:#081426; }
 html[data-theme="dark"] .studio-header { background:#061126; box-shadow:0 4px 24px #0008; }
 html[data-theme="dark"] .studio-sidebar { background:#0a1b34; border-color:#1e3653; }
@@ -86,6 +107,8 @@ html[data-theme="dark"] .uebtv-player-mark {
 }
 html[data-theme="dark"] .uebtv-watch-player-info__viewers { background:#351623; border-color:#8e3447; color:#ffc3cd; }
 html[data-theme="dark"] .uebtv-watch-player-info__viewers strong { color:#ff6680; }
+html[data-theme="dark"] .watch-experience .uebtv-watch-player-info__viewers.is-video-views { border-color:#477caf; background:#173a61; color:#d5eaff; }
+html[data-theme="dark"] .watch-experience .uebtv-watch-player-info__viewers.is-video-views strong { color:#9ccfff; }
 html[data-theme="dark"] .uebtv-live-chat { background:#0d1d33; border-color:#29425f; }
 html[data-theme="dark"] .uebtv-live-chat__messages { background:linear-gradient(180deg,#0c1b30,#10223b); }
 html[data-theme="dark"] .uebtv-chat-bubble { border-color:#315d8d; background:linear-gradient(135deg,#12365f,#123055); color:#e5f1ff; box-shadow:0 3px 10px #0004; }
@@ -142,8 +165,8 @@ html[data-theme="dark"] .react-stream-card .react-credentials { border-color:#31
 html[data-theme="dark"] .react-stream-card .react-credentials > div + div, html[data-theme="dark"] .react-stream-card .react-toolbar { border-color:#294b6b; }
 html[data-theme="dark"] .react-stream-card .react-credentials > div > small { color:#a9bfd8; }
 html[data-theme="dark"] .react-stream-card .react-credentials code { border-color:#315271; background:#09182b; color:#9fc9ff; }
-html[data-theme="dark"] .react-stream-card .react-credentials button, html[data-theme="dark"] .react-stream-card .react-toolbar .studio-text-link { border-color:#365b80; background:#173a61; color:#b9dcff; }
-html[data-theme="dark"] .react-stream-card .react-credentials button:hover, html[data-theme="dark"] .react-stream-card .react-toolbar .studio-text-link:hover { border-color:#5d94cb; background:#1d4a78; }
+html[data-theme="dark"] .react-stream-card .react-credentials button, html[data-theme="dark"] .react-stream-card .react-toolbar .studio-text-link { border-color:#6aa6e4; background:#205b95; color:#f3f9ff; }
+html[data-theme="dark"] .react-stream-card .react-credentials button:hover, html[data-theme="dark"] .react-stream-card .react-toolbar .studio-text-link:hover { border-color:#a5d0f7; background:#3175b5; color:#fff; }
 
 /* Catalog filters, institutional hero and forms. */
 html[data-theme="dark"] .uebtv-catalog-hero { border-color:#294f77; background:radial-gradient(ellipse at 86% 14%,#1d4f82 0,transparent 53%),linear-gradient(125deg,#102d4d,#0a1d34); box-shadow:0 18px 38px -24px #000c; }
@@ -179,8 +202,8 @@ html[data-theme="dark"] .channel-heading h1 { color:#f1f7ff; }
 html[data-theme="dark"] .channel-heading h1 em { color:#86c1ff; }
 html[data-theme="dark"] .channel-heading > div > p:last-child { color:#b8cbe1; }
 html[data-theme="dark"] .channel-institution-mark { filter:brightness(0) invert(1); }
-html[data-theme="dark"] .channel-catalog { border-color:#4778ab; background:#163859; color:#c7e2ff; }
-html[data-theme="dark"] .channel-catalog:hover { background:#1d4771; color:#eef7ff; }
+html[data-theme="dark"] .channel-catalog { border-color:#6aa6e4; background:#205b95; color:#f3f9ff; }
+html[data-theme="dark"] .channel-catalog:hover { border-color:#a5d0f7; background:#3175b5; color:#fff; }
 html[data-theme="dark"] .channel-main { border-color:#29425f; background:#10223b; box-shadow:0 18px 42px -25px #000c; }
 html[data-theme="dark"] .channel-now { background:#10223b; }
 html[data-theme="dark"] .channel-now p, html[data-theme="dark"] .channel-auto { color:#adc0d6; }
@@ -253,6 +276,7 @@ html[data-theme="dark"] .watch-experience .uebtv-chat-message__meta strong { col
     .studio-brand-mascot { width:40px; height:60px; margin-right:-8px; transform:translate(3px,4px) rotate(6deg); }
     .studio-header--operator .uebtv-brand-logo--header { width:105px; height:53px; }
     .studio-header--operator .studio-brand-mascot { width:30px; height:48px; }
+    .channel-institution-mark { width:126px; max-height:40px; }
     .studio-account { gap:6px; }
     .studio-theme-toggle { width:34px; height:34px; }
     .studio-signout { min-height:38px; padding-inline:9px; font-size:11px; border-radius:8px; }

@@ -17,6 +17,7 @@ class ChannelController extends Controller
         $items = $schedule->timeline();
         $live = $schedule->live();
         $active = collect($items)->first(fn ($i) => in_array($i['state'], ['playing', 'paused']));
+        $advertisement = $live || $active ? null : $schedule->advertisement();
         $next = collect($items)->filter(fn ($i) => $i['state'] === 'upcoming')->take(5)->map(fn ($i) => [
             'id' => $i['event']->id, 'title' => $i['event']->titulo, 'starts_at' => $i['starts_at'], 'duration' => $i['duration'],
         ])->values();
@@ -29,8 +30,14 @@ class ChannelController extends Controller
             unset($playback['event']);
         }
 
-        return response()->json(['mode' => $live ? 'live' : ($active ? 'scheduled' : 'idle'),
-            'event' => $data, 'playback' => $live ? null : $playback,
+        return response()->json(['mode' => $live ? 'live' : ($active ? 'scheduled' : ($advertisement ? 'advertisement' : 'idle')),
+            'event' => $data, 'playback' => $live ? null : ($playback ?? ($advertisement ? [
+                'state' => 'playing', 'position' => $advertisement['position'], 'duration' => $advertisement['duration'],
+            ] : null)),
+            'advertisement' => $advertisement ? [
+                'id' => $advertisement['ad']->id, 'title' => $advertisement['ad']->title,
+                'mediaUrl' => route('channel.ad.media', $advertisement['ad']),
+            ] : null,
             'next' => $next, 'summary' => $schedule->summary($items), 'server_time' => now()->toIso8601String(),
             'resumeTitle' => $live ? ($active['event']->titulo ?? null) : null,
         ])->header('Cache-Control', 'no-store');
