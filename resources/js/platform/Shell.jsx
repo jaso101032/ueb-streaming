@@ -40,9 +40,17 @@ export default function Shell({ shell, children }) {
                 <a className="studio-skip" href="#contenido">
                     Saltar al contenido
                 </a>
-                <header className="studio-header">
+                <header className={`studio-header ${shell.operator ? "studio-header--operator" : ""}`}>
                     <div className="studio-header-inner">
-                        <a className="studio-brand" href={shell.home} aria-label="UEBTV">
+                        <a className="studio-brand studio-brand--uebtv" href={shell.home} aria-label="UEBTV">
+                            <img
+                                className="studio-brand-mascot"
+                                src={shell.mascot}
+                                alt=""
+                                aria-hidden="true"
+                                width="58"
+                                height="84"
+                            />
                             <UebtvMark className="uebtv-brand-logo--header" />
                         </a>
                         <div className="studio-account">

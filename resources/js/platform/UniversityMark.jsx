@@ -7,13 +7,6 @@ export default function UniversityMark({ className = "" }) {
     return (
         <span className={`university-mark ${className}`.trim()}>
             <img
-                className="university-mark__mascot"
-                src={shell.mascot}
-                alt="Mascota de la Universidad Estatal de Bolívar"
-                width="48"
-                height="72"
-            />
-            <img
                 className="university-mark__logo"
                 src={shell.logo}
                 alt="Logotipo oficial de la Universidad Estatal de Bolívar"
