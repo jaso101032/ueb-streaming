@@ -110,15 +110,17 @@ class InstitutionalAdTest extends TestCase
         try {
             (new Process(['/usr/bin/ffmpeg', '-y', '-f', 'lavfi', '-i', 'color=c=blue:s=64x64:r=10',
                 '-t', '2', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-f', 'mp4', $path]))->mustRun();
-            $this->actingAs($admin)->post(route('admin.ads.store'), [
+            $this->actingAs($admin)->withHeaders(['Accept' => 'application/json'])->post(route('admin.ads.store'), [
                 'ad_title' => 'Campaña UEB', 'ad_video' => new UploadedFile($path, 'campana.mp4', 'video/mp4', null, true),
-            ])->assertSessionHasNoErrors()->assertRedirect(route('admin.scheduled.index'));
+            ])->assertCreated()->assertJsonPath('redirect', route('admin.scheduled.index').'#schedule-ads');
             $ad = InstitutionalAd::firstOrFail();
             $this->assertSame('pending', $ad->processing_status);
             $this->get(route('channel.state'))->assertJsonPath('mode', 'idle');
             app(InstitutionalAdProcessor::class)->process($ad->id);
             $ad->refresh();
             $this->assertSame('ready', $ad->processing_status);
+            $this->assertSame(100, $ad->processing_progress);
+            $this->assertNotNull($ad->processing_heartbeat_at);
             $this->assertNull($ad->source_path);
             Storage::disk('local')->assertExists($ad->path);
             $this->get(route('channel.state'))->assertJsonPath('mode', 'advertisement')

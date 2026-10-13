@@ -90,6 +90,7 @@ html[data-theme="dark"] .uebtv-watch-aside__rule { border-color:#29425f; }
 html[data-theme="dark"] .uebtv-watch-breadcrumb { color:#9eb2cb; }
 html[data-theme="dark"] .uebtv-watch-breadcrumb a { border-color:#365474; background:#132c4a; color:#9fc9ff; }
 html[data-theme="dark"] .uebtv-watch-category { background:#173554; color:#9fc9ff; }
+html[data-theme="dark"] .watch-experience .uebtv-watch-state:not(.is-live) { background:#1b4168; border:1px solid #4d78a9; color:#e4f2ff; }
 html[data-theme="dark"] :is(.studio-panel,.react-panel,.uebtv-watch-broadcast-card,.uebtv-watch-title-block,.uebtv-watch-player-info,.schedule-section,.schedule-totals article,.uebtv-live-chat__form,.uebtv-live-chat__note,.uebtv-live-chat__login,.uebtv-live-chat__closed,.uebtv-catalog-card,.uebtv-video-card,.uebtv-library-empty) { background:#10223b; border-color:#29425f; box-shadow:0 14px 32px -22px #000b; }
 html[data-theme="dark"] .uebtv-watch-player-info__brand { color:#9fc9ff; }
 /* La marca conserva su color institucional: en oscuro se le da una base
@@ -355,6 +356,13 @@ html[data-theme="dark"] .watch-experience .uebtv-chat-message__meta strong { col
 
     .uebtv-player-controls { padding:2px 9px 8px; background:linear-gradient(transparent,#030b18f5 42%); }
     .uebtv-player-timeline { min-height:13px; gap:7px; margin-bottom:4px; }
+    .uebtv-player-timeline.is-vod-timeline { display:grid; grid-template-columns:minmax(0,1fr); gap:5px; margin-bottom:7px; }
+    .uebtv-player-timeline.is-vod-timeline > span { grid-row:1; justify-self:end; font-size:10px; line-height:1; color:#fff; text-shadow:0 1px 3px #000; }
+    .uebtv-player-timeline.is-vod-timeline .uebtv-player-range--progress { grid-row:2; width:100%; min-width:0; height:4px; margin:3px 0; }
+    .uebtv-player-timeline.is-vod-timeline .uebtv-player-range--progress::-webkit-slider-runnable-track { height:4px; }
+    .uebtv-player-timeline.is-vod-timeline .uebtv-player-range--progress::-moz-range-track,.uebtv-player-timeline.is-vod-timeline .uebtv-player-range--progress::-moz-range-progress { height:4px; }
+    .uebtv-player-timeline.is-vod-timeline .uebtv-player-range--progress::-webkit-slider-thumb { width:12px; height:12px; }
+    .uebtv-player-timeline.is-vod-timeline .uebtv-player-range--progress::-moz-range-thumb { width:11px; height:11px; }
     .uebtv-player-live-static, .uebtv-player-range { height:2px; }
     .uebtv-player-range::-moz-range-track, .uebtv-player-range::-moz-range-progress { height:2px; }
     .uebtv-player-live-static i { width:9px; height:9px; }
@@ -364,13 +372,22 @@ html[data-theme="dark"] .watch-experience .uebtv-chat-message__meta strong { col
     .uebtv-player-actions { gap:7px; }
     .uebtv-player-icon-button { width:32px; height:32px; border-color:#ffffff3d; background:#071a35cc; box-shadow:0 3px 10px #0005; }
     .uebtv-player-icon-button--primary { border-color:#ff9aaa; background:#ff3152; }
+    .uebtv-player-speed { width:42px; max-width:42px; height:32px; padding:0 6px; border:1px solid #ffffff3d; border-radius:16px; background:#071a35cc; color:#fff; font-size:11px; }
     .uebtv-player-icon-svg { width:18px; height:18px; }
     .uebtv-player-go-live { min-height:32px; height:32px; padding-inline:8px; font-size:9px; }
     .uebtv-player-pip-return { max-width:calc(100% - 28px); min-height:42px; text-align:center; }
+    .react-player-label { display:none; }
 }
 
 @media(max-width:640px) { .studio-theme-toggle { width:34px; height:34px; } .studio-theme-toggle svg { width:16px; height:16px; } }
 @media(max-width:380px) {
+    .studio-header:not(.studio-header--operator) .studio-header-inner { gap:4px; padding-inline:8px; }
+    .studio-header:not(.studio-header--operator) .uebtv-brand-logo--header { width:112px; height:56px; }
+    .studio-header:not(.studio-header--operator) .studio-brand-mascot { width:30px; height:46px; margin-right:-8px; }
+    .studio-header:not(.studio-header--operator) .studio-account { gap:4px; }
+    .studio-header:not(.studio-header--operator) .studio-theme-toggle { width:30px; height:30px; }
+    .studio-header:not(.studio-header--operator) .studio-signout { padding-inline:6px; font-size:10px; }
+    .studio-header:not(.studio-header--operator) .studio-menu-toggle { width:34px; height:34px; }
     .studio-header--operator .studio-header-inner { gap:4px; padding-inline:8px; }
     .studio-header--operator .uebtv-brand-logo--header { width:92px; height:46px; }
     .studio-header--operator .studio-brand-mascot { width:26px; height:42px; margin-right:-6px; }

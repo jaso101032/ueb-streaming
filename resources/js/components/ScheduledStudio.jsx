@@ -67,20 +67,77 @@ const stateLabels = {
     ended: "Disponible",
     pending: "En cola",
     processing: "Optimizando",
+    ready: "Lista para emitir",
     failed: "Error de conversión",
     cancelled: "Cancelado",
     paused: "Pausado por directo",
 };
 
-function InstitutionalAds({ action, csrf, ads, old, uploadLimits }) {
-    const [title, setTitle] = useState(old.ad_title || "");
-    const [fileError, setFileError] = useState("");
-    const [submitting, setSubmitting] = useState(false);
+function useVideoUpload() {
+    const [upload, setUpload] = useState({ phase: "idle", percent: 0, error: "" });
     useEffect(() => {
-        const reset = () => setSubmitting(false);
+        const reset = () => setUpload({ phase: "idle", percent: 0, error: "" });
         window.addEventListener("pageshow", reset);
         return () => window.removeEventListener("pageshow", reset);
     }, []);
+    const submit = (event) => {
+        event.preventDefault();
+        if (upload.phase === "uploading" || upload.phase === "verifying") return;
+        const form = event.currentTarget;
+        const request = new XMLHttpRequest();
+        request.open("POST", form.action);
+        request.setRequestHeader("Accept", "application/json");
+        request.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+        setUpload({ phase: "uploading", percent: 0, error: "" });
+        request.upload.onprogress = (progress) => {
+            if (progress.lengthComputable) {
+                setUpload({ phase: "uploading", percent: Math.min(99, Math.round(progress.loaded / progress.total * 100)),
+                    loaded: progress.loaded, total: progress.total, error: "" });
+            }
+        };
+        request.upload.onload = () => setUpload((current) => ({ ...current, phase: "verifying", percent: 100, loaded: current.total || current.loaded }));
+        request.onload = () => {
+            let data = {};
+            try { data = JSON.parse(request.responseText); } catch (_) { /* A proxy can return an HTML error page. */ }
+            if (request.status === 201 && data.redirect) {
+                window.location.assign(data.redirect);
+                return;
+            }
+            const firstError = data.errors && Object.values(data.errors).flat()[0];
+            const message = firstError || data.message || (request.status === 413
+                ? "El archivo supera el límite del servidor."
+                : "No se pudo subir el video. Revisa tu conexión e inténtalo de nuevo.");
+            setUpload({ phase: "error", percent: 0, error: message });
+        };
+        request.onerror = () => setUpload({ phase: "error", percent: 0, error: "Se perdió la conexión durante la subida. Inténtalo de nuevo." });
+        request.send(new FormData(form));
+    };
+    return { upload, submit, reset: () => setUpload({ phase: "idle", percent: 0, error: "" }) };
+}
+
+function UploadProgress({ upload }) {
+    if (upload.phase === "idle") return null;
+    if (upload.phase === "error") return <p className="schedule-upload-error" role="alert">{upload.error}</p>;
+    return <div className="schedule-upload-progress" role="status" aria-live="polite">
+        <span>{upload.phase === "verifying" ? "Subida completa. Verificando el archivo…" : `Subiendo video: ${upload.percent}%`}</span>
+        <progress max="100" value={upload.percent} aria-label="Progreso de subida del video" />
+        <small>{upload.total ? `${(upload.loaded / 1048576).toFixed(1)} de ${(upload.total / 1048576).toFixed(1)} MB enviados. ` : ""}Después de subirlo, la conversión tendrá su propio avance en esta página.</small>
+    </div>;
+}
+
+function ConversionProgress({ status, percent }) {
+    if (status !== "pending" && status !== "processing") return null;
+    return <div className="schedule-conversion-progress" role="status">
+        <span>{status === "pending" ? "En cola para convertir" : `Convirtiendo video: ${percent ?? 0}%`}</span>
+        {status === "processing" && <progress max="100" value={percent ?? 0} aria-label="Progreso de conversión del video" />}
+    </div>;
+}
+
+function InstitutionalAds({ action, csrf, ads, old, uploadLimits }) {
+    const [title, setTitle] = useState(old.ad_title || "");
+    const [fileError, setFileError] = useState("");
+    const { upload, submit, reset } = useVideoUpload();
+    const submitting = upload.phase === "uploading" || upload.phase === "verifying";
     const choose = (event) => {
         const file = event.target.files[0];
         const error = file && (!/\.(mp4|m4v|mov|mkv|webm|avi|wmv|mpeg|mpg)$/i.test(file.name)
@@ -88,6 +145,7 @@ function InstitutionalAds({ action, csrf, ads, old, uploadLimits }) {
             : file.size > uploadLimits.maxBytes ? `El video supera el límite de ${uploadLimits.maxMb} MB.` : "");
         event.target.setCustomValidity(error || "");
         setFileError(error || "");
+        reset();
     };
     return <section id="schedule-ads" className="ad-studio" aria-labelledby="ad-studio-title">
         <div className="ad-studio-heading">
@@ -96,7 +154,7 @@ function InstitutionalAds({ action, csrf, ads, old, uploadLimits }) {
             <span className="schedule-pill">{ads.filter((ad) => ad.active && ad.status === "ready").length} anuncios activos</span>
         </div>
         <div className="ad-studio-grid">
-            <form className="schedule-form ad-studio-form" method="POST" action={action} encType="multipart/form-data" onSubmit={() => setSubmitting(true)} aria-busy={submitting}>
+            <form className="schedule-form ad-studio-form" method="POST" action={action} encType="multipart/form-data" onSubmit={submit} aria-busy={submitting}>
                 <input type="hidden" name="_token" value={csrf} />
                 <Section number="P" title="Añadir anuncio oficial" subtitle="Solo utiliza piezas institucionales autorizadas por la UEB.">
                     <Field id="ad-title" label="Nombre del anuncio">
@@ -108,13 +166,13 @@ function InstitutionalAds({ action, csrf, ads, old, uploadLimits }) {
                     <p id="ad-file-help" className="schedule-help">Hasta {uploadLimits.maxMb} MB. El archivo se optimiza antes de emitirse y se repetirá con los otros anuncios durante los huecos.</p>
                     {fileError && <p id="ad-file-error" className="schedule-file-error" role="alert">{fileError}</p>}
                 </Section>
-                <div className="schedule-submit"><button type="submit" className="studio-button" disabled={submitting}>{submitting ? "Subiendo…" : "Subir publicidad"}<Icon name="upload" size={17} /></button></div>
+                <div className="schedule-submit"><UploadProgress upload={upload} /><button type="submit" className="studio-button" disabled={submitting}>{submitting ? "Subiendo…" : "Subir publicidad"}<Icon name="upload" size={17} /></button></div>
             </form>
             <div className="studio-panel ad-studio-list">
                 <div className="studio-panel-heading"><div><p className="studio-eyebrow">BIBLIOTECA INSTITUCIONAL</p><h3>Anuncios disponibles</h3></div><strong>{ads.length}</strong></div>
                 {ads.length ? ads.map((ad) => <article className="ad-studio-item" key={ad.id}>
                     <div className="ad-studio-item__mark" aria-hidden="true">P</div>
-                    <div className="ad-studio-item__body"><h4>{ad.title}</h4><p>{stateLabels[ad.status] || ad.status}{ad.status === "ready" ? ` · ${durationLabel(ad.duration)}` : ""}{ad.status === "ready" && !ad.active ? " · Fuera del aire" : ""}</p>{ad.error && <small role="status">{ad.error}</small>}</div>
+                    <div className="ad-studio-item__body"><h4>{ad.title}</h4><p>{stateLabels[ad.status] || ad.status}{ad.status === "ready" ? ` · ${durationLabel(ad.duration)}` : ""}{ad.status === "ready" && !ad.active ? " · Fuera del aire" : ""}</p><ConversionProgress status={ad.status} percent={ad.progress} />{ad.error && <small role="status">{ad.error}</small>}</div>
                     <div className="ad-studio-item__actions">
                         {ad.status === "failed" && <Action url={ad.retryUrl} className="studio-button">Reintentar</Action>}
                         <Action url={ad.toggleUrl} className="studio-button" confirm={ad.active ? "¿Quitar este anuncio de la señal continua?" : undefined}>{ad.active ? "Desactivar" : "Activar"}</Action>
@@ -129,6 +187,7 @@ export default function ScheduledStudio({
     action,
     adAction,
     ads = [],
+    progressUrl,
     csrf,
     timezone,
     categories,
@@ -148,7 +207,12 @@ export default function ScheduledStudio({
     const [preview, setPreview] = useState("");
     const [duration, setDuration] = useState(0);
     const [fileError, setFileError] = useState("");
-    const [submitting, setSubmitting] = useState(false);
+    const { upload, submit, reset } = useVideoUpload();
+    const submitting = upload.phase === "uploading" || upload.phase === "verifying";
+    const [eventRows, setEventRows] = useState(events);
+    const [adRows, setAdRows] = useState(ads);
+    const hasConversions = eventRows.some((event) => ["pending", "processing"].includes(event.state))
+        || adRows.some((ad) => ["pending", "processing"].includes(ad.status));
     useEffect(() => {
         if (!file) {
             setPreview("");
@@ -159,10 +223,31 @@ export default function ScheduledStudio({
         return () => URL.revokeObjectURL(url);
     }, [file]);
     useEffect(() => {
-        const reset = () => setSubmitting(false);
-        window.addEventListener("pageshow", reset);
-        return () => window.removeEventListener("pageshow", reset);
-    }, []);
+        if (!hasConversions || !progressUrl) return;
+        const controller = new AbortController();
+        const refresh = async () => {
+            if (document.visibilityState === "hidden") return;
+            try {
+                const response = await fetch(progressUrl, { signal: controller.signal, credentials: "same-origin", cache: "no-store" });
+                if (!response.ok) return;
+                const data = await response.json();
+                setEventRows((rows) => rows.map((event) => {
+                    const current = data.events?.[event.id];
+                    if (!current) return event;
+                    const state = current.status === "ready"
+                        ? (["pending", "processing", "failed"].includes(event.state) ? "ready" : event.state)
+                        : current.status;
+                    return { ...event, state, progress: current.progress, error: current.error };
+                }));
+                setAdRows((rows) => rows.map((ad) => data.ads?.[ad.id]
+                    ? { ...ad, status: data.ads[ad.id].status, progress: data.ads[ad.id].progress, error: data.ads[ad.id].error }
+                    : ad));
+            } catch (error) { if (error.name !== "AbortError") { /* Retry on next poll. */ } }
+        };
+        refresh();
+        const timer = window.setInterval(refresh, 5000);
+        return () => { controller.abort(); window.clearInterval(timer); };
+    }, [hasConversions, progressUrl]);
     const choose = (event) => {
         const selected = event.target.files[0];
         setDuration(0);
@@ -176,6 +261,7 @@ export default function ScheduledStudio({
         event.target.setCustomValidity(error || "");
         setFileError(error || "");
         setFile(error ? null : selected || null);
+        reset();
     };
     const complete = [!!title.trim() && !!category, !!date, !!file].filter(
         Boolean,
@@ -289,7 +375,7 @@ export default function ScheduledStudio({
                     method="POST"
                     action={action}
                     encType="multipart/form-data"
-                    onSubmit={() => setSubmitting(true)}
+                    onSubmit={submit}
                     aria-busy={submitting}
                 >
                     <input type="hidden" name="_token" value={csrf} />
@@ -416,7 +502,7 @@ export default function ScheduledStudio({
                     <div className="schedule-submit">
                         <p role="status">
                             {submitting ? (
-                                "Subiendo y verificando el video. No cierres esta página…"
+                                "No cierres esta página hasta completar la subida."
                             ) : (
                                 <>
                                     Tu contenido se mostrará como{" "}
@@ -424,13 +510,14 @@ export default function ScheduledStudio({
                                 </>
                             )}
                         </p>
+                        <UploadProgress upload={upload} />
                         <button
                             className="studio-button"
                             type="submit"
                             disabled={submitting}
                         >
                             {submitting
-                                ? "Procesando…"
+                                ? "Subiendo…"
                                 : "Subir y programar emisión"}
                             <Icon name="arrow" size={17} />
                         </button>
@@ -551,8 +638,8 @@ export default function ScheduledStudio({
                         {pagination.total} emisiones
                     </span>
                 </div>
-                {events.length ? (
-                    events.map((event) => (
+                {eventRows.length ? (
+                    eventRows.map((event) => (
                         <div className="schedule-event" key={event.id}>
                             <div className="schedule-date">
                                 <strong>{event.day}</strong>
@@ -585,6 +672,7 @@ export default function ScheduledStudio({
                                 </small>
                             )}
                             {event.error && <p role="status">{event.error}</p>}
+                            <ConversionProgress status={event.state} percent={event.progress} />
                             {event.state === "failed" && (
                                 <Action url={event.retryUrl}>Reintentar</Action>
                             )}
@@ -625,7 +713,7 @@ export default function ScheduledStudio({
                     </nav>
                 )}
             </section>
-            <InstitutionalAds action={adAction} csrf={csrf} ads={ads} old={old} uploadLimits={uploadLimits} />
+            <InstitutionalAds action={adAction} csrf={csrf} ads={adRows} old={old} uploadLimits={uploadLimits} />
         </div>
     );
 }

@@ -628,7 +628,11 @@ button:disabled {
 .uebtv-player-range::-moz-range-track { height:6px; border:0; border-radius:99px; background:#718399; }
 .uebtv-player-range::-moz-range-progress { height:6px; border-radius:99px; background:#ff3152; }
 .uebtv-player-range--progress { flex: 1; min-width: 30px; }
+.uebtv-player-range--progress::-webkit-slider-runnable-track { height:6px; border:0; border-radius:99px; background:linear-gradient(to right,#ff3152 var(--player-progress),#ffffff70 var(--player-progress)); }
+.uebtv-player-range--progress::-moz-range-track { background:linear-gradient(to right,#ff3152 var(--player-progress),#ffffff70 var(--player-progress)); }
 .uebtv-player-range--live { background:linear-gradient(to right, #ff3152 0%, #ff3152 100%); }
+.uebtv-player-range--live::-webkit-slider-runnable-track { background:#ff3152; }
+.uebtv-player-range--live::-moz-range-track { background:#ff3152; }
 .uebtv-player-range--live::-webkit-slider-thumb { width:16px; height:16px; background:#ff3152; }
 .uebtv-player-range--live::-moz-range-thumb { width:14px; height:14px; background:#ff3152; }
 .uebtv-player-range--live::-moz-range-track, .uebtv-player-range--live::-moz-range-progress { background:#ff3152; }

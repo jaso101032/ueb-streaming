@@ -58,9 +58,27 @@ class ScheduledVideoTest extends TestCase {
             $this->get(route('scheduled.state', $created))->assertJsonPath('state', 'processing');
             app(\App\Services\ScheduledVideoProcessor::class)->process($created->scheduledVideo->id);
             $this->assertSame('ready', $created->scheduledVideo->fresh()->processing_status);
+            $this->assertSame(100, $created->scheduledVideo->fresh()->processing_progress);
+            $this->assertNotNull($created->scheduledVideo->fresh()->processing_heartbeat_at);
             $this->assertNull($created->scheduledVideo->fresh()->source_path);
             Storage::disk('local')->assertExists($created->scheduledVideo->fresh()->path);
         } finally { if (is_file($path)) unlink($path); }
+    }
+    public function test_progress_endpoint_is_admin_only_and_heartbeat_keeps_long_conversions_alive(): void {
+        $event = $this->event();
+        $video = $event->scheduledVideo;
+        $video->update(['processing_status' => 'processing', 'processing_started_at' => now()->subHours(2),
+            'processing_heartbeat_at' => now(), 'processing_progress' => 42]);
+        $this->get(route('admin.scheduled.progress'))->assertRedirect();
+        $admin = User::where('role', 'admin')->firstOrFail();
+        $this->actingAs($admin)->get(route('admin.scheduled.progress'))->assertOk()
+            ->assertJsonPath('events.'.$event->id.'.status', 'processing')
+            ->assertJsonPath('events.'.$event->id.'.progress', 42);
+        \Illuminate\Support\Facades\Artisan::call('scheduled:process');
+        $this->assertSame('processing', $video->fresh()->processing_status);
+        $video->update(['processing_heartbeat_at' => now()->subHours(2)]);
+        \Illuminate\Support\Facades\Artisan::call('scheduled:process');
+        $this->assertSame('failed', $video->fresh()->processing_status);
     }
     public function test_common_formats_are_converted_and_failures_can_only_be_retried_by_admin(): void {
         $event = $this->event();

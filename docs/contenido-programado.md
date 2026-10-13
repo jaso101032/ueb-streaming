@@ -96,8 +96,11 @@ En hosting se deben ajustar los valores del PHP web y cualquier límite del prox
 ## Formatos y optimización automática
 
 Se admiten MP4/M4V, MOV, MKV, WebM, AVI, WMV y MPEG/MPG, hasta 500 MB y
-12 horas. FFprobe comprueba que exista una pista de video real antes de aceptar
-la subida. La conversión se realiza fuera de la petición HTTP:
+12 horas. El formulario muestra el porcentaje real de la subida y, cuando el
+servidor confirma la recepción, muestra por separado la cola y el porcentaje
+aproximado de conversión (se actualiza cada 5 segundos). FFprobe comprueba que
+exista una pista de video real antes de aceptar la subida. La conversión se
+realiza fuera de la petición HTTP:
 
 - MP4 con H.264 (CRF 23, preset fast), píxeles yuv420p y audio AAC estéreo 128 kb/s.
 - Resolución máxima 1920 × 1080, conservando proporción y sin ampliar videos pequeños.
@@ -113,7 +116,8 @@ Los archivos pendientes no se emiten. Si la hora prevista pasa mientras se
 optimizan, entran en la programación desde que estén listos, sin saltarse el inicio.
 Después de verificar el resultado se elimina el original. Si falla la conversión,
 se conserva para permitir «Reintentar», disponible únicamente al administrador.
-Usa «Actualizar estado» en la cartelera para consultar el resultado.
+La cartelera consulta el estado automáticamente mientras haya videos pendientes;
+«Actualizar estado» también permite recalcular la cobertura horaria.
 
 Aplica la migración y reinicia el servidor local:
 
@@ -130,6 +134,11 @@ php artisan scheduled:process --watch
 ```
 
 Para procesar una tanda manualmente: `php artisan scheduled:process`.
-Se necesitan FFmpeg con libx264/AAC y FFprobe instalados. Una conversión que exceda
-una hora falla y puede reintentarse. Tras una interrupción del proceso, los trabajos
-bloqueados se marcan como fallidos a los 65 minutos.
+Se necesitan FFmpeg con libx264/AAC y FFprobe instalados. El tiempo máximo de
+conversión se adapta a la duración: mínimo 1 hora y hasta 24 horas para los
+archivos más largos. No garantiza que un video de 12 horas termine en cualquier
+equipo: el tiempo depende de CPU, resolución y códec de origen. FFmpeg informa
+el avance y renueva un latido cada 5 segundos; solo se marca como interrumpido
+un trabajo sin latido durante 65 minutos. Al reiniciar tras una actualización,
+aplica también la migración `2026_10_13_000000_add_processing_progress_to_videos.php`
+y reinicia el procesador para que use el nuevo seguimiento.

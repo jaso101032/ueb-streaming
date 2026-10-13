@@ -7,6 +7,37 @@ const login = async (page, email = "admin@ui.test") => {
     await page.getByRole("button", { name: "Entrar a UEBTV" }).click();
     await page.waitForURL(/admin\/dashboard|eventos/);
 };
+test("public navigation menu is usable on mobile and desktop", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/senal");
+    await expect(page.getByRole("link", { name: "Iniciar sesión" })).toBeVisible();
+    await page.getByRole("button", { name: "Abrir menú" }).click();
+    const menu = page.getByRole("navigation", { name: "Menú principal" });
+    await expect(menu).toBeVisible();
+    await expect(menu.getByRole("link", { name: /Señal en vivo/ })).toHaveAttribute("href", /\/senal$/);
+    await expect(menu.getByRole("link", { name: /Explorar catálogo/ })).toHaveAttribute("href", /\/eventos$/);
+    await expect(menu.getByRole("link", { name: "Crear cuenta" })).toHaveAttribute("href", /\/register$/);
+    await expect(page.locator("body")).toHaveJSProperty("scrollWidth", 390);
+    await page.screenshot({ path: "/tmp/uebtv-guest-menu-mobile.png" });
+    await page.setViewportSize({ width: 320, height: 720 });
+    await expect(page.locator("body")).toHaveJSProperty("scrollWidth", 320);
+    await expect(menu).toBeVisible();
+    const logo = await page.locator('.studio-brand--uebtv').boundingBox();
+    const account = await page.locator('.studio-account').boundingBox();
+    expect(logo.x + logo.width).toBeLessThanOrEqual(account.x);
+    await page.screenshot({ path: "/tmp/uebtv-guest-menu-320.png" });
+    await page.keyboard.press("Escape");
+    await expect(menu).toHaveCount(0);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.getByRole("button", { name: "Abrir menú" }).click();
+    await expect(menu).toBeVisible();
+    await page.screenshot({ path: "/tmp/uebtv-guest-menu-desktop.png" });
+    await page.locator("main").click({ position: { x: 20, y: 20 } });
+    await expect(menu).toHaveCount(0);
+    await login(page, "student@ui.test");
+    await page.getByRole("button", { name: "Abrir menú" }).click();
+    await expect(menu.getByRole("link", { name: "Mi perfil" })).toBeVisible();
+});
 test("public catalog, empty search, room and mobile layout render without React errors", async ({
     page,
 }) => {
@@ -129,7 +160,7 @@ test("access, profile, administration, event form preview and mobile navigation"
         page.getByRole("button", { name: "Confirmar eliminación" }),
     ).toBeVisible();
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.getByRole("button", { name: "Abrir o cerrar menú" }).click();
+    await page.getByRole("button", { name: "Abrir menú" }).click();
     await expect(
         page.getByRole("link", { name: "Crear evento", exact: true }),
     ).toBeVisible();
@@ -342,6 +373,60 @@ test("scheduled playback joins the server position and becomes seekable after en
     await expect
         .poll(() => page.locator("video").evaluate((v) => v.currentTime))
         .toBe(5);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.locator("video").evaluate((v) => { v.currentTime = 30; });
+    const progress = page.getByRole("slider", { name: "Posición del video" });
+    await expect(progress).toHaveAttribute("style", /--player-progress: 50%/);
+    const mobileControls = await page.evaluate(() => {
+        const bar = document.querySelector('.uebtv-player-range--progress');
+        const shell = document.querySelector('.uebtv-player-shell');
+        const speed = document.querySelector('.uebtv-player-speed');
+        return {
+            barWidth: bar.getBoundingClientRect().width,
+            playerWidth: shell.getBoundingClientRect().width,
+            track: getComputedStyle(bar, '::-webkit-slider-runnable-track').backgroundImage,
+            speedHeight: speed.getBoundingClientRect().height,
+        };
+    });
+    expect(mobileControls.barWidth).toBeGreaterThan(mobileControls.playerWidth * 0.8);
+    expect(mobileControls.track).toContain('linear-gradient');
+    expect(mobileControls.speedHeight).toBe(32);
+    await expect(page.locator('.react-player-label')).toBeHidden();
+    await page.screenshot({ path: '/tmp/uebtv-vod-mobile-controls.png' });
+    await page.evaluate(() => { document.documentElement.dataset.theme = 'dark'; });
+    await expect(page.locator('.uebtv-watch-state').first()).toHaveCSS('color', 'rgb(228, 242, 255)');
+    await page.screenshot({ path: '/tmp/uebtv-vod-mobile-controls-dark.png' });
+});
+
+test("live player reconnects after a native HLS error without reloading the page", async ({ page }) => {
+    await page.addInitScript(() => {
+        const original = HTMLMediaElement.prototype.canPlayType;
+        HTMLMediaElement.prototype.canPlayType = function (type) {
+            return type === "application/vnd.apple.mpegurl" ? "probably" : original.call(this, type);
+        };
+    });
+    await page.route("**/eventos/1", async (route) => {
+        const response = await route.fetch();
+        let html = await response.text();
+        const match = html.match(/data-react-page="Watch" data-props="([^"]*)"/);
+        const decode = (value) => value.replaceAll("&quot;", '"').replaceAll("&amp;", "&").replaceAll("&#039;", "'").replaceAll("&lt;", "<").replaceAll("&gt;", ">");
+        const props = JSON.parse(decode(match[1]));
+        props.event.status = "en_vivo";
+        props.event.scheduled = null;
+        props.event.videoUrl = null;
+        props.event.hlsUrl = "/mock-live.m3u8";
+        props.event.viewersUrl = null;
+        const encoded = JSON.stringify(props).replaceAll("&", "&amp;").replaceAll('"', "&quot;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+        html = html.replace(match[1], encoded);
+        await route.fulfill({ response, body: html });
+    });
+    await page.route("**/mock-live.m3u8**", (route) => route.fulfill({ body: "#EXTM3U\n", contentType: "application/vnd.apple.mpegurl" }));
+    await page.goto("/eventos/1");
+    const video = page.locator("video");
+    await expect(video).toHaveAttribute("src", /mock-live\.m3u8\?reconnect=0/);
+    await video.evaluate((element) => element.dispatchEvent(new Event("error")));
+    await expect(page.getByText("Reconectando automáticamente", { exact: false })).toBeVisible();
+    await expect(video).toHaveAttribute("src", /mock-live\.m3u8\?reconnect=1/, { timeout: 5000 });
 });
 
 test("React event form creates, updates and deletes through Laravel routes", async ({
@@ -525,6 +610,26 @@ test("admin sees separate programming and institutional advertising forms on mob
     await expect(page.locator("body")).toHaveJSProperty("scrollWidth", 390);
 });
 
+test("advertising upload shows progress and a recoverable server error", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await login(page);
+    await page.goto("/admin/contenido-programado");
+    await page.getByLabel("Nombre del anuncio").fill("Campaña institucional");
+    await page.getByLabel("Archivo de video").setInputFiles({
+        name: "campana.mp4", mimeType: "video/mp4", buffer: Buffer.alloc(1024),
+    });
+    await page.route("**/admin/contenido-programado/publicidad", async (route) => {
+        await new Promise((resolve) => setTimeout(resolve, 700));
+        await route.fulfill({ status: 422, contentType: "application/json",
+            body: JSON.stringify({ errors: { ad_video: ["Archivo rechazado por el servidor."] } }) });
+    });
+    await page.getByRole("button", { name: "Subir publicidad" }).click();
+    await expect(page.getByRole("progressbar", { name: "Progreso de subida del video" })).toBeVisible();
+    await expect(page.locator("body")).toHaveJSProperty("scrollWidth", 390);
+    await expect(page.getByRole("alert").filter({ hasText: "Archivo rechazado por el servidor." })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Subir publicidad" })).toBeEnabled();
+});
+
 test("desktop header places UEBTV and mascot near the left edge without changing mobile layout", async ({ page }) => {
     await page.setViewportSize({ width: 1863, height: 900 });
     await login(page);
@@ -585,6 +690,8 @@ test("scheduled upload accepts a real MP4 larger than the old 8 MB POST limit", 
         page
             .locator(".schedule-event")
             .filter({ hasText: "Video de prueba de subida grande" })
-            .getByText("En cola"),
+            .getByText("En cola", { exact: true }),
     ).toBeVisible();
+    await expect(page.locator(".schedule-event").filter({ hasText: "Video de prueba de subida grande" })
+        .getByText("En cola para convertir")).toBeVisible();
 });

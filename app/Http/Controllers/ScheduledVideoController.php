@@ -23,6 +23,25 @@ class ScheduledVideoController extends Controller
             'timeline' => ($timeline = app(ChannelSchedule::class)->timeline()), 'summary' => app(ChannelSchedule::class)->summary($timeline)]);
     }
 
+    public function progress(Request $request)
+    {
+        $page = max(1, (int) $request->query('page', 1));
+        $events = Evento::whereHas('scheduledVideo')->with('scheduledVideo')->latest()->paginate(12, ['*'], 'page', $page);
+
+        return response()->json([
+            'events' => $events->mapWithKeys(fn ($event) => [$event->id => [
+                'status' => $event->scheduledVideo->processing_status,
+                'progress' => $event->scheduledVideo->processing_progress,
+                'error' => $event->scheduledVideo->processing_error,
+            ]]),
+            'ads' => InstitutionalAd::get()->mapWithKeys(fn ($ad) => [$ad->id => [
+                'status' => $ad->processing_status,
+                'progress' => $ad->processing_progress,
+                'error' => $ad->processing_error,
+            ]]),
+        ])->header('Cache-Control', 'no-store');
+    }
+
     public function store(Request $request)
     {
         $data = $request->validate([
@@ -52,14 +71,21 @@ class ScheduledVideoController extends Controller
             throw $e;
         }
 
-        return to_route('admin.scheduled.index')->with('success', 'Video recibido. Se está preparando para la emisión; aparecerá en la programación cuando esté listo.');
+        $message = 'Video recibido. Se está preparando para la emisión; aparecerá en la programación cuando esté listo.';
+        if ($request->expectsJson()) {
+            $request->session()->flash('success', $message);
+            return response()->json(['message' => $message, 'redirect' => route('admin.scheduled.index')], 201);
+        }
+
+        return to_route('admin.scheduled.index')->with('success', $message);
     }
 
     public function retry(Evento $evento)
     {
         $video = $evento->scheduledVideo;
         abort_unless($video && $video->processing_status === 'failed' && $video->source_path, 409);
-        $video->update(['processing_status' => 'pending', 'processing_error' => null]);
+        $video->update(['processing_status' => 'pending', 'processing_progress' => 0,
+            'processing_heartbeat_at' => null, 'processing_error' => null]);
 
         return back()->with('success', 'Conversión pendiente de reintento.');
     }

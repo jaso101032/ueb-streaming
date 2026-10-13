@@ -93,6 +93,7 @@ Route::post('/streaming/hooks/authorize', \App\Http\Controllers\StreamAuthorizat
 
 require __DIR__.'/auth.php';
 Route::middleware(['auth', 'role:admin'])->prefix('admin/contenido-programado')->group(function () {
+    Route::get('/progreso', [\App\Http\Controllers\ScheduledVideoController::class, 'progress'])->name('admin.scheduled.progress');
     Route::post('/publicidad', [\App\Http\Controllers\InstitutionalAdController::class, 'store'])->middleware('throttle:10,1')->name('admin.ads.store');
     Route::post('/publicidad/{ad}/estado', [\App\Http\Controllers\InstitutionalAdController::class, 'toggle'])->name('admin.ads.toggle');
     Route::post('/publicidad/{ad}/reintentar', [\App\Http\Controllers\InstitutionalAdController::class, 'retry'])->middleware('throttle:5,1')->name('admin.ads.retry');

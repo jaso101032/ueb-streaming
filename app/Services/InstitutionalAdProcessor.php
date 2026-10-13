@@ -11,7 +11,8 @@ class InstitutionalAdProcessor
     public function process(int $id): void
     {
         $claimed = InstitutionalAd::whereKey($id)->where('processing_status', 'pending')
-            ->update(['processing_status' => 'processing', 'processing_started_at' => now(), 'processing_error' => null]);
+            ->update(['processing_status' => 'processing', 'processing_started_at' => now(),
+                'processing_heartbeat_at' => now(), 'processing_progress' => 0, 'processing_error' => null]);
         if (! $claimed) return;
 
         $ad = InstitutionalAd::findOrFail($id);
@@ -20,10 +21,13 @@ class InstitutionalAdProcessor
         try {
             $disk->makeDirectory('institutional-ads');
             $converter = app(ScheduledVideoProcessor::class);
-            $converter->transcode($disk->path($ad->source_path), $disk->path($output));
+            $converter->transcode($disk->path($ad->source_path), $disk->path($output), $ad->duration,
+                fn (int $percent) => InstitutionalAd::whereKey($id)->where('processing_status', 'processing')
+                    ->update(['processing_progress' => $percent, 'processing_heartbeat_at' => now()]));
             $duration = $converter->probe($disk->path($output))['duration'];
             $ad->update(['path' => $output, 'duration' => $duration,
                 'optimized_bytes' => $disk->size($output), 'processing_status' => 'ready',
+                'processing_progress' => 100, 'processing_heartbeat_at' => now(),
                 'ready_at' => now(), 'processing_error' => null]);
             $disk->delete($ad->source_path);
             $ad->update(['source_path' => null]);

@@ -32,7 +32,13 @@ class InstitutionalAdController extends Controller
             throw $e;
         }
 
-        return to_route('admin.scheduled.index')->with('success', 'Publicidad recibida. Se emitirá en los huecos cuando termine su conversión.');
+        $message = 'Publicidad recibida. Se emitirá en los huecos cuando termine su conversión.';
+        if ($request->expectsJson()) {
+            $request->session()->flash('success', $message);
+            return response()->json(['message' => $message, 'redirect' => route('admin.scheduled.index').'#schedule-ads'], 201);
+        }
+
+        return to_route('admin.scheduled.index')->with('success', $message);
     }
 
     public function toggle(InstitutionalAd $ad)
@@ -45,7 +51,8 @@ class InstitutionalAdController extends Controller
     public function retry(InstitutionalAd $ad)
     {
         abort_unless($ad->processing_status === 'failed' && $ad->source_path, 409);
-        $ad->update(['processing_status' => 'pending', 'processing_error' => null]);
+        $ad->update(['processing_status' => 'pending', 'processing_progress' => 0,
+            'processing_heartbeat_at' => null, 'processing_error' => null]);
 
         return back()->with('success', 'Se reintentará la conversión de la publicidad.');
     }

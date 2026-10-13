@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import NavIcon from "./NavIcon";
 import { Context, Action } from "./shared";
 import UniversityMark from "./UniversityMark";
@@ -14,6 +14,10 @@ function ThemeIcon({ theme }) {
 
 export default function Shell({ shell, children }) {
     const [menu, setMenu] = useState(false);
+    const menuRef = useRef(null), menuButtonRef = useRef(null);
+    const currentPath = typeof window === "undefined" ? "" : window.location.pathname;
+    const channelPath = new URL(shell.channel, "http://localhost").pathname;
+    const catalogPath = new URL(shell.catalog, "http://localhost").pathname;
     const [theme, setTheme] = useState(() => {
         if (typeof window === "undefined") return "light";
         const saved = window.localStorage.getItem("uebtv-theme");
@@ -34,6 +38,14 @@ export default function Shell({ shell, children }) {
         document.documentElement.dataset.theme = theme;
         window.localStorage.setItem("uebtv-theme", theme);
     }, [theme]);
+    useEffect(() => {
+        if (!menu || shell.operator) return undefined;
+        const closeOutside = (event) => {
+            if (!menuRef.current?.contains(event.target) && !menuButtonRef.current?.contains(event.target)) setMenu(false);
+        };
+        document.addEventListener("pointerdown", closeOutside);
+        return () => document.removeEventListener("pointerdown", closeOutside);
+    }, [menu, shell.operator]);
     return (
         <Context.Provider value={shell}>
             <div className="min-h-screen flex flex-col">
@@ -84,22 +96,45 @@ export default function Shell({ shell, children }) {
                                     className="studio-signout"
                                     href={shell.login}
                                 >
-                                    Ingresar
+                                    Iniciar sesión
                                 </a>
                             )}
-                            {(shell.operator || !shell.user) && (
-                                <button
-                                    className="studio-menu-toggle"
-                                    onClick={() => setMenu(!menu)}
-                                    aria-expanded={menu}
-                                    aria-controls="studio-sidebar"
-                                    aria-label="Abrir o cerrar menú"
-                                >
-                                    ☰
-                                </button>
-                            )}
+                            <button
+                                ref={menuButtonRef}
+                                type="button"
+                                className={`studio-menu-toggle ${menu ? "is-open" : ""}`}
+                                onClick={() => setMenu((value) => !value)}
+                                aria-expanded={menu}
+                                aria-controls={shell.operator ? "studio-sidebar" : "studio-guest-menu"}
+                                aria-label={menu ? "Cerrar menú" : "Abrir menú"}
+                            >
+                                <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                                    {menu ? <path d="M5 5l14 14M19 5 5 19" /> : <path d="M4 7h16M4 12h16M4 17h16" />}
+                                </svg>
+                            </button>
                         </div>
                     </div>
+                    {!shell.operator && menu && (
+                        <nav ref={menuRef} id="studio-guest-menu" className="studio-guest-menu" aria-label="Menú principal">
+                            <p className="studio-guest-menu__eyebrow">EXPLORA UEBTV</p>
+                            <a href={shell.channel} aria-current={currentPath === channelPath ? "page" : undefined}>
+                                <span className="studio-guest-menu__icon" aria-hidden="true"><NavIcon index={2} /></span>
+                                <span className="studio-guest-menu__copy"><strong>Señal en vivo</strong><small>Directos y programación 24/7</small></span>
+                                <span className="studio-guest-menu__arrow" aria-hidden="true">↗</span>
+                            </a>
+                            <a href={shell.catalog} aria-current={currentPath.startsWith(catalogPath) ? "page" : undefined}>
+                                <span className="studio-guest-menu__icon" aria-hidden="true"><NavIcon index={3} /></span>
+                                <span className="studio-guest-menu__copy"><strong>Explorar catálogo</strong><small>Eventos y videos de la UEB</small></span>
+                                <span className="studio-guest-menu__arrow" aria-hidden="true">↗</span>
+                            </a>
+                            <div className="studio-guest-menu__account">
+                                <span>{shell.user ? "TU CUENTA" : "ÚNETE A LA COMUNIDAD"}</span>
+                                <a href={shell.user ? shell.profile : shell.register}>
+                                    {shell.user ? "Mi perfil" : "Crear cuenta"}<span aria-hidden="true">↗</span>
+                                </a>
+                            </div>
+                        </nav>
+                    )}
                 </header>
                 {shell.operator ? (
                     <aside
@@ -138,14 +173,7 @@ export default function Shell({ shell, children }) {
                             <UniversityMark className="university-mark--sidebar" />
                         </div>
                     </aside>
-                ) : (
-                    !shell.user &&
-                    menu && (
-                        <nav id="studio-sidebar" className="studio-mobile-nav">
-                            <a href={shell.register}>Crear cuenta ↗</a>
-                        </nav>
-                    )
-                )}
+                ) : null}
                 <div
                     className={
                         shell.operator
