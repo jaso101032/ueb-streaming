@@ -183,7 +183,7 @@ export default function Player({ event: e, onScheduledState, recordingRef, onVid
                 const { default: Hls } = await import("hls.js");
                 if (stopped) return;
                 if (!Hls.isSupported()) { setError("Este navegador no admite la emisión."); return; }
-                hls = new Hls({ lowLatencyMode: true, liveSyncDurationCount: 2, liveMaxLatencyDurationCount: 5, maxLiveSyncPlaybackRate: 1.15, maxBufferLength: 8, maxMaxBufferLength: 12, backBufferLength: 8 });
+                hls = new Hls({ lowLatencyMode: false, liveSyncDurationCount: 3, liveMaxLatencyDurationCount: 6, maxLiveSyncPlaybackRate: 1.15, maxBufferLength: 12, maxMaxBufferLength: 20, backBufferLength: 12 });
                 hls.loadSource(e.hlsUrl);
                 hls.attachMedia(target);
                 hls.on(Hls.Events.MANIFEST_PARSED, () => { if (!manualPause.current) target.play().catch(() => {}); });
