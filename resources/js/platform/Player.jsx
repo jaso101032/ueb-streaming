@@ -10,7 +10,7 @@ const timeLabel = (seconds) => {
 // HLS keeps a small buffer at the live edge. Treat that normal latency as live;
 // controls only announce a delay after the viewer has genuinely time-shifted.
 const LIVE_EDGE_OFFSET = 3;
-const LIVE_REWIND_THRESHOLD = 5;
+const LIVE_REWIND_THRESHOLD = 12;
 
 function PlayerIcon({ name }) {
     const paths = {
@@ -150,7 +150,7 @@ export default function Player({ event: e, onScheduledState, recordingRef, onVid
     useEffect(() => {
         if (!live || !e.hlsUrl) return;
         let hls, stopped = false; const target = video.current; setError("");
-        async function attach() { try { if (target.canPlayType("application/vnd.apple.mpegurl")) { target.src = e.hlsUrl; return; } const { default: Hls } = await import("hls.js"); if (stopped) return; if (!Hls.isSupported()) { setError("Este navegador no admite la emisión."); return; } hls = new Hls({ lowLatencyMode: false, liveSyncDurationCount: 4, liveMaxLatencyDurationCount: 12, maxLiveSyncPlaybackRate: 1.05, maxBufferLength: 20, maxMaxBufferLength: 40, backBufferLength: 30, manifestLoadingMaxRetry: 6, levelLoadingMaxRetry: 6, fragLoadingMaxRetry: 8 }); hls.loadSource(e.hlsUrl); hls.attachMedia(target); hls.on(Hls.Events.MANIFEST_PARSED, () => target.play().catch(() => {})); hls.on(Hls.Events.ERROR, (_, data) => { if (!data.fatal) return; if (data.type === Hls.ErrorTypes.NETWORK_ERROR) { hls.startLoad(); return; } if (data.type === Hls.ErrorTypes.MEDIA_ERROR) { hls.recoverMediaError(); return; } setError("La señal no está disponible en este momento."); }); } catch { if (!stopped) setError("No se pudo cargar el reproductor."); } }
+        async function attach() { try { if (target.canPlayType("application/vnd.apple.mpegurl")) { target.src = e.hlsUrl; return; } const { default: Hls } = await import("hls.js"); if (stopped) return; if (!Hls.isSupported()) { setError("Este navegador no admite la emisión."); return; } hls = new Hls({ lowLatencyMode: false, liveSyncDurationCount: 4, liveMaxLatencyDurationCount: 8, maxLiveSyncPlaybackRate: 1.15, maxBufferLength: 20, maxMaxBufferLength: 40, backBufferLength: 30, manifestLoadingMaxRetry: 6, levelLoadingMaxRetry: 6, fragLoadingMaxRetry: 8 }); hls.loadSource(e.hlsUrl); hls.attachMedia(target); hls.on(Hls.Events.MANIFEST_PARSED, () => target.play().catch(() => {})); hls.on(Hls.Events.ERROR, (_, data) => { if (!data.fatal) return; if (data.type === Hls.ErrorTypes.NETWORK_ERROR) { hls.startLoad(); return; } if (data.type === Hls.ErrorTypes.MEDIA_ERROR) { hls.recoverMediaError(); return; } setError("La señal no está disponible en este momento."); }); } catch { if (!stopped) setError("No se pudo cargar el reproductor."); } }
         attach(); return () => { stopped = true; hls?.destroy(); target.removeAttribute("src"); target.load(); };
     }, [e.hlsUrl, live, retry]);
     if (e.scheduled) return <ScheduledPlayer scheduled={e.scheduled} poster={e.image} onState={onScheduledState} onVideoProgress={onVideoProgress} />;
