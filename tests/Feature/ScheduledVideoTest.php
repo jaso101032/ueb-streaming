@@ -40,6 +40,19 @@ class ScheduledVideoTest extends TestCase {
         $this->get(route('admin.scheduled.index'))->assertOk();
         $this->post(route('admin.scheduled.store'),[])->assertSessionHasErrors(['titulo','video','fecha_inicio']);
     }
+    public function test_production_media_handoff_keeps_the_scheduled_video_private(): void {
+        $event = $this->event();
+        $name = \Illuminate\Support\Str::uuid().'.mp4';
+        Storage::disk('local')->put('scheduled-videos/'.$name, 'test');
+        $event->scheduledVideo->update(['path' => 'scheduled-videos/'.$name]);
+        config(['streaming.x_accel_media' => true]);
+        $this->get(route('scheduled.media', $event))->assertNotFound();
+        $this->travel(11)->minutes();
+        $this->get(route('scheduled.media', $event))->assertOk()
+            ->assertHeader('X-Accel-Redirect', '/_protected_media/scheduled-videos/'.$name);
+        $event->update(['estado' => 'cancelado']);
+        $this->get(route('scheduled.media', $event))->assertNotFound();
+    }
     public function test_real_mp4_upload_creates_private_scheduled_event(): void {
         $event = $this->event();
         $this->actingAs(User::where('role','admin')->first());

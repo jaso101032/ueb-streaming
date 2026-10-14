@@ -77,6 +77,20 @@ class InstitutionalAdTest extends TestCase
         $this->get(route('channel.ad.media', $ad))->assertOk();
     }
 
+    public function test_production_media_handoff_still_checks_that_the_ad_is_active(): void
+    {
+        Storage::fake('local');
+        $name = \Illuminate\Support\Str::uuid().'.mp4';
+        Storage::disk('local')->put('institutional-ads/'.$name, 'test');
+        $ad = InstitutionalAd::create(['title' => 'Aviso UEB', 'path' => 'institutional-ads/'.$name,
+            'duration' => 15, 'processing_status' => 'ready', 'ready_at' => now(), 'is_active' => true]);
+        config(['streaming.x_accel_media' => true]);
+        $this->get(route('channel.ad.media', $ad))->assertOk()
+            ->assertHeader('X-Accel-Redirect', '/_protected_media/institutional-ads/'.$name);
+        $ad->update(['is_active' => false]);
+        $this->get(route('channel.ad.media', $ad))->assertNotFound();
+    }
+
     public function test_live_signal_interrupts_advertising_and_advertising_returns_after_disconnect(): void
     {
         Storage::fake('local');

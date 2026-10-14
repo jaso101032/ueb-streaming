@@ -570,7 +570,7 @@ button:disabled {
     pointer-events: none;
     transition:opacity .22s ease,transform .22s ease;
 }
-.uebtv-player-mark img { display: block; width: 100%; height: auto; }
+.uebtv-player-mark img { display: block; width: 100%; height: auto; max-height: 64px; object-fit: contain; object-position: top right; filter: drop-shadow(0 1px 2px #0008); }
 .uebtv-player-live {
     position: absolute;
     z-index: 2;

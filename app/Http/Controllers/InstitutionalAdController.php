@@ -62,6 +62,11 @@ class InstitutionalAdController extends Controller
         abort_unless($ad->is_active && $ad->processing_status === 'ready' && $ad->path
             && Storage::disk('local')->exists($ad->path), 404);
 
+        if (config('streaming.x_accel_media') && preg_match('~^institutional-ads/([a-f0-9-]{36}\.mp4)$~D', $ad->path, $matches)) {
+            return response('', 200, ['X-Accel-Redirect' => '/_protected_media/institutional-ads/'.$matches[1],
+                'Content-Type' => 'video/mp4', 'Cache-Control' => 'private, no-store', 'X-Content-Type-Options' => 'nosniff']);
+        }
+
         return response()->file(Storage::disk('local')->path($ad->path), [
             'Content-Type' => 'video/mp4', 'Cache-Control' => 'private, no-store',
             'X-Content-Type-Options' => 'nosniff',

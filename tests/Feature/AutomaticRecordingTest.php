@@ -90,6 +90,9 @@ class AutomaticRecordingTest extends TestCase
         $this->get(route('eventos.show', $this->event))->assertOk()->assertSee(route('eventos.recording', $this->event));
         $this->get(route('eventos.recording', $this->event), ['Range' => 'bytes=0-31'])->assertStatus(206)
             ->assertHeader('Content-Type', 'video/mp4');
+        config(['streaming.x_accel_media' => true]);
+        $this->get(route('eventos.recording', $this->event))->assertOk()
+            ->assertHeader('X-Accel-Redirect', '/_protected_media/recordings/'.$stream->recording_file);
         $this->publish()->assertForbidden();
         $this->artisan('streaming:prepare-recordings')->assertSuccessful();
         $this->assertSame($stream->recording_file, $stream->fresh()->recording_file);

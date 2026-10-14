@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Models\Evento;
+use App\Models\PlayerWatermark;
 
 class ReactPage
 {
@@ -54,6 +55,7 @@ class ReactPage
         }
         if ($user?->role === 'admin') {
             $links[] = ['label' => 'Parrilla 24/7', 'url' => route('admin.scheduled.index'), 'active' => request()->routeIs('admin.scheduled.*')];
+            $links[] = ['label' => 'Marca de agua', 'url' => route('admin.watermark.edit'), 'active' => request()->routeIs('admin.watermark.*')];
         }
 
         return ['user' => $user?->only(['name', 'email', 'role']), 'links' => $links, 'operator' => $operator, 'createUrl' => $operator ? route('admin.eventos.create') : null,
@@ -67,6 +69,7 @@ class ReactPage
             // UEBTV identifica el producto y la señal; la marca UEB oficial
             // se entrega por separado como firma institucional.
             'tvLogo' => asset('images/brand/uebtv-logo-final.png'),
+            'playerWatermark' => PlayerWatermark::current(),
             'csrf' => csrf_token(),
             'errors' => session('errors')?->all() ?? [], 'success' => session('success'), 'status' => session('status'), 'year' => now()->year];
     }

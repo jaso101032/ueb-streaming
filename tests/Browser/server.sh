@@ -17,6 +17,8 @@ php artisan migrate --force
 php tests/Browser/seed.php
 ffmpeg -hide_banner -loglevel error -f lavfi -i color=c=0x102f56:s=320x180:r=1:d=60 -c:v libx264 -pix_fmt yuv420p -movflags +faststart -y /tmp/uebtv-react-test.mp4
 cd public
-php -d upload_max_filesize=500M -d post_max_size=512M -S 127.0.0.1:8017 -t . ../vendor/laravel/framework/src/Illuminate/Foundation/resources/server.php &
+# Application resolves storage before dotenv loads. Include the exported
+# LARAVEL_STORAGE_PATH in $_ENV even under PHP's built-in HTTP server.
+php -d variables_order=EGPCS -d upload_max_filesize=500M -d post_max_size=512M -S 127.0.0.1:8017 -t . ../tests/Browser/router.php &
 browser_server_pid=$!
 wait "$browser_server_pid"

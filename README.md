@@ -11,7 +11,13 @@ mantiene la pantalla de espera. Detalles en
 
 > Estado de entrega: consulta [la guía de entrega del 12 de octubre de 2026](docs/ENTREGA_2026-10-12.md) antes de continuar el desarrollo. Resume lo implementado, los límites conocidos y el arranque local para PC, OBS y teléfono.
 
+Actualización del 14 de octubre: [marca de agua, continuidad de reproducción y
+pasos de actualización](docs/ENTREGA_2026-10-14.md).
+
 Para desplegar en Dokploy, sigue [la guía de producción](docs/despliegue-dokploy.md).
+
+El administrador puede personalizar la **Marca de agua** del reproductor con un PNG
+transparente. Consulta [formatos, validación y despliegue](docs/marca-de-agua.md).
 
 ## Tecnologías
 
@@ -22,7 +28,7 @@ Para desplegar en Dokploy, sigue [la guía de producción](docs/despliegue-dokpl
 
 ## Requisitos
 
-- PHP 8.3+ con extensiones requeridas por Laravel.
+- PHP 8.3+ con extensiones requeridas por Laravel y GD (PNG) para la marca de agua.
 - Composer, Node.js y npm.
 - PostgreSQL configurado, o SQLite para desarrollo local.
 - Nginx con `ngx_rtmp_module` para streaming.

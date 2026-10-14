@@ -15,7 +15,23 @@ del repositorio.
 En la pestaña de dominios del servicio Compose, crea el dominio HTTPS para el
 servicio `app`, puerto interno `8080`, con TLS/Let's Encrypt habilitado. Crea
 un registro DNS `A` que apunte ese dominio a la IP pública del servidor.
-El HLS se sirve por `https://TU_DOMINIO/hls/...` detrás del mismo dominio.
+El HLS se sirve por `https://TU_DOMINIO/hls/...` detrás del mismo dominio;
+Nginx lo lee del volumen compartido con RTMP, sin reenviar cada segmento al
+contenedor de ingesta.
+Los MP4 privados se autorizan en Laravel y Nginx los entrega mediante rutas
+internas `X-Accel-Redirect`, incluidas las solicitudes por rangos. Esto evita
+mantener ocupado un proceso PHP por cada descarga o espectador. El Compose
+activa `STREAMING_X_ACCEL_MEDIA=true`; en desarrollo sin ese Nginx se usa la
+respuesta de archivo de Laravel. Las rutas `/_protected_media/` no son públicas.
+
+No hay un cupo de dispositivos configurado en el reproductor. La capacidad
+depende sobre todo del bitrate de la señal, del ancho de banda saliente y del
+servidor: como estimación inicial, `espectadores × bitrate` da el tráfico de
+salida, al que hay que añadir margen para picos y otras peticiones. Antes de
+prometer una cantidad concreta, probar 5, 10 y 20 dispositivos en redes
+distintas y vigilar tiempos de respuesta, CPU, memoria, tráfico y cortes. El
+autoplay se intenta silenciado; si el navegador bloquea incluso eso, exige un
+toque del espectador y ninguna página web puede saltarse esa restricción.
 
 ## Variables de entorno y secretos
 
@@ -55,3 +71,8 @@ servicios automáticamente; el servicio Postgres no debe exponerse públicamente
 Dokploy gestiona dominios de Compose desde su pestaña **Domains** y reinicia el
 Compose al guardar cambios de dominio. Asegúrate de respaldar PostgreSQL y los
 volúmenes de medios; desplegar una imagen nueva no sustituye esos respaldos.
+
+La [marca de agua configurable](marca-de-agua.md) usa la tabla `player_watermarks`
+y PNG en `storage/app/public/player-watermarks`. El contenedor ya incluye GD,
+ejecuta la migración y crea `public/storage`. Conserva el volumen `app_storage`
+junto con la base de datos para no perder la selección al volver a desplegar.

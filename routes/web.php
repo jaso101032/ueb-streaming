@@ -66,6 +66,9 @@ Route::middleware('auth')->group(function () {
 // Funciones de gestión exclusivas del administrador.
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/marca-de-agua', [\App\Http\Controllers\Admin\PlayerWatermarkController::class, 'edit'])->name('watermark.edit');
+    Route::put('/marca-de-agua', [\App\Http\Controllers\Admin\PlayerWatermarkController::class, 'update'])->middleware('throttle:10,1')->name('watermark.update');
+    Route::delete('/marca-de-agua', [\App\Http\Controllers\Admin\PlayerWatermarkController::class, 'destroy'])->middleware('throttle:10,1')->name('watermark.destroy');
     
     // CRUD completo de Eventos accesible por Administrador y Operador
     Route::resource('eventos', EventoController::class)->except('destroy');

@@ -598,6 +598,64 @@ test("institutional advertising fills a channel gap with a P and no seek control
     expect(errors).toEqual([]);
 });
 
+test("channel keeps playing muted when the browser rejects audible autoplay on the next ad", async ({ page }) => {
+    await page.addInitScript(() => {
+        const original = HTMLMediaElement.prototype.play;
+        HTMLMediaElement.prototype.play = function (...args) {
+            if (!this.muted) return Promise.reject(new DOMException("Audio autoplay blocked", "NotAllowedError"));
+            return original.apply(this, args);
+        };
+    });
+    let id = 1;
+    await page.route("**/senal/estado", (route) => route.fulfill({ json: {
+        mode: "advertisement", event: null,
+        advertisement: { id, title: `Anuncio ${id}`, mediaUrl: "/mock-ad.mp4" },
+        playback: { state: "playing", position: 1, duration: 60 },
+        next: [], summary: { count: 0, totalSeconds: 0, remainingSeconds: 0 },
+    } }));
+    const bytes = readFileSync("/tmp/uebtv-react-test.mp4");
+    await page.route("**/mock-ad.mp4", (route) => {
+        const range = route.request().headers()["range"];
+        const start = range ? Number(range.match(/bytes=(\d+)/)?.[1] || 0) : 0;
+        return route.fulfill({ status: range ? 206 : 200, contentType: "video/mp4",
+            headers: { "Accept-Ranges": "bytes", ...(range ? { "Content-Range": `bytes ${start}-${bytes.length - 1}/${bytes.length}` } : {}) },
+            body: bytes.subarray(start) });
+    });
+    await page.goto("/senal");
+    await expect.poll(() => page.locator("video").evaluate((v) => v.currentTime)).toBeGreaterThan(1);
+    await page.getByRole("button", { name: "Activar sonido" }).click();
+    await expect(page.locator("video")).toHaveJSProperty("muted", false);
+    id = 2;
+    await expect(page.getByRole("heading", { name: "Anuncio 2" })).toBeVisible({ timeout: 10000 });
+    await expect(page.locator("video")).toHaveJSProperty("muted", true);
+    await expect.poll(() => page.locator("video").evaluate((v) => v.currentTime)).toBeGreaterThan(1);
+    await expect(page.getByText("Pulsa reproducir para unirte a la señal.")).toHaveCount(0);
+});
+
+test("channel retries an interrupted ad without asking the viewer to reload", async ({ page }) => {
+    await page.route("**/senal/estado", (route) => route.fulfill({ json: {
+        mode: "advertisement", event: null,
+        advertisement: { id: 7, title: "Aviso institucional", mediaUrl: "/mock-ad.mp4" },
+        playback: { state: "playing", position: 1, duration: 60 },
+        next: [], summary: { count: 0, totalSeconds: 0, remainingSeconds: 0 },
+    } }));
+    const bytes = readFileSync("/tmp/uebtv-react-test.mp4");
+    let attempts = 0;
+    await page.route("**/mock-ad.mp4*", (route) => {
+        attempts++;
+        if (attempts === 1) return route.fulfill({ status: 503, body: "Temporary video error" });
+        const range = route.request().headers()["range"];
+        const start = range ? Number(range.match(/bytes=(\d+)/)?.[1] || 0) : 0;
+        return route.fulfill({ status: range ? 206 : 200, contentType: "video/mp4",
+            headers: { "Accept-Ranges": "bytes", ...(range ? { "Content-Range": `bytes ${start}-${bytes.length - 1}/${bytes.length}` } : {}) },
+            body: bytes.subarray(start) });
+    });
+    await page.goto("/senal");
+    await expect.poll(() => page.locator("video").evaluate((v) => v.currentTime), { timeout: 15000 }).toBeGreaterThan(1);
+    expect(attempts).toBeGreaterThan(1);
+    await expect(page.getByText("Pulsa reproducir para unirte a la señal.")).toHaveCount(0);
+});
+
 test("admin sees separate programming and institutional advertising forms on mobile", async ({ page }) => {
     await login(page);
     await page.goto("/admin/contenido-programado");

@@ -13,7 +13,9 @@ import Auth, { Profile } from "./platform/Auth";
 import Watch from "./platform/Watch";
 import Channel from "./platform/Channel";
 import UploadError from "./platform/UploadError";
+import WatermarkSettings from "./platform/WatermarkSettings";
 const pages = {
+    WatermarkSettings,
     UploadError,
     Channel,
     AdminStudio,

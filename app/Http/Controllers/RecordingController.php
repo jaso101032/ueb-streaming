@@ -11,6 +11,10 @@ class RecordingController extends Controller
     {
         $path = $evento->transmision?->recordingPath();
         abort_unless($evento->estado === 'finalizado' && $path, 404);
+        if (config('streaming.x_accel_media')) {
+            return response('', 200, ['X-Accel-Redirect' => '/_protected_media/recordings/'.basename($path),
+                'Content-Type' => 'video/mp4', 'X-Content-Type-Options' => 'nosniff', 'Cache-Control' => 'private, max-age=3600']);
+        }
         // BinaryFileResponse supports byte ranges for seeking without loading the file in memory.
         return response()->file($path, ['Content-Type' => 'video/mp4',
             'X-Content-Type-Options' => 'nosniff', 'Cache-Control' => 'private, max-age=3600']);

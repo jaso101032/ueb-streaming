@@ -16,7 +16,14 @@ function ChannelVideo({ snapshot, received, startMuted, onMuteChange }) {
     const latest = useRef({ snapshot, received });
     latest.current = { snapshot, received };
     const [notice, setNotice] = useState("");
-    const align = () => {
+    const [retry, setRetry] = useState(0);
+    const manualPause = useRef(false);
+    const autoplayBlocked = useRef(false);
+    const playPending = useRef(false);
+    const retryTimer = useRef(null);
+    const retryAttempts = useRef(0);
+    const lastProgress = useRef({ at: performance.now(), position: 0 });
+    const align = (force = false) => {
         const { snapshot: s, received: t } = latest.current;
         const v = video.current;
         if (!v || v.readyState < 1) return;
@@ -27,43 +34,88 @@ function ChannelVideo({ snapshot, received, startMuted, onMuteChange }) {
                     ? (performance.now() - t) / 1000
                     : 0),
         );
-        if (Math.abs(v.currentTime - target) > 1.2) v.currentTime = target;
+        // Small clock differences are normal. Seeking every three seconds can
+        // repeatedly discard buffered data, especially on mobile networks.
+        if (Math.abs(v.currentTime - target) > (force ? 1.5 : 4)) v.currentTime = target;
         if (v.playbackRate !== 1) v.playbackRate = 1;
     };
-    const play = () => {
-        align();
-        video.current
-            ?.play()
-            .then(() => setNotice(""))
-            .catch(() => setNotice("Pulsa reproducir para unirte a la señal."));
+    const play = async (fromUser = false) => {
+        const v = video.current;
+        if (!v || playPending.current) return;
+        if (fromUser) { manualPause.current = false; autoplayBlocked.current = false; }
+        if (manualPause.current || autoplayBlocked.current || latest.current.snapshot.playback.state === "paused") return;
+        align(true);
+        playPending.current = true;
+        try {
+            await v.play();
+            setNotice("");
+        } catch (error) {
+            // Audible autoplay is forbidden on some phones. Join muted first;
+            // the viewer can turn sound back on with the existing control.
+            if (error.name === "NotAllowedError" && !fromUser && !v.muted) {
+                v.muted = true;
+                try { await v.play(); setNotice(""); return; } catch { /* A tap is required. */ }
+            }
+            if (error.name === "NotAllowedError") {
+                autoplayBlocked.current = true;
+                setNotice("Pulsa reproducir para unirte a la señal.");
+            } else if (error.name !== "AbortError") reconnect();
+        } finally {
+            playPending.current = false;
+        }
+    };
+    const reconnect = () => {
+        if (retryTimer.current || manualPause.current || autoplayBlocked.current) return;
+        const delay = Math.min(1000 * 2 ** Math.min(retryAttempts.current++, 4), 16000);
+        setNotice("La señal se interrumpió. Reconectando automáticamente…");
+        retryTimer.current = window.setTimeout(() => {
+            retryTimer.current = null;
+            lastProgress.current = { at: performance.now(), position: 0 };
+            setRetry((current) => current + 1);
+        }, delay);
     };
     useEffect(() => {
         align();
         if (snapshot.playback.state === "paused") video.current?.pause();
-        else play();
+        else if (video.current?.paused && !manualPause.current && !autoplayBlocked.current) play();
     }, [snapshot]);
+    useEffect(() => {
+        const timer = window.setInterval(() => {
+            const v = video.current;
+            if (document.hidden || !v || manualPause.current || autoplayBlocked.current || latest.current.snapshot.playback.state !== "playing") return;
+            if (performance.now() - lastProgress.current.at > 10000 && (!v.paused || v.readyState < 2)) reconnect();
+        }, 2000);
+        return () => { window.clearInterval(timer); window.clearTimeout(retryTimer.current); };
+    }, []);
+    const mediaUrl = retry ? `${media.mediaUrl}${media.mediaUrl.includes("?") ? "&" : "?"}reconnect=${retry}` : media.mediaUrl;
     return (
         <>
             <BrandedVideo
                 videoRef={video}
-                src={media.mediaUrl}
+                src={mediaUrl}
                 mediaTitle={isAd ? `Publicidad institucional · ${media.title}` : snapshot.event.title}
                 live={false}
                 startMuted={startMuted}
                 onMuteChange={onMuteChange}
-                onLoadedMetadata={play}
-                onSeeking={align}
-                onError={() =>
-                    setNotice(
-                        "No se pudo cargar el archivo. Reintentando con la programación…",
-                    )
-                }
+                onLoadedMetadata={() => { align(true); play(); }}
+                onUserPause={() => { manualPause.current = true; }}
+                onUserResume={() => { manualPause.current = false; autoplayBlocked.current = false; }}
+                onPlay={() => { autoplayBlocked.current = false; setNotice(""); }}
+                onTimeUpdate={() => {
+                    const position = video.current?.currentTime ?? 0;
+                    if (!video.current?.seeking && Math.abs(position - lastProgress.current.position) > 0.1) {
+                        lastProgress.current = { at: performance.now(), position };
+                        retryAttempts.current = 0;
+                        setNotice("");
+                    }
+                }}
+                onError={reconnect}
             >
                 {isAd && <span className="channel-ad-indicator" title="Publicidad institucional" aria-label="Publicidad institucional">P</span>}
                 {notice && (
                     <div className="react-player-notice" role="status">
                         <p>{notice}</p>
-                        <button className="studio-button" onClick={play}>
+                        <button className="studio-button" onClick={() => play(true)}>
                             Reproducir
                         </button>
                     </div>

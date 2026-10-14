@@ -7,3 +7,8 @@ La interfaz utiliza los recursos gráficos originales publicados por el sitio of
 - `public/images/brand/uebtv-logo.jpg`: logo de UEB TV Comunicación (900 × 900), descargado del avatar público del canal oficial `https://www.youtube.com/channel/UCNNLPXAV5uiO0mssCn9soLg`.
 
 La marca UEBTV aparece en la cabecera, el acceso, la pantalla del canal, las salas de reproducción y las vistas previas de contenido. El logotipo institucional UEB se reserva para el pie del panel administrativo. Son identidades distintas y no se ensamblan en un único logotipo.
+
+El recurso UEBTV activo es `public/images/brand/uebtv-logo-final.png`, proporcionado
+por el equipo. El administrador puede sustituir **solo la marca de agua del reproductor**
+por un PNG institucional autorizado con transparencia; no sustituye la identidad del
+resto del sitio. Consulta la [guía de marca de agua](marca-de-agua.md).
