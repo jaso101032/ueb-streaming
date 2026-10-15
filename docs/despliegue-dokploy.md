@@ -23,6 +23,16 @@ internas `X-Accel-Redirect`, incluidas las solicitudes por rangos. Esto evita
 mantener ocupado un proceso PHP por cada descarga o espectador. El Compose
 activa `STREAMING_X_ACCEL_MEDIA=true`; en desarrollo sin ese Nginx se usa la
 respuesta de archivo de Laravel. Las rutas `/_protected_media/` no son públicas.
+Nginx y los procesadores de medios corren como `www-data` para leer los MP4
+privados sin abrir sus permisos al resto de usuarios. El Dockerfile valida esta
+configuración durante la construcción de la imagen y da acceso a `www-data` al
+directorio temporal de Nginx, necesario para subir videos grandes.
+
+Después de desplegar, comprueba un anuncio activo con una solicitud parcial,
+por ejemplo `curl -r 0-1023 -o /dev/null -w '%{http_code}\n'` seguido de la URL
+`https://TU_DOMINIO/senal/publicidad/ID/video`. Debe responder **206**, no **403**.
+Un `403` del Nginx indica que el trabajador no puede leer el archivo. Un `404`
+indica que el anuncio no está activo, no terminó de procesarse o ya no existe.
 
 No hay un cupo de dispositivos configurado en el reproductor. La capacidad
 depende sobre todo del bitrate de la señal, del ancho de banda saliente y del

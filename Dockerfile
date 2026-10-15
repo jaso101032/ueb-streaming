@@ -19,6 +19,12 @@ RUN apk add --no-cache nginx supervisor su-exec ffmpeg python3 icu-libs libpq li
     && docker-php-ext-install -j"$(nproc)" bcmath exif gd intl mbstring opcache pcntl pdo_pgsql xml zip \
     && apk del .build-deps
 
+# Laravel keeps converted MP4s in private directories (0700). Run Nginx's
+# workers as the same www-data user as PHP and the media processors so internal
+# X-Accel-Redirect locations can read them without making them public.
+RUN sed -i -E 's/^[[:space:]]*user[[:space:]]+nginx([[:space:]]+nginx)?;/user www-data www-data;/' /etc/nginx/nginx.conf \
+    && grep -qx 'user www-data www-data;' /etc/nginx/nginx.conf
+
 WORKDIR /var/www/html
 COPY --from=vendor /app /var/www/html
 COPY --from=frontend --chown=www-data:www-data /app/public/uebtv-build-v2 /var/www/html/public/uebtv-build-v2
@@ -28,7 +34,8 @@ COPY docker/supervisord.conf /etc/supervisord.conf
 COPY docker/entrypoint.sh /usr/local/bin/uebtv-entrypoint
 RUN chmod +x /usr/local/bin/uebtv-entrypoint \
     && mkdir -p /run/nginx /var/lib/uebtv/recordings/raw /var/lib/uebtv/recordings/vod /tmp/hls \
-    && chown -R www-data:www-data /var/www/html
+    && nginx -t \
+    && chown -R www-data:www-data /var/www/html /var/lib/nginx
 
 EXPOSE 8080
 ENTRYPOINT ["/usr/local/bin/uebtv-entrypoint"]
