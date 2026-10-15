@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import Player, { BrandedVideo } from "./Player";
+import Player, { BrandedVideo, clockedMediaTarget, isTimeBuffered } from "./Player";
 import { useShell } from "./shared";
 import UebtvMark from "./UebtvMark";
 
@@ -23,20 +23,27 @@ function ChannelVideo({ snapshot, received, startMuted, onMuteChange }) {
     const retryTimer = useRef(null);
     const retryAttempts = useRef(0);
     const lastProgress = useRef({ at: performance.now(), position: 0 });
+    const lastSeekAt = useRef(0);
+    const previousClockPosition = useRef(snapshot.playback.position);
     const align = (force = false) => {
         const { snapshot: s, received: t } = latest.current;
         const v = video.current;
-        if (!v || v.readyState < 1) return;
-        const target = Math.min(
-            s.playback.duration,
+        if (!v || v.readyState < 1 || v.seeking) return;
+        const now = performance.now();
+        const target = clockedMediaTarget(v,
             s.playback.position +
                 (s.playback.state === "playing"
-                    ? (performance.now() - t) / 1000
+                    ? (now - t) / 1000
                     : 0),
+            s.playback.duration,
         );
-        // Small clock differences are normal. Seeking every three seconds can
-        // repeatedly discard buffered data, especially on mobile networks.
-        if (Math.abs(v.currentTime - target) > (force ? 1.5 : 4)) v.currentTime = target;
+        const drift = Math.abs(v.currentTime - target);
+        // An initial join needs one seek. Subsequent clock corrections must
+        // not abort an in-flight range request or throw away the current buffer.
+        if ((force && drift > 1.5) || (!force && drift > 10 && v.readyState >= 3 && now - lastSeekAt.current > 15000 && isTimeBuffered(v, target))) {
+            lastSeekAt.current = now;
+            v.currentTime = target;
+        }
         if (v.playbackRate !== 1) v.playbackRate = 1;
     };
     const play = async (fromUser = false) => {
@@ -44,7 +51,6 @@ function ChannelVideo({ snapshot, received, startMuted, onMuteChange }) {
         if (!v || playPending.current) return;
         if (fromUser) { manualPause.current = false; autoplayBlocked.current = false; }
         if (manualPause.current || autoplayBlocked.current || latest.current.snapshot.playback.state === "paused") return;
-        align(true);
         playPending.current = true;
         try {
             await v.play();
@@ -75,15 +81,26 @@ function ChannelVideo({ snapshot, received, startMuted, onMuteChange }) {
         }, delay);
     };
     useEffect(() => {
-        align();
+        const v = video.current;
+        const wrapped = snapshot.playback.position + 5 < previousClockPosition.current;
+        previousClockPosition.current = snapshot.playback.position;
+        if (wrapped && v?.readyState >= 1) {
+            // One advertisement can loop under the same ID. Move back to the
+            // new cycle explicitly; React does not remount the video in that case.
+            v.currentTime = clockedMediaTarget(v, snapshot.playback.position, snapshot.playback.duration);
+            lastSeekAt.current = performance.now();
+            lastProgress.current.at = performance.now();
+        } else align();
         if (snapshot.playback.state === "paused") video.current?.pause();
-        else if (video.current?.paused && !manualPause.current && !autoplayBlocked.current) play();
+        else if (video.current?.readyState >= 1 && video.current.paused && !manualPause.current && !autoplayBlocked.current) play();
     }, [snapshot]);
     useEffect(() => {
         const timer = window.setInterval(() => {
             const v = video.current;
             if (document.hidden || !v || manualPause.current || autoplayBlocked.current || latest.current.snapshot.playback.state !== "playing") return;
-            if (performance.now() - lastProgress.current.at > 10000 && (!v.paused || v.readyState < 2)) reconnect();
+            const idle = performance.now() - lastProgress.current.at;
+            if (idle > 6000 && v.readyState < 3 && !v.paused && !retryTimer.current) setNotice("Cargando la señal…");
+            if (idle > 30000 && (!v.paused || v.readyState < 2)) reconnect();
         }, 2000);
         return () => { window.clearInterval(timer); window.clearTimeout(retryTimer.current); };
     }, []);
@@ -96,11 +113,14 @@ function ChannelVideo({ snapshot, received, startMuted, onMuteChange }) {
                 mediaTitle={isAd ? `Publicidad institucional · ${media.title}` : snapshot.event.title}
                 live={false}
                 startMuted={startMuted}
+                autoStart={false}
                 onMuteChange={onMuteChange}
-                onLoadedMetadata={() => { align(true); play(); }}
+                onLoadedMetadata={() => { lastProgress.current.at = performance.now(); align(true); play(); }}
+                onSeeked={() => { lastProgress.current.at = performance.now(); }}
                 onUserPause={() => { manualPause.current = true; }}
                 onUserResume={() => { manualPause.current = false; autoplayBlocked.current = false; }}
-                onPlay={() => { autoplayBlocked.current = false; setNotice(""); }}
+                onPlay={() => { autoplayBlocked.current = false; }}
+                onPlaying={() => { lastProgress.current.at = performance.now(); setNotice(""); }}
                 onTimeUpdate={() => {
                     const position = video.current?.currentTime ?? 0;
                     if (!video.current?.seeking && Math.abs(position - lastProgress.current.position) > 0.1) {

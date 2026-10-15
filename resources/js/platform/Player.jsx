@@ -12,6 +12,18 @@ const timeLabel = (seconds) => {
 const LIVE_EDGE_OFFSET = 3;
 const LIVE_REWIND_THRESHOLD = 5;
 
+export const clockedMediaTarget = (video, position, duration) => {
+    const mediaEnd = Number.isFinite(video.duration) ? video.duration : duration;
+    return Math.max(0, Math.min(position, duration, mediaEnd - 0.25));
+};
+
+export const isTimeBuffered = (video, time) => {
+    for (let i = 0; i < video.buffered.length; i++) {
+        if (video.buffered.start(i) - 0.25 <= time && time < video.buffered.end(i) - 0.25) return true;
+    }
+    return false;
+};
+
 function PlayerIcon({ name }) {
     const paths = {
         play: <path d="M8 5.6v12.8L18.4 12 8 5.6Z" />,
@@ -24,7 +36,7 @@ function PlayerIcon({ name }) {
     return <svg className="uebtv-player-icon-svg" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">{paths[name]}</svg>;
 }
 
-export function BrandedVideo({ videoRef, src, poster, mediaTitle, live = false, dvr = false, seekable = false, hidden = false, startMuted = live, onMuteChange, onLoadedMetadata, onSeeking, onPlay, onPause, onUserPause, onUserResume, onTimeUpdate, onError, children }) {
+export function BrandedVideo({ videoRef, src, poster, mediaTitle, live = false, dvr = false, seekable = false, hidden = false, startMuted = live, autoStart = live || startMuted, onMuteChange, onLoadedMetadata, onSeeking, onSeeked, onPlay, onPlaying, onPause, onWaiting, onEnded, onUserPause, onUserResume, onTimeUpdate, onError, children }) {
     const shell = useRef(null), playbackChanging = useRef(false), autoplayAttempted = useRef(false), controlsTimer = useRef();
     const [playing, setPlaying] = useState(false), [autoplayBlocked, setAutoplayBlocked] = useState(false), [controlsVisible, setControlsVisible] = useState(true), [current, setCurrent] = useState(0), [duration, setDuration] = useState(0), [liveWindow, setLiveWindow] = useState({ start: 0, end: 0 }), [volume, setVolume] = useState(1), [muted, setMuted] = useState(startMuted), [rate, setRate] = useState(1), [inPictureInPicture, setInPictureInPicture] = useState(false), [isFullscreen, setIsFullscreen] = useState(false);
     const video = () => videoRef.current;
@@ -59,7 +71,7 @@ export function BrandedVideo({ videoRef, src, poster, mediaTitle, live = false, 
     useEffect(() => { const changed = () => setIsFullscreen(document.fullscreenElement === shell.current); document.addEventListener("fullscreenchange", changed); return () => document.removeEventListener("fullscreenchange", changed); }, []);
     const goLive = () => { const v = video(); if (!v) return; onUserResume?.(); const ranges = v.seekable; if (ranges.length) v.currentTime = Math.max(ranges.start(ranges.length - 1), ranges.end(ranges.length - 1) - LIVE_EDGE_OFFSET); v.play().catch(() => {}); };
     const attemptLiveAutoplay = (element) => {
-        if (!(live || startMuted) || autoplayAttempted.current) return;
+        if (!autoStart || autoplayAttempted.current) return;
         autoplayAttempted.current = true;
         if (startMuted) {
             element.muted = true;
@@ -93,10 +105,10 @@ export function BrandedVideo({ videoRef, src, poster, mediaTitle, live = false, 
         return () => window.clearTimeout(controlsTimer.current);
     }, [playing]);
     return <div ref={shell} className={`uebtv-player-shell ${hidden ? "is-hidden" : ""} ${controlsVisible ? "is-chrome-visible" : ""}`} onPointerMove={showControls} onPointerDown={showControls}>
-        <video ref={videoRef} className="uebtv-video" src={src} poster={poster} defaultMuted={startMuted} autoPlay={live || startMuted} playsInline preload="metadata" disableRemotePlayback hidden={hidden}
+        <video ref={videoRef} className="uebtv-video" src={src} poster={poster} defaultMuted={startMuted} autoPlay={autoStart} playsInline preload="metadata" disableRemotePlayback hidden={hidden}
             onCanPlay={(event) => attemptLiveAutoplay(event.currentTarget)} onLoadedMetadata={(event) => { attemptLiveAutoplay(event.currentTarget); updateProgress(); onLoadedMetadata?.(event); }} onTimeUpdate={(event) => { updateProgress(); onTimeUpdate?.(event); }} onDurationChange={updateProgress}
             onVolumeChange={(event) => { setVolume(event.currentTarget.volume); setMuted(event.currentTarget.muted); onMuteChange?.(event.currentTarget.muted || event.currentTarget.volume === 0); }}
-            onPlay={(event) => { setPlaying(true); setAutoplayBlocked(false); onPlay?.(event); }} onPause={(event) => { setPlaying(false); onPause?.(event); }} onSeeking={onSeeking} onError={onError} />
+            onPlay={(event) => { setPlaying(true); setAutoplayBlocked(false); onPlay?.(event); }} onPlaying={onPlaying} onPause={(event) => { setPlaying(false); onPause?.(event); }} onWaiting={onWaiting} onSeeking={onSeeking} onSeeked={onSeeked} onEnded={onEnded} onError={onError} />
         {!hidden && <>
             <PlayerWatermark />
             {live && <span className="uebtv-player-live">● EN VIVO</span>}
@@ -126,10 +138,23 @@ export function BrandedVideo({ videoRef, src, poster, mediaTitle, live = false, 
 
 export function ScheduledPlayer({ scheduled, poster, onState, onVideoProgress }) {
     const video = useRef(), snapshot = useRef(), received = useRef(0), previous = useRef();
+    const lastSeekAt = useRef(0), requestedTarget = useRef(null), externalSeek = useRef(false);
     const [state, setState] = useState("loading"), [notice, setNotice] = useState("Consultando el horario de emisión…"), [play, setPlay] = useState(false);
     const playable = ["playing", "ended"].includes(state);
-    const align = () => { const s = snapshot.current, v = video.current; if (s?.state !== "playing" || !v || v.readyState < 1) return; const target = Math.min(s.duration, s.position + (performance.now() - received.current) / 1000); if (Math.abs(v.currentTime - target) > 1.5) v.currentTime = target; v.playbackRate = 1; };
-    const start = async () => { align(); try { await video.current.play(); setNotice(""); setPlay(false); } catch { setNotice("Pulsa reproducir para unirte a la emisión."); setPlay(true); } };
+    const align = (force = false) => {
+        const s = snapshot.current, v = video.current;
+        if (s?.state !== "playing" || !v || v.readyState < 1 || v.seeking) return;
+        const now = performance.now();
+        const target = clockedMediaTarget(v, s.position + (now - received.current) / 1000, s.duration);
+        const drift = Math.abs(v.currentTime - target);
+        if ((force && drift > 1.5) || (!force && drift > 10 && v.readyState >= 3 && now - lastSeekAt.current > 15000 && isTimeBuffered(v, target))) {
+            lastSeekAt.current = now;
+            requestedTarget.current = target;
+            v.currentTime = target;
+        }
+        if (v.playbackRate !== 1) v.playbackRate = 1;
+    };
+    const start = async () => { align(true); try { await video.current.play(); setNotice(""); setPlay(false); } catch { setNotice("Pulsa reproducir para unirte a la emisión."); setPlay(true); } };
     useEffect(() => {
         let stopped = false, timer, controller, working = false;
         async function sync() {
@@ -150,14 +175,19 @@ export function ScheduledPlayer({ scheduled, poster, onState, onVideoProgress })
         const visible = () => { clearTimeout(timer); sync(); }; sync(); document.addEventListener("visibilitychange", visible);
         return () => { stopped = true; clearTimeout(timer); controller?.abort(); document.removeEventListener("visibilitychange", visible); };
     }, [scheduled.stateUrl, onState]);
-    return <><BrandedVideo videoRef={video} hidden={!playable} src={playable ? scheduled.mediaUrl : undefined} poster={poster || undefined} mediaTitle={scheduled.title} live={state === "playing"} seekable={state === "ended"} onLoadedMetadata={() => { if (snapshot.current?.state === "playing") start(); }} onSeeking={align} onPlay={() => { align(); setNotice(""); setPlay(false); }} onPause={() => { if (snapshot.current?.state === "playing") { setNotice("Reanudar te llevará al momento actual de la emisión."); setPlay(true); } }} onTimeUpdate={onVideoProgress} onError={() => setNotice("No se pudo cargar el video. Comprueba tu conexión y vuelve a abrir la sala.")} /><span className="react-player-label">{state === "ended" ? "Pregrabado · Disponible bajo demanda" : "Emisión programada · Pregrabado"}</span>{notice && <div className="react-player-notice" role="status"><span aria-hidden="true">▷</span><p>{notice}</p>{play && <button className="studio-button" onClick={start}>Reproducir</button>}</div>}</>;
+    return <><BrandedVideo videoRef={video} hidden={!playable} src={playable ? scheduled.mediaUrl : undefined} poster={poster || undefined} mediaTitle={scheduled.title} live={state === "playing"} autoStart={false} seekable={state === "ended"} onLoadedMetadata={() => { if (snapshot.current?.state === "playing") start(); }} onSeeking={() => {
+        const v = video.current, s = snapshot.current;
+        if (s?.state !== "playing" || requestedTarget.current === null || !v) return;
+        const target = clockedMediaTarget(v, s.position + (performance.now() - received.current) / 1000, s.duration);
+        if (Math.abs(v.currentTime - requestedTarget.current) > 1.5 && Math.abs(v.currentTime - target) > 8) externalSeek.current = true;
+    }} onSeeked={() => { if (externalSeek.current) { externalSeek.current = false; align(true); } }} onPlay={() => { setNotice(""); setPlay(false); }} onPause={() => { if (snapshot.current?.state === "playing") { setNotice("Reanudar te llevará al momento actual de la emisión."); setPlay(true); } }} onTimeUpdate={onVideoProgress} onError={() => setNotice("No se pudo cargar el video. Comprueba tu conexión y vuelve a abrir la sala.")} /><span className="react-player-label">{state === "ended" ? "Pregrabado · Disponible bajo demanda" : "Emisión programada · Pregrabado"}</span>{notice && <div className="react-player-notice" role="status"><span aria-hidden="true">▷</span><p>{notice}</p>{play && <button className="studio-button" onClick={start}>Reproducir</button>}</div>}</>;
 }
 
 export default function Player({ event: e, onScheduledState, recordingRef, onVideoProgress, startMuted, onMuteChange }) {
     const video = useRef(); const manualPause = useRef(false), retryAttempts = useRef(0); const [error, setError] = useState(""); const [retry, setRetry] = useState(0); const live = e.status === "en_vivo" && !e.scheduled;
     useEffect(() => {
         if (!live || !e.hlsUrl) return;
-        let hls, stopped = false, reconnectTimer, lastProgress = performance.now(), lastPosition = 0, mediaRecovered = false;
+        let hls, stopped = false, reconnectTimer, lastProgress = performance.now(), lastPosition = 0, mediaRecovered = false, rebufferAttempted = false;
         const target = video.current;
         setError("");
         const reconnect = () => {
@@ -167,17 +197,32 @@ export default function Player({ event: e, onScheduledState, recordingRef, onVid
             reconnectTimer = window.setTimeout(() => setRetry((value) => value + 1), delay);
         };
         const progress = () => {
-            if (target.currentTime !== lastPosition) { lastPosition = target.currentTime; lastProgress = performance.now(); retryAttempts.current = 0; }
+            if (Math.abs(target.currentTime - lastPosition) > 0.05) { lastPosition = target.currentTime; lastProgress = performance.now(); rebufferAttempted = false; retryAttempts.current = 0; setError(""); }
         };
         const playing = () => { lastProgress = performance.now(); mediaRecovered = false; setError(""); };
         const online = () => { if (!manualPause.current && target.readyState < 3) reconnect(); };
+        const visible = () => {
+            if (document.hidden || manualPause.current || performance.now() - lastProgress < 15000) return;
+            lastProgress = performance.now();
+            rebufferAttempted = false;
+            hls?.startLoad();
+        };
         const nativeError = () => reconnect();
         target.addEventListener("timeupdate", progress);
         target.addEventListener("playing", playing);
         target.addEventListener("error", nativeError);
         window.addEventListener("online", online);
+        document.addEventListener("visibilitychange", visible);
         const watchdog = window.setInterval(() => {
-            if (!document.hidden && !target.paused && !manualPause.current && performance.now() - lastProgress > 8000) reconnect();
+            if (document.hidden || target.paused || manualPause.current) return;
+            const idle = performance.now() - lastProgress;
+            // A live HLS fragment can arrive late on a busy/mobile network.
+            // First resume loading; rebuilding the whole player is a last resort.
+            if (idle > 20000 && !rebufferAttempted && hls) {
+                rebufferAttempted = true;
+                hls.startLoad();
+            }
+            if (idle > 35000) reconnect();
         }, 2000);
         async function attach() {
             try {
@@ -210,6 +255,7 @@ export default function Player({ event: e, onScheduledState, recordingRef, onVid
             window.clearTimeout(reconnectTimer);
             window.clearInterval(watchdog);
             window.removeEventListener("online", online);
+            document.removeEventListener("visibilitychange", visible);
             target.removeEventListener("timeupdate", progress);
             target.removeEventListener("playing", playing);
             target.removeEventListener("error", nativeError);

@@ -317,7 +317,10 @@ npm run test:browser
 
 Requieren PHP con SQLite y FFmpeg. El servidor de prueba usa el puerto 8017 y una base SQLite temporal en `/tmp`; no utiliza la base real. No ejecutes otra instancia de prueba en ese puerto. Si existe configuración Laravel cacheada, el script se detiene para evitar utilizar otra base de datos.
 
-Las pruebas cubren navegación móvil, formularios y vistas previas, permisos, chat con errores de red, y sincronización de un MP4 de prueba. Para validar una emisión OBS real hace falta que Nginx/RTMP esté recibiendo señal.
+Las pruebas cubren navegación móvil, formularios y vistas previas, permisos,
+chat con errores de red, sincronización de MP4 y recuperación de la señal ante
+un segmento HLS o un video lento. Para validar una emisión OBS real hace falta
+que Nginx/RTMP esté recibiendo señal.
 
 ## Canal automático y subida de videos
 

@@ -43,6 +43,18 @@ distintas y vigilar tiempos de respuesta, CPU, memoria, tráfico y cortes. El
 autoplay se intenta silenciado; si el navegador bloquea incluso eso, exige un
 toque del espectador y ninguna página web puede saltarse esa restricción.
 
+El reproductor tolera demoras temporales de descarga antes de reiniciar la
+señal: un MP4 programado o publicitario mantiene su solicitud en curso hasta
+30 segundos sin avance y un directo HLS intenta reanudar la carga antes de
+reconectarse. Esto evita que una red lenta provoque reinicios repetidos, pero
+no sustituye el ancho de banda necesario. Si varios dispositivos se detienen
+a la vez, comprueba primero el tiempo de respuesta y las respuestas `206` de
+los MP4, o la descarga de la lista `.m3u8` y los segmentos `.ts` del directo;
+revisa también tráfico saliente, CPU y memoria del servidor. Si solo falla un
+dispositivo, comprueba su red, el ahorro de datos y las restricciones de
+reproducción automática del navegador. Una prueba real con OBS y varios
+espectadores sigue siendo necesaria después de cada despliegue.
+
 ## Variables de entorno y secretos
 
 Define estas variables en el servicio Compose de Dokploy; no las guardes en

@@ -16,6 +16,7 @@ trap 'exit 0' TERM INT
 php artisan migrate --force
 php tests/Browser/seed.php
 ffmpeg -hide_banner -loglevel error -f lavfi -i color=c=0x102f56:s=320x180:r=1:d=60 -c:v libx264 -pix_fmt yuv420p -movflags +faststart -y /tmp/uebtv-react-test.mp4
+ffmpeg -hide_banner -loglevel error -f lavfi -i color=c=0x102f56:s=160x90:r=5:d=18 -c:v libx264 -pix_fmt yuv420p -g 10 -hls_time 2 -hls_list_size 0 -hls_segment_filename /tmp/uebtv-react-hls-%d.ts -y /tmp/uebtv-react-hls.m3u8
 cd public
 # Application resolves storage before dotenv loads. Include the exported
 # LARAVEL_STORAGE_PATH in $_ENV even under PHP's built-in HTTP server.

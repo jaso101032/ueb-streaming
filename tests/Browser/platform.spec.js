@@ -429,6 +429,38 @@ test("live player reconnects after a native HLS error without reloading the page
     await expect(video).toHaveAttribute("src", /mock-live\.m3u8\?reconnect=1/, { timeout: 5000 });
 });
 
+test("live HLS tolerates a slow first fragment without rebuilding the player", async ({ page }) => {
+    test.setTimeout(45000);
+    await page.addInitScript(() => {
+        const original = HTMLMediaElement.prototype.canPlayType;
+        HTMLMediaElement.prototype.canPlayType = function (type) {
+            return type === "application/vnd.apple.mpegurl" ? "" : original.call(this, type);
+        };
+    });
+    let manifests = 0, fragments = 0;
+    await page.route("**/senal/estado", (route) => route.fulfill({ json: {
+        mode: "live", event: { id: 44, title: "Directo de prueba", status: "en_vivo", hlsUrl: "/slow-live.m3u8", url: "/eventos/44" },
+        playback: null, advertisement: null, next: [], summary: { count: 0, totalSeconds: 0, remainingSeconds: 0 },
+    } }));
+    await page.route("**/slow-live.m3u8", (route) => {
+        manifests++;
+        return route.fulfill({ body: readFileSync("/tmp/uebtv-react-hls.m3u8"), contentType: "application/vnd.apple.mpegurl" });
+    });
+    await page.route("**/uebtv-react-hls-*.ts", async (route) => {
+        fragments++;
+        if (fragments === 1) await new Promise((resolve) => setTimeout(resolve, 12000));
+        const filename = new URL(route.request().url()).pathname.split("/").pop();
+        await route.fulfill({ body: readFileSync(`/tmp/${filename}`), contentType: "video/mp2t" });
+    });
+    const started = Date.now();
+    await page.goto("/senal");
+    await expect.poll(() => page.locator("video").evaluate((v) => v.currentTime), { timeout: 30000 }).toBeGreaterThan(0);
+    expect(fragments).toBeGreaterThan(0);
+    expect(Date.now() - started).toBeGreaterThan(11000);
+    expect(manifests).toBe(1);
+    await expect(page.getByText("Reconectando automáticamente", { exact: false })).toHaveCount(0);
+});
+
 test("React event form creates, updates and deletes through Laravel routes", async ({
     page,
 }) => {
@@ -654,6 +686,61 @@ test("channel retries an interrupted ad without asking the viewer to reload", as
     await expect.poll(() => page.locator("video").evaluate((v) => v.currentTime), { timeout: 15000 }).toBeGreaterThan(1);
     expect(attempts).toBeGreaterThan(1);
     await expect(page.getByText("Pulsa reproducir para unirte a la señal.")).toHaveCount(0);
+});
+
+for (const mode of ["advertisement", "scheduled"]) {
+    test(`continuous ${mode} waits for a slow MP4 instead of restarting it`, async ({ page }) => {
+        test.setTimeout(45000);
+        const bytes = readFileSync("/tmp/uebtv-react-test.mp4");
+        let requests = 0, reloads = 0;
+        await page.route("**/senal/estado", (route) => route.fulfill({ json: {
+            mode,
+            event: mode === "scheduled" ? { id: 8, title: "Programa de prueba", status: "programado", scheduled: { mediaUrl: "/slow-channel.mp4" }, url: "/eventos/8" } : null,
+            advertisement: mode === "advertisement" ? { id: 8, title: "Anuncio de prueba", mediaUrl: "/slow-channel.mp4" } : null,
+            playback: { state: "playing", position: 20, duration: 60 },
+            next: [], summary: { count: 0, totalSeconds: 0, remainingSeconds: 0 },
+        } }));
+        await page.route("**/slow-channel.mp4*", async (route) => {
+            requests++;
+            if (route.request().url().includes("reconnect=")) reloads++;
+            if (requests === 1) await new Promise((resolve) => setTimeout(resolve, 12000));
+            const range = route.request().headers().range?.match(/bytes=(\d+)-(\d*)/);
+            const start = range ? Number(range[1]) : 0;
+            const end = range?.[2] ? Math.min(Number(range[2]), bytes.length - 1) : bytes.length - 1;
+            await route.fulfill({ status: range ? 206 : 200, contentType: "video/mp4",
+                headers: { "Accept-Ranges": "bytes", ...(range ? { "Content-Range": `bytes ${start}-${end}/${bytes.length}` } : {}) },
+                body: bytes.subarray(start, end + 1) });
+        });
+        await page.goto("/senal");
+        await expect.poll(() => page.locator("video").evaluate((v) => v.currentTime), { timeout: 30000 }).toBeGreaterThan(19);
+        expect(reloads).toBe(0);
+        await expect(page.getByText("Reconectando automáticamente", { exact: false })).toHaveCount(0);
+    });
+}
+
+test("a repeated institutional ad returns to its new cycle without reloading", async ({ page }) => {
+    let position = 56;
+    await page.route("**/senal/estado", (route) => route.fulfill({ json: {
+        mode: "advertisement", event: null,
+        advertisement: { id: 7, title: "Anuncio en ciclo", mediaUrl: "/loop-ad.mp4" },
+        playback: { state: "playing", position, duration: 60 },
+        next: [], summary: { count: 0, totalSeconds: 0, remainingSeconds: 0 },
+    } }));
+    const bytes = readFileSync("/tmp/uebtv-react-test.mp4");
+    await page.route("**/loop-ad.mp4*", (route) => {
+        const range = route.request().headers().range?.match(/bytes=(\d+)-(\d*)/);
+        const start = range ? Number(range[1]) : 0;
+        const end = range?.[2] ? Math.min(Number(range[2]), bytes.length - 1) : bytes.length - 1;
+        return route.fulfill({ status: range ? 206 : 200, contentType: "video/mp4",
+            headers: { "Accept-Ranges": "bytes", ...(range ? { "Content-Range": `bytes ${start}-${end}/${bytes.length}` } : {}) },
+            body: bytes.subarray(start, end + 1) });
+    });
+    await page.goto("/senal");
+    await expect.poll(() => page.locator("video").evaluate((v) => v.currentTime)).toBeGreaterThan(55);
+    position = 2;
+    await expect.poll(() => page.locator("video").evaluate((v) => v.currentTime), { timeout: 12000 }).toBeLessThan(10);
+    await expect.poll(() => page.locator("video").evaluate((v) => v.currentTime), { timeout: 12000 }).toBeGreaterThan(2);
+    await expect(page.locator("video")).toHaveAttribute("src", "/loop-ad.mp4");
 });
 
 test("admin sees separate programming and institutional advertising forms on mobile", async ({ page }) => {
