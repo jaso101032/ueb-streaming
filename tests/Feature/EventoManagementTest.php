@@ -88,14 +88,17 @@ class EventoManagementTest extends TestCase
         $this->get(route('eventos.index'))->assertOk()->assertSee('storage/'.$evento->miniatura, false);
     }
 
-    public function test_operator_cannot_manage_events(): void
+    public function test_operator_can_create_and_edit_events_but_cannot_delete_them(): void
     {
         $evento = $this->evento();
         $this->actingAs(User::factory()->create(['role' => 'operador']));
-        $this->post(route('admin.eventos.store'), $this->data())->assertForbidden();
-        $this->put(route('admin.eventos.update', $evento), $this->data())->assertForbidden();
+        $this->get(route('admin.eventos.index'))->assertOk();
+        $this->get(route('admin.eventos.create'))->assertOk();
+        $this->post(route('admin.eventos.store'), $this->data())->assertSessionHasNoErrors();
+        $this->put(route('admin.eventos.update', $evento), $this->data(['titulo' => 'Editado por operador']))->assertSessionHasNoErrors();
         $this->delete(route('admin.eventos.destroy', $evento))->assertForbidden();
         $this->assertNotSoftDeleted('eventos', ['id' => $evento->id]);
+        $this->assertSame('Editado por operador', $evento->fresh()->titulo);
     }
 
     public function test_partial_update_preserves_omitted_fields_thumbnail_and_slug(): void
@@ -229,10 +232,16 @@ class EventoManagementTest extends TestCase
         $this->assertNotSoftDeleted('eventos', ['id' => $evento->id]);
     }
 
-    public function test_operator_management_does_not_offer_delete(): void
+    public function test_operator_management_hides_deletion_and_recording_download(): void
     {
         $evento = $this->evento();
+        $evento->update(['estado' => 'finalizado']);
+        $evento->transmision()->create(['stream_key' => 'test_recording_stream_key']);
         $this->actingAs(User::factory()->create(['role' => 'operador']));
-        $this->get(route('admin.eventos.index'))->assertForbidden();
+        $props = $this->reactProps($this->get(route('admin.eventos.index')));
+        $this->assertNull($props['events'][0]['deleteUrl']);
+        $this->assertNull($props['events'][0]['downloadUrl']);
+        $this->delete(route('admin.eventos.destroy', $evento))->assertForbidden();
+        $this->get(route('admin.recording.download', $evento))->assertForbidden();
     }
 }

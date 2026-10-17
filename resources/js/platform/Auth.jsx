@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { Token, Feedback, Action, Field, useShell } from "./shared";
-import UebtvMark from "./UebtvMark";
 export function Password({
     name = "password",
     label = "Contraseña",
@@ -43,7 +42,8 @@ export default function Auth({ mode, action, name, email, token, forgotUrl }) {
     const register = mode === "register",
         reset = mode === "reset",
         verify = mode === "verify",
-        forgot = mode === "forgot";
+        forgot = mode === "forgot",
+        useUebLogo = mode === "login" || register;
     const titles = {
         login: "Bienvenido de nuevo.",
         register: "Tu comunidad empieza aquí.",
@@ -55,7 +55,7 @@ export default function Auth({ mode, action, name, email, token, forgotUrl }) {
     return (
         <div className="react-auth">
             <aside className="react-auth-brand">
-                <a href={shell.catalog} className="react-auth-logo" aria-label="UEBTV">
+                <a href={shell.catalog} className="react-auth-logo" aria-label={useUebLogo ? "Universidad Estatal de Bolívar" : "FACAGEI UEBTV"}>
                     <img
                         className="react-auth-mascot"
                         src={shell.mascot}
@@ -63,7 +63,13 @@ export default function Auth({ mode, action, name, email, token, forgotUrl }) {
                         width="48"
                         height="72"
                     />
-                    <UebtvMark className="uebtv-brand-logo--auth" />
+                    <img
+                        className={useUebLogo ? "ueb-brand-logo--auth" : "facagei-brand-logo--auth"}
+                        src={useUebLogo ? shell.logo : shell.headerLogo}
+                        alt={useUebLogo ? "Universidad Estatal de Bolívar" : "FACAGEI · Facultad de Ciencias Administrativas, Gestión Empresarial e Informática"}
+                        width={useUebLogo ? "200" : "230"}
+                        height={useUebLogo ? "42" : "104"}
+                    />
                 </a>
                 <div>
                     <span className="react-overline">

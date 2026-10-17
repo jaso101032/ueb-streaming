@@ -34,7 +34,7 @@ class ReactPage
             $data += ['editUrl' => $scheduled ? null : route('admin.eventos.edit', $e), 'detailUrl' => route('admin.eventos.show', $e),
                 'deleteUrl' => auth()->user()?->can('delete-event') ? route('admin.eventos.destroy', $e) : null,
                 'finishUrl' => $recording && ! $recording->finalizado_en && ! in_array($e->estado, ['finalizado', 'cancelado']) ? route('streaming.finalizar', $e) : null,
-                'retryUrl' => $recording?->recording_status === 'failed' ? route('streaming.recording.retry', $e) : null,
+                'retryUrl' => auth()->user()?->role === 'admin' && $recording?->recording_status === 'failed' ? route('streaming.recording.retry', $e) : null,
                 'downloadUrl' => auth()->user()?->role === 'admin' && $recording?->recordingPath() ? route('admin.recording.download', $e) : null,
                 'generateUrl' => ! $scheduled && ! $recording?->iniciado_en && ! in_array($e->estado, ['finalizado', 'cancelado']) ? route('streaming.generar.clave', $e) : null,
                 'streamKey' => $recording?->stream_key, 'server' => config('streaming.rtmp_url') ?: 'rtmp://'.request()->getHost().':1935/live', 'statusUrl' => route('streaming.estado', $e)];
@@ -46,25 +46,36 @@ class ReactPage
     public static function shell(): array
     {
         $user = auth()->user();
-        $operator = $user?->role === 'admin';
+        $admin = $user?->role === 'admin';
+        $operator = in_array($user?->role, ['admin', 'operador'], true);
         $links = [];
+        if ($admin) {
+            $links[] = ['label' => 'Resumen', 'url' => route('admin.dashboard'), 'active' => request()->routeIs('admin.dashboard'), 'icon' => 0];
+        }
         if ($operator) {
-            foreach (['Resumen' => ['admin.dashboard', 'admin.dashboard'], 'Gestionar eventos' => ['admin.eventos.index', 'admin.eventos.*'], 'Emitir con OBS' => ['streaming.control', 'streaming.*'], 'Catálogo público' => ['eventos.index', 'eventos.*']] as $label => $r) {
-                $links[] = ['label' => $label, 'url' => route($r[0]), 'active' => request()->routeIs($r[1]) && ! request()->routeIs('admin.eventos.create')];
+            foreach ([
+                ['Gestionar eventos', 'admin.eventos.index', 'admin.eventos.*', 1],
+                ['Emitir con OBS', 'streaming.control', 'streaming.*', 2],
+                ['Catálogo público', 'eventos.index', 'eventos.*', 3],
+            ] as [$label, $url, $pattern, $icon]) {
+                $links[] = ['label' => $label, 'url' => route($url), 'active' => request()->routeIs($pattern) && ! request()->routeIs('admin.eventos.create'), 'icon' => $icon];
             }
         }
-        if ($user?->role === 'admin') {
-            $links[] = ['label' => 'Parrilla 24/7', 'url' => route('admin.scheduled.index'), 'active' => request()->routeIs('admin.scheduled.*')];
-            $links[] = ['label' => 'Marca de agua', 'url' => route('admin.watermark.edit'), 'active' => request()->routeIs('admin.watermark.*')];
+        if ($admin) {
+            $links[] = ['label' => 'Parrilla 24/7', 'url' => route('admin.scheduled.index'), 'active' => request()->routeIs('admin.scheduled.*'), 'icon' => 4];
+            $links[] = ['label' => 'Marca de agua', 'url' => route('admin.watermark.edit'), 'active' => request()->routeIs('admin.watermark.*'), 'icon' => 5];
+            $links[] = ['label' => 'Gestionar usuarios', 'url' => route('admin.usuarios.index'), 'active' => request()->routeIs('admin.usuarios.*'), 'icon' => 6];
         }
 
-        return ['user' => $user?->only(['name', 'email', 'role']), 'links' => $links, 'operator' => $operator, 'createUrl' => $operator ? route('admin.eventos.create') : null,
+        return ['user' => $user?->only(['name', 'email', 'role']), 'links' => $links, 'operator' => $operator, 'panelLabel' => $admin ? 'CENTRO DE PRODUCCIÓN' : 'CENTRO DE OPERACIÓN', 'createUrl' => $operator ? route('admin.eventos.create') : null,
             // The public logo returns to the continuous channel, the audience's
             // primary entry point. The catalog remains a distinct discovery view.
-            'creating' => request()->routeIs('admin.eventos.create'), 'home' => $operator ? route('admin.dashboard') : route('channel.index'),
+            'creating' => request()->routeIs('admin.eventos.create'), 'home' => $admin ? route('admin.dashboard') : ($operator ? route('streaming.control') : route('channel.index')),
             'login' => route('login'), 'register' => route('register'), 'logout' => route('logout'), 'profile' => route('profile.edit'),
             'channel' => route('channel.index'), 'catalog' => route('eventos.index'),
             'logo' => asset('images/brand/ueb-wordmark.png'),
+            'headerLogo' => asset('images/brand/facagei-logo-light.png'),
+            'storage' => $admin ? StorageUsage::recordings() : null,
             'mascot' => asset('images/brand/mascota-ueb.webp'),
             // UEBTV identifica el producto y la señal; la marca UEB oficial
             // se entrega por separado como firma institucional.

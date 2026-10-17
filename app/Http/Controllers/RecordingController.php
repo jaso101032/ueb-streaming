@@ -30,6 +30,7 @@ class RecordingController extends Controller
     /** The protected download endpoint is deliberately separate from public playback. */
     public function download(Evento $evento)
     {
+        abort_unless(auth()->user()?->role === 'admin', 403);
         $path = $evento->transmision?->recordingPath();
         abort_unless($evento->estado === 'finalizado' && $path, 404);
 

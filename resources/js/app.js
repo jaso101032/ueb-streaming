@@ -14,7 +14,9 @@ import Watch from "./platform/Watch";
 import Channel from "./platform/Channel";
 import UploadError from "./platform/UploadError";
 import WatermarkSettings from "./platform/WatermarkSettings";
+import UserManagement from "./platform/UserManagement";
 const pages = {
+    UserManagement,
     WatermarkSettings,
     UploadError,
     Channel,

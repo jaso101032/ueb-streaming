@@ -357,7 +357,9 @@ button:disabled {
     width: fit-content;
     gap: 8px;
 }
-.studio-brand--uebtv { gap:0; }
+.studio-brand--facagei { gap:0; }
+.studio-brand--facagei .studio-brand-mascot { margin-right:-10px; }
+.facagei-brand-logo--header { display:block; box-sizing:border-box; width:230px; height:104px; object-fit:fill; }
 /* On desktop the channel identity starts at the viewport edge, while the
    account controls retain their previous right-hand alignment. */
 @media (min-width:1101px) {
@@ -409,16 +411,18 @@ button:disabled {
     min-height: 58px;
 }
 .uebtv-brand-logo--auth { width:188px; height:94px; background:transparent; }
+.facagei-brand-logo--auth { display:block; width:230px; height:104px; object-fit:fill; }
+.ueb-brand-logo--auth { display:block; width:220px; height:auto; object-fit:contain; filter:brightness(0) invert(1); }
 .react-auth-mascot {
     display:block;
     position:relative;
     z-index:1;
     flex:0 0 auto;
-    width:58px;
-    height:88px;
-    margin-right:-12px;
+    width:64px;
+    height:96px;
+    margin-right:-8px;
     object-fit:contain;
-    transform:translate(4px,5px) rotate(6deg);
+    transform:translate(8px,5px) rotate(6deg);
     transform-origin:bottom center;
     filter:drop-shadow(0 8px 12px #00000030);
 }
@@ -839,7 +843,7 @@ button:disabled {
 .uebtv-catalog-search-fields > :is(button,a) { flex:0 0 auto; }
 .catalog-event-entry, .uebtv-video-card { content-visibility:auto; contain-intrinsic-size:auto 330px; }
 .uebtv-catalog-card { display:block; height:100%; }
-.uebtv-catalog-card__visual { overflow:hidden; }
+.uebtv-catalog-card__visual { width:100%; overflow:hidden; }
 .uebtv-catalog-card__status { top:12px; right:12px; bottom:auto; left:auto; border-radius:999px; box-shadow:0 3px 12px #071a3540; }
 .uebtv-catalog-card__status.is-live { background:#cb2343; color:#fff; }
 .uebtv-catalog-card__body { display:flex; flex-direction:column; min-height:142px; }

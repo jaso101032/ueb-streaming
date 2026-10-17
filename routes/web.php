@@ -45,6 +45,9 @@ Route::get('/dashboard', function () {
     if ($role === 'admin') {
         return redirect()->route('admin.dashboard');
     } 
+    if ($role === 'operador') {
+        return redirect()->route('streaming.control');
+    }
     
 
     
@@ -66,21 +69,31 @@ Route::middleware('auth')->group(function () {
 // Funciones de gestión exclusivas del administrador.
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/usuarios', [\App\Http\Controllers\Admin\UserController::class, 'index'])->name('usuarios.index');
+    Route::post('/usuarios', [\App\Http\Controllers\Admin\UserController::class, 'store'])->middleware('throttle:10,1')->name('usuarios.store');
+    Route::put('/usuarios/{usuario}', [\App\Http\Controllers\Admin\UserController::class, 'update'])->middleware('throttle:20,1')->name('usuarios.update');
+    Route::delete('/usuarios/{usuario}', [\App\Http\Controllers\Admin\UserController::class, 'destroy'])->middleware('throttle:10,1')->name('usuarios.destroy');
     Route::get('/marca-de-agua', [\App\Http\Controllers\Admin\PlayerWatermarkController::class, 'edit'])->name('watermark.edit');
     Route::put('/marca-de-agua', [\App\Http\Controllers\Admin\PlayerWatermarkController::class, 'update'])->middleware('throttle:10,1')->name('watermark.update');
     Route::delete('/marca-de-agua', [\App\Http\Controllers\Admin\PlayerWatermarkController::class, 'destroy'])->middleware('throttle:10,1')->name('watermark.destroy');
     
-    // CRUD completo de Eventos accesible por Administrador y Operador
-    Route::resource('eventos', EventoController::class)->except('destroy');
     Route::delete('/eventos/{evento}', [EventoController::class, 'destroy'])
         ->middleware('can:delete-event')->name('eventos.destroy');
     Route::get('/eventos/{evento}/grabacion/descargar', [\App\Http\Controllers\RecordingController::class, 'download'])->name('recording.download');
 });
 
-// Panel de Control de Streaming para Operador / Admin
+// Administrators and streaming operators can create and maintain event details.
+// Destruction and access to source recordings remain in the admin-only group above.
+Route::middleware(['auth', 'role:admin,operador'])->prefix('admin')->name('admin.')->group(function () {
+    Route::resource('eventos', EventoController::class)->except(['destroy']);
+});
+
+// Panel de operación de streaming para administradores y operadores.
 Route::middleware(['auth', 'role:admin'])->prefix('streaming')->name('streaming.')->group(function () {
-    Route::post('/evento/{evento}/finalizar', [TransmisionController::class, 'finalizar'])->middleware('throttle:10,1')->name('finalizar');
     Route::post('/evento/{evento}/reintentar-grabacion', [\App\Http\Controllers\RecordingController::class, 'retry'])->middleware('throttle:5,1')->name('recording.retry');
+});
+Route::middleware(['auth', 'role:admin,operador'])->prefix('streaming')->name('streaming.')->group(function () {
+    Route::post('/evento/{evento}/finalizar', [TransmisionController::class, 'finalizar'])->middleware('throttle:10,1')->name('finalizar');
     Route::get('/control', [TransmisionController::class, 'index'])->name('control');
     Route::post('/evento/{evento}/generar-clave', [TransmisionController::class, 'generarClave'])->name('generar.clave');
     Route::get('/evento/{evento}/estado', [TransmisionController::class, 'estado'])->name('estado');

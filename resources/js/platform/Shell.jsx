@@ -2,13 +2,51 @@ import React, { useEffect, useRef, useState } from "react";
 import NavIcon from "./NavIcon";
 import { Context, Action } from "./shared";
 import UniversityMark from "./UniversityMark";
-import UebtvMark from "./UebtvMark";
 
 function ThemeIcon({ theme }) {
     return theme === "dark" ? (
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 15.2A8.5 8.5 0 0 1 8.8 4 8.5 8.5 0 1 0 20 15.2Z" /></svg>
     ) : (
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4" /><path d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></svg>
+    );
+}
+
+function formatStorage(bytes, unitIndex) {
+    const units = ["B", "KiB", "MiB", "GiB", "TiB", "PiB"];
+    const value = bytes / (1024 ** unitIndex);
+    return `${new Intl.NumberFormat("es-EC", { minimumFractionDigits: 0, maximumFractionDigits: unitIndex === 0 ? 0 : 2 }).format(value)} ${units[unitIndex]}`;
+}
+
+function StorageMeter({ storage }) {
+    if (!storage?.available) {
+        return (
+            <section className="studio-storage studio-storage--unavailable" aria-label="Almacenamiento de grabaciones">
+                <div className="studio-storage__heading"><span className="studio-storage__icon" aria-hidden="true">▤</span><span>Almacenamiento</span></div>
+                <p>No se pudo detectar el espacio del volumen de grabaciones.</p>
+            </section>
+        );
+    }
+
+    const usedPercent = Math.min(100, Math.max(0, storage.usedPercent));
+    const freePercent = 100 - usedPercent;
+    const lowSpace = freePercent <= 10;
+    const unitIndex = Math.min(5, Math.max(0, Math.floor(Math.log(Math.max(storage.totalBytes, 1)) / Math.log(1024))));
+
+    return (
+        <section className={`studio-storage ${lowSpace ? "studio-storage--low" : ""}`} aria-label="Almacenamiento de grabaciones">
+            <div className="studio-storage__heading">
+                <span className="studio-storage__icon" aria-hidden="true">▤</span>
+                <span>Almacenamiento</span>
+            </div>
+            <div className="studio-storage__free">{formatStorage(storage.freeBytes, unitIndex)} <span>libres</span></div>
+            <div className="studio-storage__track" role="progressbar" aria-label="Espacio usado" aria-valuemin="0" aria-valuemax="100" aria-valuenow={usedPercent}>
+                <span style={{ width: `${usedPercent}%` }} />
+            </div>
+            <div className="studio-storage__details">
+                <span>{formatStorage(storage.usedBytes, unitIndex)} usados</span>
+                <span>de {formatStorage(storage.totalBytes, unitIndex)}</span>
+            </div>
+        </section>
     );
 }
 
@@ -54,7 +92,7 @@ export default function Shell({ shell, children }) {
                 </a>
                 <header className={`studio-header ${shell.operator ? "studio-header--operator" : ""}`}>
                     <div className="studio-header-inner">
-                        <a className="studio-brand studio-brand--uebtv" href={shell.home} aria-label="UEBTV">
+                        <a className="studio-brand studio-brand--facagei" href={shell.home} aria-label="FACAGEI UEBTV">
                             <img
                                 className="studio-brand-mascot"
                                 src={shell.mascot}
@@ -63,7 +101,13 @@ export default function Shell({ shell, children }) {
                                 width="58"
                                 height="84"
                             />
-                            <UebtvMark className="uebtv-brand-logo--header" />
+                            <img
+                                className="facagei-brand-logo--header"
+                                src={shell.headerLogo}
+                                alt="FACAGEI · Facultad de Ciencias Administrativas, Gestión Empresarial e Informática"
+                                width="230"
+                                height="104"
+                            />
                         </a>
                         <div className="studio-account">
                             <button
@@ -143,7 +187,7 @@ export default function Shell({ shell, children }) {
                         aria-label="Panel de gestión"
                     >
                         <p className="studio-sidebar-caption">
-                            CENTRO DE PRODUCCIÓN
+                            {shell.panelLabel || "CENTRO DE PRODUCCIÓN"}
                         </p>
                         <a
                             className="studio-sidebar-create"
@@ -163,12 +207,13 @@ export default function Shell({ shell, children }) {
                                         className="studio-sidebar-icon"
                                         aria-hidden="true"
                                     >
-                                        <NavIcon index={i} />
+                                        <NavIcon index={l.icon ?? i} />
                                     </span>
                                     {l.label}
                                 </a>
                             ))}
                         </nav>
+                        {shell.user?.role === "admin" && <StorageMeter storage={shell.storage} />}
                         <div className="studio-sidebar-footer">
                             <UniversityMark className="university-mark--sidebar" />
                         </div>

@@ -273,6 +273,7 @@ html[data-theme="dark"] .watch-experience .uebtv-chat-message__meta strong { col
 /* Phone-first refinement: preserve the important action, avoid compressed desktop rows. */
 @media (max-width:640px) {
     .studio-header-inner { min-height:82px; padding-inline:14px; gap:10px; }
+    .facagei-brand-logo--header { width:clamp(120px,36vw,160px); height:auto; aspect-ratio:2.2; }
     .uebtv-brand-logo--header { width:138px; height:73px; padding:0; border-radius:0; }
     .studio-brand-mascot { width:40px; height:60px; margin-right:-8px; transform:translate(3px,4px) rotate(6deg); }
     .studio-header--operator .uebtv-brand-logo--header { width:105px; height:53px; }
@@ -382,15 +383,13 @@ html[data-theme="dark"] .watch-experience .uebtv-chat-message__meta strong { col
 @media(max-width:640px) { .studio-theme-toggle { width:34px; height:34px; } .studio-theme-toggle svg { width:16px; height:16px; } }
 @media(max-width:380px) {
     .studio-header:not(.studio-header--operator) .studio-header-inner { gap:4px; padding-inline:8px; }
-    .studio-header:not(.studio-header--operator) .uebtv-brand-logo--header { width:112px; height:56px; }
-    .studio-header:not(.studio-header--operator) .studio-brand-mascot { width:30px; height:46px; margin-right:-8px; }
+    .studio-header:not(.studio-header--operator) .facagei-brand-logo--header { width:clamp(120px,36vw,160px); }
     .studio-header:not(.studio-header--operator) .studio-account { gap:4px; }
     .studio-header:not(.studio-header--operator) .studio-theme-toggle { width:30px; height:30px; }
     .studio-header:not(.studio-header--operator) .studio-signout { padding-inline:6px; font-size:10px; }
     .studio-header:not(.studio-header--operator) .studio-menu-toggle { width:34px; height:34px; }
     .studio-header--operator .studio-header-inner { gap:4px; padding-inline:8px; }
-    .studio-header--operator .uebtv-brand-logo--header { width:92px; height:46px; }
-    .studio-header--operator .studio-brand-mascot { width:26px; height:42px; margin-right:-6px; }
+    .studio-header--operator .facagei-brand-logo--header { width:clamp(120px,36vw,160px); }
     .studio-header--operator .studio-theme-toggle { width:30px; height:30px; }
     .studio-header--operator .studio-signout { padding-inline:5px; font-size:10px; }
     .studio-header--operator .studio-menu-toggle { width:36px; height:36px; }
