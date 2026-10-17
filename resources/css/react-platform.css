@@ -420,9 +420,9 @@ button:disabled {
     flex:0 0 auto;
     width:64px;
     height:96px;
-    margin-right:-8px;
+    margin-right:12px;
     object-fit:contain;
-    transform:translate(8px,5px) rotate(6deg);
+    transform:translate(0,5px) rotate(6deg);
     transform-origin:bottom center;
     filter:drop-shadow(0 8px 12px #00000030);
 }
@@ -451,6 +451,7 @@ button:disabled {
 .channel-idle .uebtv-brand-logo--channel {
     margin-bottom: 0;
 }
+.channel-idle-logo { display:block; width:min(360px,66vw); height:auto; margin:0 auto; object-fit:contain; filter:brightness(0) invert(1); }
 .channel-idle-caption {
     margin-top: 12px;
 }
@@ -843,14 +844,22 @@ button:disabled {
 .uebtv-catalog-search-fields > :is(button,a) { flex:0 0 auto; }
 .catalog-event-entry, .uebtv-video-card { content-visibility:auto; contain-intrinsic-size:auto 330px; }
 .uebtv-catalog-card { display:block; height:100%; }
+.uebtv-catalog-card__visual-link { color:inherit; text-decoration:none; }
+.uebtv-catalog-card__details-link { display:flex; flex:1; flex-direction:column; min-height:0; color:inherit; text-decoration:none; }
 .uebtv-catalog-card__visual { width:100%; overflow:hidden; }
 .uebtv-catalog-card__status { top:12px; right:12px; bottom:auto; left:auto; border-radius:999px; box-shadow:0 3px 12px #071a3540; }
 .uebtv-catalog-card__status.is-live { background:#cb2343; color:#fff; }
 .uebtv-catalog-card__body { display:flex; flex-direction:column; min-height:142px; }
+.uebtv-catalog-card__eyebrow-row { display:flex; align-items:center; justify-content:space-between; gap:8px; min-height:30px; }
+.uebtv-catalog-card__eyebrow-row > span { color:var(--uebtv-blue); font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; }
+.uebtv-catalog-card__eyebrow-row .video-analytics-trigger { min-height:29px; padding:0 8px; font-size:9px; }
+.uebtv-catalog-card__eyebrow-row .video-analytics-trigger svg { width:14px; height:14px; }
 .uebtv-catalog-card__body h3 { overflow-wrap:anywhere; }
 .uebtv-catalog-card__meta { display:flex; align-items:flex-end; justify-content:space-between; gap:10px; margin-top:auto; padding-top:13px; color:#647993; font-size:11px; line-height:1.35; }
 .uebtv-catalog-card__meta span { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .uebtv-catalog-card__meta time { flex:0 0 auto; color:#476b92; font-variant-numeric:tabular-nums; }
+.uebtv-catalog-sort-note { display:inline-flex; align-items:center; gap:5px; margin-left:10px; padding:4px 8px; border:1px solid #cfe1f4; border-radius:999px; background:#edf5ff; color:#225f9e; font-size:9px; font-weight:700; vertical-align:middle; }
+.uebtv-catalog-sort-note i { display:grid; place-items:center; width:13px; height:13px; border-radius:50%; background:#d7eaff; color:#176bb7; font-size:11px; font-style:normal; }
 .uebtv-catalog-filters { scroll-snap-type:x proximity; }
 .uebtv-catalog-filters a { scroll-snap-align:start; }
 :is(a,button,input,select,textarea):focus-visible { outline:3px solid #4b94e8; outline-offset:2px; }

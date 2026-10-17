@@ -15,9 +15,10 @@ class VideoViewController extends Controller
 
         $scheduled = $evento->scheduledVideo;
         $scheduledPlayable = $scheduled && in_array($scheduled->playback()['state'], ['playing', 'ended'], true);
+        $livePlayable = $evento->estado === 'en_vivo' && $evento->transmision && ! $evento->transmision->finalizado_en;
         $recordingPlayable = $evento->estado !== 'en_vivo' &&
             ($evento->video_url || ($evento->estado === 'finalizado' && $evento->transmision?->recordingPath()));
-        abort_unless($evento->estado !== 'cancelado' && ($scheduledPlayable || $recordingPlayable), 409);
+        abort_unless($evento->estado !== 'cancelado' && ($livePlayable || $scheduledPlayable || $recordingPlayable), 409);
 
         DB::table('event_video_views')->insertOrIgnore([
             'evento_id' => $evento->id,

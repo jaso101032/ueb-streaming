@@ -34,6 +34,17 @@ class EventoPublicoController extends Controller
         $filter = $filters['filtro'] ?? 'todos';
         $query = Evento::with(['facultad', 'carrera', 'categoria', 'organizador', 'transmision', 'scheduledVideo'])
             ->where('estado', '!=', 'cancelado');
+        $adminCatalog = auth()->user()?->role === 'admin';
+        if ($adminCatalog) {
+            $viewCounts = DB::table('event_video_views')
+                ->select('evento_id', DB::raw('COUNT(*) as catalog_views'))
+                ->groupBy('evento_id');
+            $query->leftJoinSub($viewCounts, 'catalog_view_counts', function ($join) {
+                $join->on('eventos.id', '=', 'catalog_view_counts.evento_id');
+            })
+                ->select('eventos.*', DB::raw('COALESCE(catalog_view_counts.catalog_views, 0) as catalog_views'))
+                ->orderByRaw('COALESCE(catalog_view_counts.catalog_views, 0) DESC');
+        }
 
         $search = trim($filters['q'] ?? '');
         if ($search !== '') {
@@ -51,7 +62,7 @@ class EventoPublicoController extends Controller
         $upcomingIds = $timeline->filter(fn ($i) => $i['state'] === 'upcoming')->keys()->all();
         $endedIds = $timeline->filter(fn ($i) => $i['state'] === 'ended')->keys()->all();
         $upcomingQuery = fn ($q) => $q->whereIn('id', $upcomingIds)->orWhere(fn ($q) => $q->whereDoesntHave('scheduledVideo')->where('estado', 'programado')->where('fecha_inicio', '>=', now()));
-        $proximos = (clone $query)->where($upcomingQuery)->orderBy('fecha_inicio')->orderBy('id')->limit(4)->get();
+        $proximos = (clone $query)->reorder()->where($upcomingQuery)->orderBy('fecha_inicio')->orderBy('id')->limit(4)->get();
 
         if ($filter === 'en_vivo') {
             $query->where('estado', 'en_vivo');

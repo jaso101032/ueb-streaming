@@ -70,6 +70,7 @@ Route::middleware('auth')->group(function () {
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/usuarios', [\App\Http\Controllers\Admin\UserController::class, 'index'])->name('usuarios.index');
+    Route::get('/eventos/{evento}/estadisticas', [\App\Http\Controllers\Admin\VideoAnalyticsController::class, 'show'])->name('eventos.analytics');
     Route::post('/usuarios', [\App\Http\Controllers\Admin\UserController::class, 'store'])->middleware('throttle:10,1')->name('usuarios.store');
     Route::put('/usuarios/{usuario}', [\App\Http\Controllers\Admin\UserController::class, 'update'])->middleware('throttle:20,1')->name('usuarios.update');
     Route::delete('/usuarios/{usuario}', [\App\Http\Controllers\Admin\UserController::class, 'destroy'])->middleware('throttle:10,1')->name('usuarios.destroy');

@@ -261,7 +261,13 @@ export default function Channel({ stateUrl }) {
                                         <i />
                                     </div>
                                     <div className="channel-idle-content">
-                                        <UebtvMark className="uebtv-brand-logo--channel" />
+                                        <img
+                                            className="channel-idle-logo"
+                                            src={shell.logo}
+                                            alt="Universidad Estatal de Bolívar"
+                                            width="360"
+                                            height="76"
+                                        />
                                         <span className="channel-idle-caption">
                                             TU UNIVERSIDAD. TU SEÑAL.
                                         </span>

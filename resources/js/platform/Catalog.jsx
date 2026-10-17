@@ -1,18 +1,15 @@
 import React, { useState } from "react";
 import { useShell, Feedback, Pagination, statusLabel, Action } from "./shared";
+import VideoAnalytics from "./VideoAnalytics";
 export function Card({ event: e }) {
     return (
         <article className="catalog-event-entry">
-            <a className="uebtv-catalog-card" href={e.url}>
-                <div
-                    className={`uebtv-catalog-card__visual ${e.image ? "has-image" : ""}`}
-                    style={
-                        e.image
-                            ? {
-                                  backgroundImage: `url(${JSON.stringify(e.image)})`,
-                              }
-                            : undefined
-                    }
+            <div className="uebtv-catalog-card">
+                <a
+                    className={`uebtv-catalog-card__visual uebtv-catalog-card__visual-link ${e.image ? "has-image" : ""}`}
+                    href={e.url}
+                    aria-label={`Abrir ${e.title}`}
+                    style={e.image ? { backgroundImage: `url(${JSON.stringify(e.image)})` } : undefined}
                 >
                     <span className="uebtv-catalog-card__play">▶</span>
                     <span
@@ -21,18 +18,23 @@ export function Card({ event: e }) {
                         <i aria-hidden="true" />
                         {statusLabel(e)}
                     </span>
-                </div>
+                </a>
                 <div className="uebtv-catalog-card__body">
-                    <span>{e.category}</span>
-                    <h3>{e.title}</h3>
-                    <div className="uebtv-catalog-card__meta">
-                        <span>{e.faculty}</span>
-                        <time>{e.date}</time>
+                    <div className="uebtv-catalog-card__eyebrow-row">
+                        <span>{e.category}</span>
+                        {e.analyticsUrl && <VideoAnalytics url={e.analyticsUrl} title={e.title} />}
                     </div>
+                    <a className="uebtv-catalog-card__details-link" href={e.url}>
+                        <h3>{e.title}</h3>
+                        <div className="uebtv-catalog-card__meta">
+                            <span>{e.faculty}</span>
+                            <time>{e.date}</time>
+                        </div>
+                    </a>
                 </div>
-            </a>
+            </div>
             {e.deleteUrl && (e.status === "finalizado" || e.scheduled) && (
-                <div className="catalog-event-delete">
+                <div className="catalog-event-actions">
                     <Action
                         url={e.deleteUrl}
                         method="DELETE"
@@ -54,6 +56,7 @@ export default function Catalog({
     filters,
     categories,
     faculties,
+    isAdmin = false,
 }) {
     const shell = useShell();
     const appliedFilters = [
@@ -164,7 +167,7 @@ export default function Catalog({
                 <div className="uebtv-catalog-toolbar">
                     <div>
                         <h2>Eventos y transmisiones</h2>
-                        <p>{pagination.total} resultados</p>
+                        <p>{pagination.total} resultados{isAdmin && <span className="uebtv-catalog-sort-note"><i aria-hidden="true">↓</i> Más vistos primero</span>}</p>
                     </div>
                     <nav className="uebtv-catalog-filters">
                         {Object.entries({

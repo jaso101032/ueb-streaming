@@ -30,6 +30,12 @@ class ReactPage
             // HLS can be served on the same HTTPS domain by the production reverse proxy.
             'hlsUrl' => $recording ? (config('streaming.hls_base_url') ?: request()->getScheme().'://'.request()->getHost().':8080/hls').'/'.$recording->stream_key.'.m3u8' : null,
             'chatUrl' => route('eventos.chat.index', $e)];
+        if (auth()->user()?->role === 'admin') {
+            $data['analyticsUrl'] = route('admin.eventos.analytics', $e);
+            if (array_key_exists('catalog_views', $e->getAttributes())) {
+                $data['viewCount'] = (int) $e->getAttribute('catalog_views');
+            }
+        }
         if ($manage) {
             $data += ['editUrl' => $scheduled ? null : route('admin.eventos.edit', $e), 'detailUrl' => route('admin.eventos.show', $e),
                 'deleteUrl' => auth()->user()?->can('delete-event') ? route('admin.eventos.destroy', $e) : null,

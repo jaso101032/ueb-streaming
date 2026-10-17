@@ -230,7 +230,7 @@ export default function Shell({ shell, children }) {
                         {children}
                     </main>
                     <footer className="uebtv-footer">
-                        © {shell.year} UEBTV · Universidad Estatal de Bolívar
+                        Desarrolladores · Javier Solis · Cristhian Rochina · Universidad Estatal de Bolívar
                     </footer>
                 </div>
             </div>

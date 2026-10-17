@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from "react";
 import { useShell, statusLabel } from "./shared";
 import Player from "./Player";
 import Chat from "./Chat";
-import UebtvMark from "./UebtvMark";
 
 function browserViewerKey() {
     const storageKey = "uebtv-viewer-id";
@@ -196,7 +195,13 @@ export default function Watch({
                             </span>
                         </div>
                         <div className="uebtv-watch-aside__cover">
-                            <UebtvMark className="uebtv-brand-logo--watch-cover" />
+                            <img
+                                className="watch-ueb-logo"
+                                src={shell.logo}
+                                alt="Universidad Estatal de Bolívar"
+                                width="200"
+                                height="42"
+                            />
                             <p>Tu universidad. Tu señal.</p>
                             <span className="watch-brand-caption">TELEVISIÓN UNIVERSITARIA</span>
                         </div>
