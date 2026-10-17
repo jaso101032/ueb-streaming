@@ -1,7 +1,6 @@
 import { durationLabel } from "../platform/Channel";
-import { Action } from "../platform/shared";
-import UebtvMark from "../platform/UebtvMark";
-import React, { useEffect, useState } from "react";
+import { Action, useShell } from "../platform/shared";
+import React, { useEffect, useRef, useState } from "react";
 
 function Icon({ name = "play", size = 22 }) {
     const paths = {
@@ -200,11 +199,16 @@ export default function ScheduledStudio({
     channelUrl,
     uploadLimits,
 }) {
+    const shell = useShell();
     const [title, setTitle] = useState(old.titulo || "");
     const [date, setDate] = useState(old.fecha_inicio || "");
     const [category, setCategory] = useState(old.categoria_id || "");
     const [file, setFile] = useState(null);
     const [preview, setPreview] = useState("");
+    const [thumbnail, setThumbnail] = useState(null);
+    const [thumbnailPreview, setThumbnailPreview] = useState("");
+    const [thumbnailError, setThumbnailError] = useState("");
+    const thumbnailInput = useRef(null);
     const [duration, setDuration] = useState(0);
     const [fileError, setFileError] = useState("");
     const { upload, submit, reset } = useVideoUpload();
@@ -222,6 +226,15 @@ export default function ScheduledStudio({
         setPreview(url);
         return () => URL.revokeObjectURL(url);
     }, [file]);
+    useEffect(() => {
+        if (!thumbnail) {
+            setThumbnailPreview("");
+            return;
+        }
+        const url = URL.createObjectURL(thumbnail);
+        setThumbnailPreview(url);
+        return () => URL.revokeObjectURL(url);
+    }, [thumbnail]);
     useEffect(() => {
         if (!hasConversions || !progressUrl) return;
         const controller = new AbortController();
@@ -266,6 +279,17 @@ export default function ScheduledStudio({
     const complete = [!!title.trim() && !!category, !!date, !!file].filter(
         Boolean,
     ).length;
+    const chooseThumbnail = (event) => {
+        const selected = event.target.files[0];
+        const error = selected && (!/\.(jpe?g|png|webp)$/i.test(selected.name)
+            ? "Selecciona una imagen JPG, PNG o WebP."
+            : selected.size > 2 * 1024 * 1024
+              ? "La imagen de portada no puede superar los 2 MB."
+              : "");
+        event.target.setCustomValidity(error || "");
+        setThumbnailError(error || "");
+        setThumbnail(error ? null : selected || null);
+    };
     const coverageEnd = summary.endsAt
         ? new Date(summary.endsAt).toLocaleString("es-EC", { dateStyle: "short", timeStyle: "short" })
         : null;
@@ -450,6 +474,33 @@ export default function ScheduledStudio({
                         title="Agrega tu video"
                         subtitle="Convertiremos tu archivo a un video optimizado para la web."
                     >
+                        <div className="schedule-thumbnail-field">
+                            <label htmlFor="schedule-thumbnail">Imagen de portada del catálogo <span>Opcional</span></label>
+                            <p>Esta imagen aparecerá en la tarjeta del video, como portada de los eventos en vivo.</p>
+                            <input
+                                ref={thumbnailInput}
+                                id="schedule-thumbnail"
+                                type="file"
+                                name="miniatura"
+                                accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                                onChange={chooseThumbnail}
+                                aria-describedby="schedule-thumbnail-help schedule-thumbnail-error"
+                            />
+                            <small id="schedule-thumbnail-help">JPG, PNG o WebP · Máximo 2 MB</small>
+                            {thumbnail && <div className="schedule-thumbnail-selected" role="status">
+                                <img src={thumbnailPreview} alt="Vista previa de la portada elegida" />
+                                <span>{thumbnail.name}</span>
+                                <button type="button" onClick={() => {
+                                    setThumbnail(null);
+                                    setThumbnailError("");
+                                    if (thumbnailInput.current) {
+                                        thumbnailInput.current.value = "";
+                                        thumbnailInput.current.setCustomValidity("");
+                                    }
+                                }}>Quitar</button>
+                            </div>}
+                            <p id="schedule-thumbnail-error" className="schedule-file-error" role="alert">{thumbnailError}</p>
+                        </div>
                         <div
                             className={`schedule-upload ${file ? "has-file" : ""}`}
                         >
@@ -554,13 +605,19 @@ export default function ScheduledStudio({
                             </p>
                         </div>
                     ) : (
-                        <div className="schedule-preview-art">
-                            <UebtvMark className="uebtv-brand-logo--schedule" />
+                        <div className={`schedule-preview-art ${thumbnailPreview ? "has-cover" : ""}`}>
+                            {thumbnailPreview ? <img className="schedule-preview-cover" src={thumbnailPreview} alt="" aria-hidden="true" /> : <img
+                                className="schedule-preview-logo"
+                                src={shell.logo}
+                                alt="Universidad Estatal de Bolívar"
+                                width="190"
+                                height="40"
+                            />}
                             <span className="schedule-preview-play">
                                 <Icon />
                             </span>
                             <span className="schedule-preview-tag">
-                                PREGRABADO · SINCRONIZADO
+                                {thumbnailPreview ? "PORTADA DEL CATÁLOGO" : "PREGRABADO · SINCRONIZADO"}
                             </span>
                         </div>
                     )}

@@ -49,6 +49,7 @@ class ScheduledVideoController extends Controller
             'categoria_id' => 'required|exists:categorias,id',
             'fecha_inicio' => 'required|date_format:Y-m-d\TH:i|after:now',
             'video' => 'required|file|mimes:mp4,mov,avi,mkv,webm,wmv,asf,mpeg,mpg,m4v|max:512000',
+            'miniatura' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048', 'dimensions:max_width=4096,max_height=4096'],
         ]);
         try {
             $duration = app(ScheduledVideoProcessor::class)->probe($request->file('video')->getRealPath())['duration'];
@@ -57,17 +58,25 @@ class ScheduledVideoController extends Controller
         }
         $path = $request->file('video')->store('scheduled-sources', 'local');
         abort_unless($path, 500, 'No se pudo guardar el video.');
+        $thumbnailPath = null;
         try {
-            DB::transaction(function () use ($data, $duration, $path, $request) {
+            if ($request->hasFile('miniatura')) {
+                $thumbnailPath = $request->file('miniatura')->store('eventos/miniaturas', 'public');
+                abort_unless($thumbnailPath, 500, 'No se pudo guardar la imagen de portada.');
+            }
+            DB::transaction(function () use ($data, $duration, $path, $thumbnailPath, $request) {
                 $event = Evento::create(['titulo' => $data['titulo'], 'descripcion' => $data['descripcion'] ?? null,
                     'categoria_id' => $data['categoria_id'], 'fecha_inicio' => $data['fecha_inicio'],
                     'fecha_fin' => Carbon::parse($data['fecha_inicio'])->addSeconds((int) ceil($duration)),
-                    'tipo_evento' => 'Emisión pregrabada', 'estado' => 'programado', 'organizador_id' => $request->user()->id,
+                    'tipo_evento' => 'Emisión pregrabada', 'estado' => 'programado', 'miniatura' => $thumbnailPath, 'organizador_id' => $request->user()->id,
                     'slug' => Str::uuid()->toString()]);
                 $event->scheduledVideo()->create(['path' => $path, 'duration' => $duration, 'source_path' => $path, 'source_bytes' => $request->file('video')->getSize(), 'processing_status' => 'pending']);
             });
         } catch (\Throwable $e) {
             Storage::disk('local')->delete($path);
+            if ($thumbnailPath) {
+                Storage::disk('public')->delete($thumbnailPath);
+            }
             throw $e;
         }
 

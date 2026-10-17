@@ -30,6 +30,7 @@
 .schedule-submit .studio-button { font-size:12px; }
 .schedule-preview { min-width:0; border-radius:18px; overflow:hidden; background:#fff; border:1px solid #dbe6f3; }
 .schedule-preview-art { position:relative; display:flex; flex-direction:column; align-items:center; justify-content:space-between; min-height:230px; padding:22px; color:white; background:radial-gradient(ellipse at 100% 100%,#245c9a,transparent 75%),#071a35; }
+.schedule-preview-logo { display:block; align-self:flex-start; width:min(190px,100%); max-height:48px; height:auto; object-fit:contain; object-position:left center; filter:brightness(0) invert(1); }
 .schedule-preview-brand { align-self:start; font-weight:700; font-size:18px; letter-spacing:-.05em; }
 .schedule-preview-brand > span { color:#9dc6f5; }
 .schedule-preview-play { display:grid; place-items:center; width:57px; height:57px; padding-left:3px; border:1px solid #9ec0e777; border-radius:50%; background:#ffffff09; color:#c3ddfb; font-size:17px; box-shadow:0 0 0 12px #ffffff03; }
@@ -70,6 +71,21 @@
 .schedule-progress .is-complete { color:#1856a1; }
 .schedule-progress .is-complete i { background:#e7f1ff; border-color:#a9c9ef; }
 .schedule-upload.has-file { border-style:solid; border-color:#8db4e6; background:#f1f7ff; }
+.schedule-thumbnail-field { display:grid; gap:8px; margin-bottom:16px; padding:16px; border:1px solid #d8e5f5; border-radius:13px; background:#f8fbff; }
+.schedule-thumbnail-field > label { display:flex; align-items:center; gap:8px; color:#153557; font-size:12px; font-weight:700; }
+.schedule-thumbnail-field > label span { padding:4px 7px; border-radius:20px; background:#e9f2ff; color:#35699f; font-size:9px; font-weight:600; }
+.schedule-thumbnail-field > p:not(.schedule-file-error),.schedule-thumbnail-field > small { margin:0; color:#71849d; font-size:10px; line-height:1.5; }
+.schedule-thumbnail-field input { width:100%; min-width:0; color:#536b8a; font-size:11px; }
+.schedule-thumbnail-field input::file-selector-button { padding:8px 11px; margin-right:9px; border:1px solid #c7daf2; border-radius:8px; color:#174e95; background:#fff; cursor:pointer; font-weight:600; }
+.schedule-thumbnail-selected { display:flex; align-items:center; gap:10px; min-width:0; padding:8px; border:1px solid #cfe0f4; border-radius:10px; background:white; }
+.schedule-thumbnail-selected img { width:64px; height:42px; flex:0 0 auto; border-radius:6px; object-fit:cover; }
+.schedule-thumbnail-selected > span { flex:1; min-width:0; overflow:hidden; color:#345779; font-size:10px; text-overflow:ellipsis; white-space:nowrap; }
+.schedule-thumbnail-selected button { padding:6px 9px; border:1px solid #e3c8cc; border-radius:7px; background:#fff8f8; color:#a13b4b; font-size:10px; cursor:pointer; }
+.schedule-preview-art.has-cover { isolation:isolate; overflow:hidden; }
+.schedule-preview-cover { position:absolute; z-index:0; inset:0; width:100%; height:100%; object-fit:cover; }
+.schedule-preview-art.has-cover::after { position:absolute; z-index:1; inset:0; background:linear-gradient(180deg,#061a35a8 0%,#061a3520 42%,#061a35c9 100%); content:""; }
+.schedule-preview-art.has-cover > :not(.schedule-preview-cover) { position:relative; z-index:2; }
+.schedule-preview-art.has-cover .schedule-preview-play { align-self:center; }
 .schedule-file-error { color:#ae3347; font-size:12px; margin-top:10px; }
 .schedule-file-error:empty { display:none; }
 .schedule-local-preview { background:#071a35; padding:12px; }
@@ -123,4 +139,11 @@ html[data-theme="dark"] .schedule-upload-progress { border-color:#4e82b3; backgr
 html[data-theme="dark"] .schedule-upload-progress small { color:#b8d5ed; }
 html[data-theme="dark"] .schedule-conversion-progress { color:#b9daff; }
 html[data-theme="dark"] .schedule-upload-error { border-color:#a94f5b; background:#3e1d2a; color:#ffd4dc !important; }
+html[data-theme="dark"] .schedule-thumbnail-field { border-color:#294b6b; background:#102b46; }
+html[data-theme="dark"] .schedule-thumbnail-field > label { color:#e4f1ff; }
+html[data-theme="dark"] .schedule-thumbnail-field > label span { background:#1d4267; color:#c9e2ff; }
+html[data-theme="dark"] .schedule-thumbnail-field > p:not(.schedule-file-error),html[data-theme="dark"] .schedule-thumbnail-field > small { color:#a9c2dc; }
+html[data-theme="dark"] .schedule-thumbnail-selected { border-color:#3a628a; background:#153451; }
+html[data-theme="dark"] .schedule-thumbnail-selected > span { color:#d4e9ff; }
+html[data-theme="dark"] .schedule-thumbnail-selected button { border-color:#70444c; background:#38232c; color:#ffd4dc; }
 @media(max-width:640px) { .schedule-conversion-progress { flex-basis:100%; width:100%; }.ad-studio-item .schedule-conversion-progress { width:100%; } }

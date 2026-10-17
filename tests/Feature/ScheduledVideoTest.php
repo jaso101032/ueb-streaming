@@ -2,10 +2,20 @@
 namespace Tests\Feature;
 use App\Models\{Evento, User, Categoria};
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 class ScheduledVideoTest extends TestCase {
     use RefreshDatabase;
+    private function poster(): UploadedFile {
+        $chunk = fn (string $type, string $data) => pack('N', strlen($data)).$type.$data.pack('N', crc32($type.$data));
+        $png = "\x89PNG\r\n\x1a\n"
+            .$chunk('IHDR', pack('NNCCCCC', 1, 1, 8, 2, 0, 0, 0))
+            .$chunk('IDAT', gzcompress("\0\xff\0\0"))
+            .$chunk('IEND', '');
+
+        return UploadedFile::fake()->createWithContent('portada.png', $png);
+    }
     private function event() {
         Storage::fake('local');
         $user = User::factory()->create(['role'=>'admin']);
@@ -55,14 +65,18 @@ class ScheduledVideoTest extends TestCase {
     }
     public function test_real_mp4_upload_creates_private_scheduled_event(): void {
         $event = $this->event();
+        Storage::fake('public');
         $this->actingAs(User::where('role','admin')->first());
         $path = tempnam(sys_get_temp_dir(), 'ueb-scheduled-');
         try {
             $process = new \Symfony\Component\Process\Process(['/usr/bin/ffmpeg','-y','-f','lavfi','-i','color=c=blue:s=64x64:r=10','-t','2','-c:v','libx264','-pix_fmt','yuv420p','-f','mp4',$path]);
             $process->mustRun();
             $file = new \Illuminate\Http\UploadedFile($path, 'programa.mp4', 'video/mp4', null, true);
-            $this->post(route('admin.scheduled.store'), ['titulo'=>'Video subido','categoria_id'=>$event->categoria_id,'fecha_inicio'=>now()->addMinutes(10)->format('Y-m-d\TH:i'),'video'=>$file])->assertSessionHasNoErrors()->assertRedirect(route('admin.scheduled.index'));
+            $this->post(route('admin.scheduled.store'), ['titulo'=>'Video subido','categoria_id'=>$event->categoria_id,'fecha_inicio'=>now()->addMinutes(10)->format('Y-m-d\TH:i'),'video'=>$file,'miniatura'=>$this->poster()])->assertSessionHasNoErrors()->assertRedirect(route('admin.scheduled.index'));
             $created = Evento::where('titulo','Video subido')->firstOrFail();
+            $this->assertNotNull($created->miniatura);
+            Storage::disk('public')->assertExists($created->miniatura);
+            $this->get(route('eventos.index'))->assertOk()->assertSee('storage/'.$created->miniatura, false);
             $this->assertNotNull($created->scheduledVideo);
             $this->assertNull($created->transmision);
             $this->assertSame(2, $created->scheduledVideo->duration);
