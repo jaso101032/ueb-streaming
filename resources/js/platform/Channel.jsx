@@ -147,10 +147,17 @@ function ChannelVideo({ snapshot, received, startMuted, onMuteChange }) {
 
 export default function Channel({ stateUrl }) {
     const shell = useShell();
+    const tvMode = new URLSearchParams(window.location.search).get("modo") === "tv";
     const [data, setData] = useState(null);
     const [received, setReceived] = useState(0);
     const [error, setError] = useState("");
-    const [channelMuted, setChannelMuted] = useState(true);
+    const [channelMuted, setChannelMuted] = useState(!tvMode);
+    useEffect(() => {
+        if (!tvMode) return undefined;
+        document.documentElement.classList.add("uebtv-tv-mode");
+        document.title = "UEBTV · Señal continua";
+        return () => document.documentElement.classList.remove("uebtv-tv-mode");
+    }, [tvMode]);
     useEffect(() => {
         let stopped = false,
             timer,
@@ -193,7 +200,7 @@ export default function Channel({ stateUrl }) {
     const playing = live || data?.mode === "scheduled" || advertising;
     const next = data?.next?.[0];
     return (
-        <div className="studio-page channel-page">
+        <div className={`studio-page channel-page ${tvMode ? "channel-page--tv" : ""}`}>
             <header className="channel-heading">
                 <div>
                     <p className="studio-eyebrow">

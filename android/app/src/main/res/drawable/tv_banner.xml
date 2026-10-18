@@ -1,0 +1,13 @@
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <gradient android:angle="0" android:startColor="#EDF4FC" android:centerColor="#FFFFFF" android:endColor="#E4EFFB" android:type="linear" />
+        </shape>
+    </item>
+    <item android:left="12dp" android:width="56dp" android:height="112dp" android:gravity="left|center_vertical">
+        <bitmap android:src="@drawable/mascota_ueb" android:gravity="fill" />
+    </item>
+    <item android:left="92dp" android:width="205dp" android:height="43dp" android:gravity="left|center_vertical">
+        <bitmap android:src="@drawable/ueb_wordmark" android:gravity="fill" />
+    </item>
+</layer-list>

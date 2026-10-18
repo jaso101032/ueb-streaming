@@ -7,6 +7,21 @@ const login = async (page, email = "admin@ui.test") => {
     await page.getByRole("button", { name: "Entrar a UEBTV" }).click();
     await page.waitForURL(/admin\/dashboard|eventos/);
 };
+test("Android TV channel mode shows a full-screen viewer without the website shell", async ({ page }) => {
+    await page.route("**/senal/estado", (route) => route.fulfill({ json: {
+        mode: "idle", event: null, playback: null, advertisement: null, next: [],
+        summary: { count: 0, totalSeconds: 0, remainingSeconds: 0 },
+    } }));
+    await page.goto("/senal?modo=tv");
+    await expect(page.locator("html")).toHaveClass(/uebtv-tv-mode/);
+    await expect(page.locator(".studio-header")).toBeHidden();
+    await expect(page.locator(".channel-heading")).toBeHidden();
+    await expect(page.locator(".channel-next")).toBeHidden();
+    await expect(page.locator(".channel-screen")).toBeVisible();
+    const frame = await page.locator(".channel-screen-frame").boundingBox();
+    expect(frame.width).toBeGreaterThanOrEqual(1440);
+    expect(frame.height).toBeGreaterThanOrEqual(900);
+});
 test("public navigation menu is usable on mobile and desktop", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/senal");
