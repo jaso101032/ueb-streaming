@@ -29,7 +29,9 @@ class ReactPage
             'recordingStatus' => $recording?->recording_status, 'viewers' => $recording?->espectadores_activos ?? 0, 'viewersUrl' => '/eventos/'.$e->id.'/espectadores', 'videoViewsUrl' => route('eventos.video-views', $e), 'playbackUrl' => '/eventos/'.$e->id.'/estado',
             // HLS can be served on the same HTTPS domain by the production reverse proxy.
             'hlsUrl' => $recording ? (config('streaming.hls_base_url') ?: request()->getScheme().'://'.request()->getHost().':8080/hls').'/'.$recording->stream_key.'.m3u8' : null,
-            'chatUrl' => route('eventos.chat.index', $e)];
+            'chatUrl' => route('eventos.chat.index', $e), 'chatEnabled' => (bool) $e->chat_enabled,
+            'chatRestricted' => (bool) auth()->user()?->chat_restricted,
+            'chatToggleUrl' => auth()->user()?->allowsOperatorAction('toggle_chat') && ! $scheduled && ! in_array($e->estado, ['finalizado', 'cancelado']) ? route('streaming.chat.toggle', $e) : null];
         if (auth()->user()?->role === 'admin') {
             $data['analyticsUrl'] = route('admin.eventos.analytics', $e);
             if (array_key_exists('catalog_views', $e->getAttributes())) {
@@ -37,13 +39,19 @@ class ReactPage
             }
         }
         if ($manage) {
-            $data += ['editUrl' => $scheduled ? null : route('admin.eventos.edit', $e), 'detailUrl' => route('admin.eventos.show', $e),
+            $canEdit = (bool) auth()->user()?->allowsOperatorAction('events');
+            $canStream = (bool) auth()->user()?->allowsOperatorAction('stream');
+            $data += ['editUrl' => $canEdit && ! $scheduled ? route('admin.eventos.edit', $e) : null, 'detailUrl' => $canEdit ? route('admin.eventos.show', $e) : null,
                 'deleteUrl' => auth()->user()?->can('delete-event') ? route('admin.eventos.destroy', $e) : null,
-                'finishUrl' => $recording && ! $recording->finalizado_en && ! in_array($e->estado, ['finalizado', 'cancelado']) ? route('streaming.finalizar', $e) : null,
+                'finishUrl' => $canStream && $recording && ! $recording->finalizado_en && ! in_array($e->estado, ['finalizado', 'cancelado']) ? route('streaming.finalizar', $e) : null,
                 'retryUrl' => auth()->user()?->role === 'admin' && $recording?->recording_status === 'failed' ? route('streaming.recording.retry', $e) : null,
                 'downloadUrl' => auth()->user()?->role === 'admin' && $recording?->recordingPath() ? route('admin.recording.download', $e) : null,
-                'generateUrl' => ! $scheduled && ! $recording?->iniciado_en && ! in_array($e->estado, ['finalizado', 'cancelado']) ? route('streaming.generar.clave', $e) : null,
-                'streamKey' => $recording?->stream_key, 'server' => config('streaming.rtmp_url') ?: 'rtmp://'.request()->getHost().':1935/live', 'statusUrl' => route('streaming.estado', $e)];
+                'generateUrl' => $canStream && ! $scheduled && ! $recording?->iniciado_en && ! in_array($e->estado, ['finalizado', 'cancelado']) ? route('streaming.generar.clave', $e) : null,
+                'streamKey' => $canStream ? $recording?->stream_key : null, 'server' => $canStream ? (config('streaming.rtmp_url') ?: 'rtmp://'.request()->getHost().':1935/live') : null, 'statusUrl' => $canStream ? route('streaming.estado', $e) : null];
+            if (auth()->user()?->role === 'admin') {
+                $data['recordingMetadata'] = $recording?->displayRecordingMetadata();
+                $data['recordingFpsLimit'] = $recording?->recording_fps_limit;
+            }
         }
 
         return $data;
@@ -54,6 +62,8 @@ class ReactPage
         $user = auth()->user();
         $admin = $user?->role === 'admin';
         $operator = in_array($user?->role, ['admin', 'operador'], true);
+        $canEvents = (bool) $user?->allowsOperatorAction('events');
+        $canStream = (bool) $user?->allowsOperatorAction('stream');
         $links = [];
         if ($admin) {
             $links[] = ['label' => 'Resumen', 'url' => route('admin.dashboard'), 'active' => request()->routeIs('admin.dashboard'), 'icon' => 0];
@@ -64,19 +74,22 @@ class ReactPage
                 ['Emitir con OBS', 'streaming.control', 'streaming.*', 2],
                 ['Catálogo público', 'eventos.index', 'eventos.*', 3],
             ] as [$label, $url, $pattern, $icon]) {
+                if ($label === 'Gestionar eventos' && ! $canEvents) continue;
+                if ($label === 'Emitir con OBS' && ! $canStream) continue;
                 $links[] = ['label' => $label, 'url' => route($url), 'active' => request()->routeIs($pattern) && ! request()->routeIs('admin.eventos.create'), 'icon' => $icon];
             }
         }
         if ($admin) {
+            $links[] = ['label' => 'Biblioteca de medios', 'url' => route('admin.media.index'), 'active' => request()->routeIs('admin.media.*'), 'icon' => 3];
             $links[] = ['label' => 'Parrilla 24/7', 'url' => route('admin.scheduled.index'), 'active' => request()->routeIs('admin.scheduled.*'), 'icon' => 4];
             $links[] = ['label' => 'Marca de agua', 'url' => route('admin.watermark.edit'), 'active' => request()->routeIs('admin.watermark.*'), 'icon' => 5];
             $links[] = ['label' => 'Gestionar usuarios', 'url' => route('admin.usuarios.index'), 'active' => request()->routeIs('admin.usuarios.*'), 'icon' => 6];
         }
 
-        return ['user' => $user?->only(['name', 'email', 'role']), 'links' => $links, 'operator' => $operator, 'panelLabel' => $admin ? 'CENTRO DE PRODUCCIÓN' : 'CENTRO DE OPERACIÓN', 'createUrl' => $operator ? route('admin.eventos.create') : null,
+        return ['user' => $user?->only(['name', 'email', 'role']), 'links' => $links, 'operator' => $operator, 'panelLabel' => $admin ? 'CENTRO DE PRODUCCIÓN' : 'CENTRO DE OPERACIÓN', 'createUrl' => $canEvents ? route('admin.eventos.create') : null,
             // The public logo returns to the continuous channel, the audience's
             // primary entry point. The catalog remains a distinct discovery view.
-            'creating' => request()->routeIs('admin.eventos.create'), 'home' => $admin ? route('admin.dashboard') : ($operator ? route('streaming.control') : route('channel.index')),
+            'creating' => request()->routeIs('admin.eventos.create'), 'home' => $admin ? route('admin.dashboard') : ($canStream ? route('streaming.control') : ($canEvents ? route('admin.eventos.index') : route('channel.index'))),
             'login' => route('login'), 'register' => route('register'), 'logout' => route('logout'), 'profile' => route('profile.edit'),
             'channel' => route('channel.index'), 'catalog' => route('eventos.index'),
             'logo' => asset('images/brand/ueb-wordmark.png'),

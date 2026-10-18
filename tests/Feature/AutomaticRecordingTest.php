@@ -73,8 +73,9 @@ class AutomaticRecordingTest extends TestCase
 
     public function test_real_video_is_converted_published_and_supports_range_requests(): void
     {
+        $this->event->transmision()->update(['recording_fps_limit' => 30]);
         $this->publish()->assertNoContent();
-        $fixture = new Process(['/usr/bin/ffmpeg', '-nostdin', '-v', 'error', '-f', 'lavfi', '-i', 'color=c=blue:s=160x90:r=10',
+        $fixture = new Process(['/usr/bin/ffmpeg', '-nostdin', '-v', 'error', '-f', 'lavfi', '-i', 'color=c=blue:s=160x90:r=60',
             '-f', 'lavfi', '-i', 'sine=frequency=440:sample_rate=44100', '-t', '1',
             '-c:v', 'libx264', '-threads', '1', '-c:a', 'aac', '-f', 'flv', $this->root.'/raw/ueb_test.flv']);
         $fixture->mustRun();
@@ -83,10 +84,20 @@ class AutomaticRecordingTest extends TestCase
         $this->artisan('streaming:prepare-recordings')->assertSuccessful();
         $stream = $this->event->transmision()->first();
         $this->assertSame('ready', $stream->recording_status, $stream->recording_error ?? '');
+        $this->assertSame('MP4', $stream->recording_metadata['format']);
+        $this->assertSame('h264', $stream->recording_metadata['videoCodec']);
+        $this->assertSame('aac', $stream->recording_metadata['audioCodec']);
+        $this->assertSame(160, $stream->recording_metadata['width']);
+        $this->assertEqualsWithDelta(30, $stream->recording_metadata['fps'], 0.1);
+        $this->assertSame(filesize($this->root.'/raw/ueb_test.flv'), $stream->recording_metadata['rawBytes']);
+        $this->assertSame(filesize($stream->recordingPath()), $stream->recording_metadata['mp4Bytes']);
         $this->assertFileExists($stream->recordingPath());
         $this->assertFileExists($this->root.'/raw/ueb_test.flv');
         $this->assertSame('https://example.com/manual.mp4', $this->event->fresh()->video_url);
         $this->assertSame('finalizado', $this->event->fresh()->estado);
+        $this->actingAs(User::where('role', 'admin')->first());
+        $this->get(route('admin.eventos.show', $this->event))->assertOk()->assertSee('recordingMetadata');
+        auth()->logout();
         $this->get(route('eventos.show', $this->event))->assertOk()->assertSee(route('eventos.recording', $this->event));
         $this->get(route('eventos.recording', $this->event), ['Range' => 'bytes=0-31'])->assertStatus(206)
             ->assertHeader('Content-Type', 'video/mp4');

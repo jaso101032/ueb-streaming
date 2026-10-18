@@ -54,7 +54,8 @@ class RecordingProcessor
             $claimed->update(['recording_file' => $filename]);
             $temporary = $root.'/vod/.'.$filename;
             $process = new Process(['/usr/bin/python3', base_path('scripts/prepare-recording.py'),
-                $source, $temporary, config('streaming.ffmpeg'), config('streaming.ffprobe')]);
+                $source, $temporary, config('streaming.ffmpeg'), config('streaming.ffprobe'),
+                (string) ($claimed->recording_fps_limit ?: 'source')]);
             $process->setTimeout(21600);
             $process->run();
             if ($process->getExitCode() === 75) {
@@ -64,10 +65,15 @@ class RecordingProcessor
             if (!$process->isSuccessful() || !is_file($temporary) || filesize($temporary) === 0) {
                 throw new \RuntimeException('Conversion failed');
             }
+            $metadata = json_decode($process->getOutput(), true, 512, JSON_THROW_ON_ERROR);
+            if (!is_array($metadata) || ($metadata['mp4Bytes'] ?? 0) <= 0 || ($metadata['rawBytes'] ?? 0) <= 0) {
+                throw new \RuntimeException('Invalid recording metadata');
+            }
             chmod($temporary, 0640);
             if (!rename($temporary, $root.'/vod/'.$filename)) throw new \RuntimeException('Publish failed');
             // File is served through a guarded route; .mp4 alone never exposes it.
             $claimed->update(['recording_status' => 'ready', 'recording_file' => $filename,
+                'recording_metadata' => $metadata,
                 'recording_ready_at' => now(), 'recording_error' => null]);
         } catch (Throwable $exception) {
             if ($temporary && is_file($temporary)) unlink($temporary);

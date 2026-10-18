@@ -57,7 +57,7 @@ test("admin watermark is validated, previewed, persisted and restored on desktop
     await page.goto("/eventos/1");
     const playerMark = page.locator(".uebtv-player-shell .uebtv-player-mark img");
     await expect(playerMark).toHaveAttribute("src", customUrl);
-    await expect(page.locator(".uebtv-brand-logo--header img")).toHaveAttribute("src", /images\/brand\/uebtv-logo-final.png$/);
+    await expect(page.locator(".facagei-brand-logo--header")).toHaveAttribute("src", /images\/brand\/facagei-logo-light.png$/);
     await expect.poll(() => playerMark.evaluate((element) => element.naturalWidth)).toBe(768);
     const bounds = await playerMark.boundingBox();
     expect(bounds.width).toBeLessThanOrEqual(112);

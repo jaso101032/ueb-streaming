@@ -88,6 +88,26 @@ class EventoManagementTest extends TestCase
         $this->get(route('eventos.index'))->assertOk()->assertSee('storage/'.$evento->miniatura, false);
     }
 
+    public function test_recording_fps_can_be_set_before_broadcast_but_not_after_start(): void
+    {
+        $this->post(route('admin.eventos.store'), $this->data(['recording_fps_limit' => 30]))
+            ->assertSessionHasNoErrors();
+        $evento = Evento::firstOrFail();
+        $this->assertSame(30, $evento->transmision->recording_fps_limit);
+
+        $this->put(route('admin.eventos.update', $evento), $this->data(['recording_fps_limit' => 60]))
+            ->assertSessionHasNoErrors();
+        $this->assertSame(60, $evento->transmision->fresh()->recording_fps_limit);
+
+        $evento->transmision->update(['iniciado_en' => now()]);
+        $this->put(route('admin.eventos.update', $evento), $this->data(['recording_fps_limit' => 30]))
+            ->assertSessionHasErrors('recording_fps_limit');
+        $this->assertSame(60, $evento->transmision->fresh()->recording_fps_limit);
+
+        $this->post(route('admin.eventos.store'), $this->data(['recording_fps_limit' => 120]))
+            ->assertSessionHasErrors('recording_fps_limit');
+    }
+
     public function test_operator_can_create_and_edit_events_but_cannot_delete_them(): void
     {
         $evento = $this->evento();

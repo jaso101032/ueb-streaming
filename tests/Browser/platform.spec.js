@@ -22,7 +22,7 @@ test("public navigation menu is usable on mobile and desktop", async ({ page }) 
     await page.setViewportSize({ width: 320, height: 720 });
     await expect(page.locator("body")).toHaveJSProperty("scrollWidth", 320);
     await expect(menu).toBeVisible();
-    const logo = await page.locator('.studio-brand--uebtv').boundingBox();
+    const logo = await page.locator('.studio-header .studio-brand').boundingBox();
     const account = await page.locator('.studio-account').boundingBox();
     expect(logo.x + logo.width).toBeLessThanOrEqual(account.x);
     await page.screenshot({ path: "/tmp/uebtv-guest-menu-320.png" });
@@ -91,6 +91,72 @@ test("archived video shows views instead of connected spectators and counts play
     await expect(page.getByLabel("1 visualización")).toBeVisible({ timeout: 15000 });
     await page.reload();
     await expect(page.getByLabel("1 visualización")).toBeVisible();
+});
+test("desktop player shortcuts control recorded video without hijacking text fields", async ({ page }) => {
+    await page.route("**/test-video.mp4", (route) => route.fulfill({
+        body: readFileSync("/tmp/uebtv-react-test.mp4"),
+        contentType: "video/mp4",
+        headers: { "Accept-Ranges": "bytes" },
+    }));
+    await page.goto("/eventos/1");
+    const video = page.locator("video");
+    await page.getByRole("button", { name: "Reproducir", exact: true }).click();
+    await expect.poll(() => video.evaluate((v) => v.currentTime)).toBeGreaterThan(0.5);
+    await page.evaluate(() => document.activeElement.blur());
+    await page.keyboard.press("Space");
+    await expect(video).toHaveJSProperty("paused", true);
+    const beforeSeek = await video.evaluate((v) => v.currentTime);
+    await page.keyboard.press("ArrowRight");
+    await expect.poll(() => video.evaluate((v) => v.currentTime)).toBeGreaterThan(beforeSeek + 4.5);
+    await page.keyboard.press("ArrowLeft");
+    await expect.poll(() => video.evaluate((v) => v.currentTime)).toBeLessThan(beforeSeek + 0.5);
+    const beforeFocusedSeek = await video.evaluate((v) => v.currentTime);
+    await page.getByLabel("Posición del video").focus();
+    await page.keyboard.press("ArrowRight");
+    await expect.poll(() => video.evaluate((v) => v.currentTime)).toBeGreaterThan(beforeFocusedSeek + 4.5);
+
+    await page.evaluate(() => {
+        const input = document.createElement("input");
+        input.id = "shortcut-test-input";
+        document.body.append(input);
+        input.focus();
+    });
+    await page.keyboard.press("f");
+    await page.keyboard.press("Space");
+    await expect(page.locator("#shortcut-test-input")).toHaveValue("f ");
+    await expect(video).toHaveJSProperty("paused", true);
+    await page.evaluate(() => document.activeElement.blur());
+    await page.keyboard.press("Space");
+    await expect(video).toHaveJSProperty("paused", false);
+    await page.getByRole("button", { name: "Pausar", exact: true }).focus();
+    await page.keyboard.press("f");
+    await expect.poll(() => page.locator(".uebtv-player-shell").evaluate((el) => document.fullscreenElement === el)).toBe(true);
+    await page.keyboard.press("f");
+    await expect.poll(() => page.evaluate(() => document.fullscreenElement)).toBeNull();
+    await page.keyboard.press("f");
+    await expect.poll(() => page.locator(".uebtv-player-shell").evaluate((el) => document.fullscreenElement === el)).toBe(true);
+    await page.keyboard.press("Escape");
+    await expect.poll(() => page.evaluate(() => document.fullscreenElement)).toBeNull();
+});
+test("arrow shortcuts do not seek institutional advertising", async ({ page }) => {
+    await page.route("**/senal/estado", (route) => route.fulfill({ json: {
+        mode: "advertisement", event: null,
+        advertisement: { id: 9, title: "Publicidad de prueba", mediaUrl: "/keyboard-ad.mp4" },
+        playback: { state: "playing", position: 20, duration: 60 },
+        next: [], summary: { count: 0, totalSeconds: 0, remainingSeconds: 0 },
+    } }));
+    await page.route("**/keyboard-ad.mp4*", (route) => route.fulfill({
+        body: readFileSync("/tmp/uebtv-react-test.mp4"), contentType: "video/mp4",
+        headers: { "Accept-Ranges": "bytes" },
+    }));
+    await page.goto("/senal");
+    const video = page.locator("video");
+    await expect.poll(() => video.evaluate((v) => v.currentTime)).toBeGreaterThan(19);
+    await video.evaluate((v) => v.pause());
+    const before = await video.evaluate((v) => v.currentTime);
+    await page.keyboard.press("ArrowRight");
+    await page.keyboard.press("ArrowLeft");
+    expect(Math.abs((await video.evaluate((v) => v.currentTime)) - before)).toBeLessThan(0.5);
 });
 test("access, profile, administration, event form preview and mobile navigation", async ({
     page,
@@ -437,7 +503,7 @@ test("live HLS tolerates a slow first fragment without rebuilding the player", a
             return type === "application/vnd.apple.mpegurl" ? "" : original.call(this, type);
         };
     });
-    let manifests = 0, fragments = 0;
+    let manifests = 0, fragments = 0, firstFragmentDelivered = false;
     await page.route("**/senal/estado", (route) => route.fulfill({ json: {
         mode: "live", event: { id: 44, title: "Directo de prueba", status: "en_vivo", hlsUrl: "/slow-live.m3u8", url: "/eventos/44" },
         playback: null, advertisement: null, next: [], summary: { count: 0, totalSeconds: 0, remainingSeconds: 0 },
@@ -448,15 +514,16 @@ test("live HLS tolerates a slow first fragment without rebuilding the player", a
     });
     await page.route("**/uebtv-react-hls-*.ts", async (route) => {
         fragments++;
-        if (fragments === 1) await new Promise((resolve) => setTimeout(resolve, 12000));
+        const first = fragments === 1;
+        if (first) await new Promise((resolve) => setTimeout(resolve, 12000));
         const filename = new URL(route.request().url()).pathname.split("/").pop();
         await route.fulfill({ body: readFileSync(`/tmp/${filename}`), contentType: "video/mp2t" });
+        if (first) firstFragmentDelivered = true;
     });
-    const started = Date.now();
     await page.goto("/senal");
+    await expect.poll(() => firstFragmentDelivered, { timeout: 30000 }).toBe(true);
     await expect.poll(() => page.locator("video").evaluate((v) => v.currentTime), { timeout: 30000 }).toBeGreaterThan(0);
     expect(fragments).toBeGreaterThan(0);
-    expect(Date.now() - started).toBeGreaterThan(11000);
     expect(manifests).toBe(1);
     await expect(page.getByText("Reconectando automáticamente", { exact: false })).toHaveCount(0);
 });
@@ -753,6 +820,8 @@ test("admin sees separate programming and institutional advertising forms on mob
     await expect(page.getByLabel("Archivo de video")).toBeVisible();
     await page.setViewportSize({ width: 390, height: 844 });
     await expect(page.locator("body")).toHaveJSProperty("scrollWidth", 390);
+    await page.setViewportSize({ width: 320, height: 720 });
+    await expect(page.locator("body")).toHaveJSProperty("scrollWidth", 320);
 });
 
 test("advertising upload shows progress and a recoverable server error", async ({ page }) => {
@@ -775,17 +844,17 @@ test("advertising upload shows progress and a recoverable server error", async (
     await expect(page.getByRole("button", { name: "Subir publicidad" })).toBeEnabled();
 });
 
-test("desktop header places UEBTV and mascot near the left edge without changing mobile layout", async ({ page }) => {
+test("desktop header places the institutional brand and mascot near the left edge without changing mobile layout", async ({ page }) => {
     await page.setViewportSize({ width: 1863, height: 900 });
     await login(page);
     await page.goto("/eventos");
-    const brand = page.locator(".studio-header .studio-brand--uebtv");
+    const brand = page.locator(".studio-header .studio-brand--facagei");
     const desktop = await brand.boundingBox();
     expect(desktop).not.toBeNull();
     expect(desktop.x).toBeLessThanOrEqual(36);
     expect(desktop.x).toBeGreaterThanOrEqual(20);
     await expect(brand.locator(".studio-brand-mascot")).toBeVisible();
-    await expect(brand.locator(".uebtv-brand-logo--header")).toBeVisible();
+    await expect(brand.locator(".facagei-brand-logo--header")).toBeVisible();
     await page.setViewportSize({ width: 390, height: 844 });
     await expect(page.locator("body")).toHaveJSProperty("scrollWidth", 390);
 });

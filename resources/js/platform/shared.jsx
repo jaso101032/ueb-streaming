@@ -16,6 +16,7 @@ export function Action({
     method,
     confirm,
     className = "studio-button",
+    ariaLabel,
 }) {
     const [busy, setBusy] = useState(false);
     useEffect(() => {
@@ -36,7 +37,7 @@ export function Action({
             }}
         >
             <Token method={method} />
-            <button className={className} disabled={busy}>
+            <button className={className} aria-label={ariaLabel} disabled={busy}>
                 {busy ? "Procesando…" : children}
             </button>
         </form>

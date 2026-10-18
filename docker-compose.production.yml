@@ -36,6 +36,7 @@ services:
       STREAMING_CALLBACK_TOKEN: ${STREAMING_CALLBACK_TOKEN:?Define un token aleatorio de 64 caracteres hexadecimales}
       STREAMING_CONTROL_URL: http://rtmp:8080/control
       STREAMING_RECORDINGS_ROOT: /var/lib/uebtv/recordings
+      STREAMING_MEDIA_QUOTA_GB: ${STREAMING_MEDIA_QUOTA_GB:-}
       STREAMING_X_ACCEL_MEDIA: "true"
       STREAMING_FFMPEG: /usr/bin/ffmpeg
       STREAMING_FFPROBE: /usr/bin/ffprobe

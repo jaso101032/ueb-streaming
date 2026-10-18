@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useShell, statusLabel } from "./shared";
 import Player from "./Player";
 import Chat from "./Chat";
+import { VideoAnalyticsInline } from "./VideoAnalytics";
 
 function browserViewerKey() {
     const storageKey = "uebtv-viewer-id";
@@ -305,11 +306,15 @@ export default function Watch({
                             </div>
                             </div>
                         </div>
+                        {e.analyticsUrl && <VideoAnalyticsInline url={e.analyticsUrl} title={e.title} />}
                     </section>
                     <Chat
                         endpoint={e.chatUrl}
                         initial={messages}
                         canModerate={canModerate}
+                        chatEnabled={e.chatEnabled}
+                        chatRestricted={e.chatRestricted}
+                        chatToggleUrl={e.chatToggleUrl}
                         seekable={e.status === "finalizado" && Boolean(e.videoUrl)}
                         onSeek={(seconds) => {
                             const video = recordingVideo.current;

@@ -7,6 +7,9 @@ export default function Chat({
     panelRef,
     isRecording,
     canComment = true,
+    chatEnabled = true,
+    chatRestricted = false,
+    chatToggleUrl = null,
     seekable = false,
     onSeek,
     onDraft,
@@ -18,7 +21,10 @@ export default function Chat({
         [connection, setConnection] = useState(""),
         [busy, setBusy] = useState(false),
         [removing, setRemoving] = useState(null),
+        [enabled, setEnabled] = useState(chatEnabled),
+        [restricted, setRestricted] = useState(chatRestricted),
         [version, setVersion] = useState(0);
+    const commentsOpen = canComment && enabled && !restricted;
     const list = useRef(),
         bottom = useRef(true),
         revision = useRef(0),
@@ -84,6 +90,8 @@ export default function Chat({
                 });
                 if (r.status !== 304 && !r.ok) throw Error();
                 if (!stopped && rev === revision.current) {
+                    setEnabled(r.headers.get("X-Chat-Enabled") !== "0");
+                    setRestricted(r.headers.get("X-Chat-Restricted") === "1");
                     if (Array.isArray(body)) {
                         setMessages(body);
                         etag = r.headers.get("ETag");
@@ -181,13 +189,18 @@ export default function Chat({
                     </p>
                     <h2>{isRecording ? "Comentarios" : "Chat en vivo"}</h2>
                     <p className="watch-chat-subtitle">
-                        {canComment ? "Comparte el momento con la comunidad." : "Mensajes conservados junto a cada momento del video."}
+                        {commentsOpen ? "Comparte el momento con la comunidad." : !canComment ? "Mensajes conservados junto a cada momento del video." : restricted ? "Tu cuenta no puede comentar; puedes leer la conversación." : "Los comentarios están desactivados; el historial sigue visible."}
                     </p>
                 </div>
-                <span className={`uebtv-chat-status ${canComment ? "is-open" : "is-closed"}`}>
-                    <i aria-hidden="true" />{canComment ? "Activo" : "Historial"}
+                <span className={`uebtv-chat-status ${commentsOpen ? "is-open" : "is-closed"}`}>
+                    <i aria-hidden="true" />{commentsOpen ? "Activo" : "Solo lectura"}
                 </span>
             </div>
+            {chatToggleUrl && canComment && <form method="POST" action={chatToggleUrl} className="uebtv-chat-control">
+                <input type="hidden" name="_token" value={csrf} />
+                <input type="hidden" name="enabled" value={enabled ? "0" : "1"} />
+                <button type="submit">{enabled ? "Desactivar comentarios" : "Activar comentarios"}</button>
+            </form>}
             <div
                 ref={list}
                 className="uebtv-live-chat__messages"
@@ -262,10 +275,10 @@ export default function Chat({
                     Moderación: puedes retirar mensajes inapropiados.
                 </p>
             )}
-            {!canComment ? (
+            {!commentsOpen ? (
                 <div className="uebtv-live-chat__closed" role="status">
                     <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /></svg>
-                    <p><strong>El chat terminó con la transmisión.</strong> Los comentarios se mantienen disponibles con su minuto correspondiente.</p>
+                    <p><strong>{!canComment ? "El chat terminó con la transmisión." : restricted ? "Tu cuenta tiene restringidos los comentarios." : "Los comentarios están desactivados."}</strong> Puedes seguir leyendo los mensajes publicados.</p>
                 </div>
             ) : user ? (
                 <>

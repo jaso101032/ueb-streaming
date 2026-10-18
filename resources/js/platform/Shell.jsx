@@ -29,14 +29,14 @@ function StorageMeter({ storage }) {
 
     const usedPercent = Math.min(100, Math.max(0, storage.usedPercent));
     const freePercent = 100 - usedPercent;
-    const lowSpace = freePercent <= 10;
+    const lowSpace = storage.lowSpace ?? freePercent <= 10;
     const unitIndex = Math.min(5, Math.max(0, Math.floor(Math.log(Math.max(storage.totalBytes, 1)) / Math.log(1024))));
 
     return (
-        <section className={`studio-storage ${lowSpace ? "studio-storage--low" : ""}`} aria-label="Almacenamiento de grabaciones">
+        <section className={`studio-storage ${lowSpace ? "studio-storage--low" : ""}`} aria-label="Almacenamiento de medios">
             <div className="studio-storage__heading">
                 <span className="studio-storage__icon" aria-hidden="true">▤</span>
-                <span>Almacenamiento</span>
+                <span>{storage.basis === "quota" ? "Cuota de medios UEBTV" : "Volumen de grabaciones"}</span>
             </div>
             <div className="studio-storage__free">{formatStorage(storage.freeBytes, unitIndex)} <span>libres</span></div>
             <div className="studio-storage__track" role="progressbar" aria-label="Espacio usado" aria-valuemin="0" aria-valuemax="100" aria-valuenow={usedPercent}>
@@ -46,6 +46,9 @@ function StorageMeter({ storage }) {
                 <span>{formatStorage(storage.usedBytes, unitIndex)} usados</span>
                 <span>de {formatStorage(storage.totalBytes, unitIndex)}</span>
             </div>
+            <p className="studio-storage__note">Medios UEBTV: {formatStorage(storage.mediaUsedBytes ?? 0, unitIndex)}{storage.basis === "filesystem" ? " · total físico del volumen" : ""}</p>
+            {storage.physicalLimited && <p className="studio-storage__note">El espacio físico disponible es menor que el cupo restante.</p>}
+            {lowSpace && <p className="studio-storage__warning" role="alert">Espacio bajo: revisa el almacenamiento antes de subir o grabar más contenido.</p>}
         </section>
     );
 }
@@ -131,8 +134,10 @@ export default function Shell({ shell, children }) {
                                     <Action
                                         url={shell.logout}
                                         className="studio-signout"
+                                        ariaLabel="Cerrar sesión"
                                     >
-                                        Cerrar sesión
+                                        <span className="studio-signout-full">Cerrar sesión</span>
+                                        <span className="studio-signout-short" aria-hidden="true">Salir</span>
                                     </Action>
                                 </>
                             ) : (

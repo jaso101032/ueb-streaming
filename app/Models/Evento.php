@@ -32,11 +32,13 @@ class Evento extends Model
         'video_url',
         'duracion_minutos',
         'responsable_streaming_id',
+        'chat_enabled',
     ];
 
     protected $casts = [
         'fecha_inicio' => 'datetime',
         'fecha_fin' => 'datetime',
+        'chat_enabled' => 'boolean',
     ];
 
     public function scheduledVideo()

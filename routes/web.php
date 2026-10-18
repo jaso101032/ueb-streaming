@@ -35,7 +35,7 @@ Route::get('/eventos/{evento}', [EventoPublicoController::class, 'show'])->name(
 Route::get('/eventos/{evento}/chat', [ChatMessageController::class, 'index'])->name('eventos.chat.index');
 Route::post('/eventos/{evento}/chat', [ChatMessageController::class, 'store'])->middleware(['auth', 'throttle:30,1'])->name('eventos.chat.store');
 
-Route::delete('/eventos/{evento}/chat/{message}', [ChatMessageController::class, 'destroy'])->middleware(['auth', 'role:admin,operador', 'throttle:60,1'])->name('eventos.chat.destroy');
+Route::delete('/eventos/{evento}/chat/{message}', [ChatMessageController::class, 'destroy'])->middleware(['auth', 'role:admin,operador', 'operator.permission:moderate_chat', 'throttle:60,1'])->name('eventos.chat.destroy');
 
 // 2. Página de inicio general post-login (Redirige según el rol exacto)
 Route::get('/dashboard', function () {
@@ -46,7 +46,7 @@ Route::get('/dashboard', function () {
         return redirect()->route('admin.dashboard');
     } 
     if ($role === 'operador') {
-        return redirect()->route('streaming.control');
+        return redirect()->route($user->allowsOperatorAction('stream') ? 'streaming.control' : ($user->allowsOperatorAction('events') ? 'admin.eventos.index' : 'channel.index'));
     }
     
 
@@ -69,6 +69,9 @@ Route::middleware('auth')->group(function () {
 // Funciones de gestión exclusivas del administrador.
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/medios', [\App\Http\Controllers\Admin\MediaLibraryController::class, 'index'])->name('media.index');
+    Route::get('/medios/programados/{evento}/video', [\App\Http\Controllers\ScheduledVideoController::class, 'adminPreview'])->name('media.scheduled-preview');
+    Route::get('/medios/publicidad/{ad}/video', [\App\Http\Controllers\InstitutionalAdController::class, 'adminPreview'])->name('media.ad-preview');
     Route::get('/usuarios', [\App\Http\Controllers\Admin\UserController::class, 'index'])->name('usuarios.index');
     Route::get('/eventos/{evento}/estadisticas', [\App\Http\Controllers\Admin\VideoAnalyticsController::class, 'show'])->name('eventos.analytics');
     Route::post('/usuarios', [\App\Http\Controllers\Admin\UserController::class, 'store'])->middleware('throttle:10,1')->name('usuarios.store');
@@ -85,7 +88,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 
 // Administrators and streaming operators can create and maintain event details.
 // Destruction and access to source recordings remain in the admin-only group above.
-Route::middleware(['auth', 'role:admin,operador'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'role:admin,operador', 'operator.permission:events'])->prefix('admin')->name('admin.')->group(function () {
     Route::resource('eventos', EventoController::class)->except(['destroy']);
 });
 
@@ -93,12 +96,15 @@ Route::middleware(['auth', 'role:admin,operador'])->prefix('admin')->name('admin
 Route::middleware(['auth', 'role:admin'])->prefix('streaming')->name('streaming.')->group(function () {
     Route::post('/evento/{evento}/reintentar-grabacion', [\App\Http\Controllers\RecordingController::class, 'retry'])->middleware('throttle:5,1')->name('recording.retry');
 });
-Route::middleware(['auth', 'role:admin,operador'])->prefix('streaming')->name('streaming.')->group(function () {
+Route::middleware(['auth', 'role:admin,operador', 'operator.permission:stream'])->prefix('streaming')->name('streaming.')->group(function () {
     Route::post('/evento/{evento}/finalizar', [TransmisionController::class, 'finalizar'])->middleware('throttle:10,1')->name('finalizar');
     Route::get('/control', [TransmisionController::class, 'index'])->name('control');
     Route::post('/evento/{evento}/generar-clave', [TransmisionController::class, 'generarClave'])->name('generar.clave');
     Route::get('/evento/{evento}/estado', [TransmisionController::class, 'estado'])->name('estado');
 });
+Route::post('/streaming/evento/{evento}/chat', [ChatMessageController::class, 'toggle'])
+    ->middleware(['auth', 'role:admin,operador', 'operator.permission:toggle_chat', 'throttle:20,1'])
+    ->name('streaming.chat.toggle');
 
 Route::post('/streaming/hooks/disconnected', [\App\Http\Controllers\StreamAuthorizationController::class, 'disconnected'])
     ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\PreventRequestForgery::class]);

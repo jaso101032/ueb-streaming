@@ -38,6 +38,8 @@ class UserController extends Controller
                 'name' => $user->name,
                 'email' => $user->email,
                 'role' => in_array(strtolower(trim((string) $user->role)), ['user', 'usuario', ''], true) ? 'usuario' : $user->role,
+                'permissions' => $user->isOperador() ? ($user->operator_permissions ?? User::operatorActions()) : [],
+                'chatRestricted' => (bool) $user->chat_restricted,
                 'verified' => $user->email_verified_at !== null,
                 'isCurrent' => $user->is(auth()->user()),
                 'hasEvents' => DB::table('eventos')->where('organizador_id', $user->id)->exists(),
@@ -48,6 +50,7 @@ class UserController extends Controller
             'pagination' => ReactPage::pagination($users),
             'filters' => ['q' => $search, 'role' => $role],
             'roles' => self::ROLES,
+            'operatorActions' => User::operatorActions(),
             'storeUrl' => route('admin.usuarios.store'),
         ];
 
@@ -60,6 +63,10 @@ class UserController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email'],
             'role' => ['required', Rule::in(self::ROLES)],
+            'permissions' => ['sometimes', 'array'],
+            'permissions.*' => ['string', Rule::in(User::operatorActions())],
+            'permissions_present' => ['sometimes', 'boolean'],
+            'chat_restricted' => ['sometimes', 'boolean'],
             'password' => ['required', 'confirmed', Password::min(8)->letters()->mixedCase()->numbers()->symbols()],
         ]);
 
@@ -67,6 +74,8 @@ class UserController extends Controller
             'name' => $data['name'],
             'email' => $data['email'],
             'role' => $data['role'],
+            'operator_permissions' => $data['role'] === 'operador' ? array_values(array_unique($data['permissions'] ?? [])) : null,
+            'chat_restricted' => (bool) ($data['chat_restricted'] ?? false),
             'password' => $data['password'],
         ]);
         $user->forceFill(['email_verified_at' => now()])->save();
@@ -80,6 +89,10 @@ class UserController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique('users', 'email')->ignore($usuario->id)],
             'role' => ['required', Rule::in(self::ROLES)],
+            'permissions' => ['sometimes', 'array'],
+            'permissions.*' => ['string', Rule::in(User::operatorActions())],
+            'permissions_present' => ['sometimes', 'boolean'],
+            'chat_restricted' => ['sometimes', 'boolean'],
             'password' => ['nullable', 'confirmed', Password::min(8)->letters()->mixedCase()->numbers()->symbols()],
         ]);
 
@@ -91,9 +104,18 @@ class UserController extends Controller
             return back()->withErrors(['role' => 'Debe quedar al menos un administrador activo.'])->withInput($request->except('password', 'password_confirmation'));
         }
 
+        $wasOperator = $usuario->isOperador();
         $usuario->name = $data['name'];
         $usuario->email = $data['email'];
         $usuario->role = $data['role'];
+        $usuario->operator_permissions = $data['role'] === 'operador'
+            ? (isset($data['permissions_present']) || isset($data['permissions']) || ! $wasOperator
+                ? array_values(array_unique($data['permissions'] ?? []))
+                : $usuario->operator_permissions)
+            : null;
+        if (array_key_exists('chat_restricted', $data)) {
+            $usuario->chat_restricted = (bool) $data['chat_restricted'];
+        }
         if (! empty($data['password'])) {
             $usuario->password = $data['password'];
         }

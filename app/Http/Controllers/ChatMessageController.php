@@ -19,6 +19,8 @@ class ChatMessageController extends Controller
         $response = response()->json($messages);
         $response->setEtag(hash('sha256', $response->getContent()));
         $response->headers->set('Cache-Control', 'private, no-cache');
+        $response->headers->set('X-Chat-Enabled', $evento->chat_enabled ? '1' : '0');
+        $response->headers->set('X-Chat-Restricted', $request->user()?->chat_restricted ? '1' : '0');
         $response->isNotModified($request);
 
         return $response;
@@ -43,6 +45,12 @@ class ChatMessageController extends Controller
 
             if ($lockedEvent->estado === 'finalizado' || $stream?->finalizado_en) {
                 throw ValidationException::withMessages(['message' => 'El chat está cerrado porque la transmisión ya terminó.']);
+            }
+            if (! $lockedEvent->chat_enabled) {
+                throw ValidationException::withMessages(['message' => 'Los comentarios están desactivados para esta transmisión.']);
+            }
+            if ($request->user()->chat_restricted) {
+                throw ValidationException::withMessages(['message' => 'Tu cuenta tiene restringidos los comentarios.']);
             }
 
             if ($lockedEvent->estado === 'en_vivo' && $stream?->iniciado_en && !$stream->finalizado_en) {
@@ -69,7 +77,7 @@ class ChatMessageController extends Controller
 
     public function destroy(Request $request, Evento $evento, ChatMessage $message, ChatFeed $feed)
     {
-        abort_unless(in_array($request->user()?->role, ['admin', 'operador'], true), 403);
+        abort_unless($request->user()?->allowsOperatorAction('moderate_chat'), 403);
         abort_unless($message->evento_id === $evento->id, 404);
 
         DB::transaction(function () use ($request, $message) {
@@ -80,5 +88,19 @@ class ChatMessageController extends Controller
         $feed->forget($evento);
 
         return response()->noContent();
+    }
+
+    public function toggle(Request $request, Evento $evento)
+    {
+        abort_unless($request->user()?->allowsOperatorAction('toggle_chat'), 403);
+        $data = $request->validate(['enabled' => ['required', 'boolean']]);
+        DB::transaction(function () use ($evento, $data) {
+            $locked = Evento::whereKey($evento->id)->lockForUpdate()->firstOrFail();
+            abort_if($locked->scheduledVideo, 422, 'El control de comentarios es para transmisiones en vivo.');
+            abort_if(in_array($locked->estado, ['finalizado', 'cancelado']), 422, 'Esta transmisión ya terminó.');
+            $locked->update(['chat_enabled' => $data['enabled']]);
+        });
+
+        return back()->with('success', $data['enabled'] ? 'Comentarios habilitados.' : 'Comentarios deshabilitados. El historial sigue visible.');
     }
 }

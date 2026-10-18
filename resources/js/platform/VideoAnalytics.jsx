@@ -105,3 +105,50 @@ export default function VideoAnalytics({ url, title }) {
         </div>, document.body)}
     </>;
 }
+
+export function VideoAnalyticsInline({ url, title }) {
+    const [days, setDays] = useState(30);
+    const [data, setData] = useState(null);
+    const [error, setError] = useState("");
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const controller = new AbortController();
+        setLoading(true);
+        setError("");
+        fetch(`${url}?days=${days}`, { signal: controller.signal, headers: { Accept: "application/json" }, credentials: "same-origin" })
+            .then(async (response) => {
+                if (!response.ok) throw new Error("No se pudieron cargar las estadísticas.");
+                return response.json();
+            })
+            .then(setData)
+            .catch((reason) => { if (reason.name !== "AbortError") setError(reason.message); })
+            .finally(() => { if (!controller.signal.aborted) setLoading(false); });
+        return () => controller.abort();
+    }, [url, days]);
+
+    return <section className="video-analytics-inline" aria-label={`Estadísticas de ${title}`}>
+        <div className="video-analytics-inline__heading">
+            <div><p className="studio-eyebrow">SOLO ADMINISTRACIÓN</p><h2>Estadísticas del video</h2><p>Visitas únicas por navegador y día · {title}</p></div>
+            <label>Período <select value={days} onChange={(event) => setDays(Number(event.target.value))}>
+                <option value={7}>7 días</option><option value={30}>30 días</option><option value={90}>90 días</option>
+            </select></label>
+        </div>
+        {error && <p className="video-analytics-message is-error" role="alert">{error}</p>}
+        {loading && !data && <p className="video-analytics-message" role="status">Cargando estadísticas…</p>}
+        {data && <>
+            <div className="video-analytics-metrics">
+                <article className="is-primary"><span>Visitas del período</span><strong>{number.format(data.current.views)}</strong><small>Últimos {days} días</small></article>
+                <article><span>Visitas acumuladas</span><strong>{number.format(data.current.allTime)}</strong><small>Desde el inicio del registro</small></article>
+                <article><span>Día con más visitas</span><strong>{data.current.peakDay ? number.format(data.current.peakDay.views) : "—"}</strong><small>{data.current.peakDay?.label ?? "Sin visitas en el período"}</small></article>
+                <article><span>Variación</span><strong>{data.current.growthPercent === null ? "Nuevo" : `${data.current.growthPercent > 0 ? "+" : ""}${number.format(data.current.growthPercent)}%`}</strong><small>Contra los {days} días anteriores</small></article>
+            </div>
+            <div className="video-analytics-chart-card"><div className="video-analytics-section-title"><div><h3>Curva de crecimiento</h3><p>Visualizaciones registradas por día.</p></div></div><TrendChart points={data.daily} /></div>
+            <div className="video-analytics-rankings">
+                <Ranking title="Más vistos" rows={data.mostViewed} empty="Aún no hay visitas registradas." />
+                <Ranking title="Menos vistos" rows={data.leastViewed} empty="Aún no hay visitas registradas." />
+            </div>
+            <p className="video-analytics-footnote">La visita se registra al comenzar la reproducción; en vivo, al cargar la señal.</p>
+        </>}
+    </section>;
+}

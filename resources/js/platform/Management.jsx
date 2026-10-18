@@ -4,9 +4,15 @@ import {
     Feedback,
     Heading,
     Pagination,
+    Token,
     statusLabel,
     useShell,
 } from "./shared";
+const formatBytes = (bytes) => {
+    if (!Number.isFinite(bytes) || bytes < 0) return "—";
+    const index = Math.min(4, Math.floor(Math.log(Math.max(bytes, 1)) / Math.log(1024)));
+    return `${new Intl.NumberFormat("es-EC", { maximumFractionDigits: 2 }).format(bytes / 1024 ** index)} ${["B", "KiB", "MiB", "GiB", "TiB"][index]}`;
+};
 export function EventList({ events, pagination }) {
     return (
         <div className="studio-page">
@@ -66,6 +72,7 @@ export function EventList({ events, pagination }) {
     );
 }
 function Recording({ event: e }) {
+    const metadata = e.recordingMetadata;
     return (
         <div className="react-recording">
             <span className="studio-eyebrow">GRABACIÓN</span>
@@ -87,6 +94,17 @@ function Recording({ event: e }) {
                 <a className="studio-text-link" href={e.downloadUrl}>
                     Descargar MP4 ↧
                 </a>
+            )}
+            {metadata && (
+                <dl className="react-facts" aria-label="Datos técnicos de la grabación">
+                    {Object.entries({
+                        ...(metadata.mp4Bytes != null ? { "Archivo publicado": `MP4 · ${formatBytes(metadata.mp4Bytes)}` } : {}),
+                        ...(metadata.rawBytes != null ? { "Original conservado": `FLV · ${formatBytes(metadata.rawBytes)}` } : {}),
+                        ...(metadata.videoCodec ? { "Video": `${metadata.videoCodec.toUpperCase()} · ${metadata.width || "?"} × ${metadata.height || "?"} · ${metadata.fps ?? "?"} FPS` } : {}),
+                        ...(metadata.audioCodec ? { "Audio": metadata.audioCodec.toUpperCase() } : {}),
+                        ...(metadata.durationSeconds != null ? { "Duración": `${Math.round(metadata.durationSeconds)} s` } : {}),
+                    }).map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}
+                </dl>
             )}
             {e.retryUrl && (
                 <Action url={e.retryUrl}>Reintentar grabación</Action>
@@ -122,6 +140,11 @@ export function EventDetail({ event: e }) {
                         Finalizar transmisión
                     </Action>
                 )}
+                {e.chatToggleUrl && <form method="POST" action={e.chatToggleUrl}>
+                    <input type="hidden" name="_token" value={shell.csrf} />
+                    <input type="hidden" name="enabled" value={e.chatEnabled ? "0" : "1"} />
+                    <button className="studio-button studio-button--light" type="submit">{e.chatEnabled ? "Desactivar comentarios" : "Activar comentarios"}</button>
+                </form>}
             </div>
             <div className="react-detail-grid">
                 <article className="studio-panel react-panel">
@@ -159,15 +182,7 @@ export function EventDetail({ event: e }) {
                         Si este evento se transmite en vivo, su señal y
                         credenciales se gestionan desde “Emitir con OBS”.
                     </p>
-                    <a
-                        className="studio-text-link"
-                        href={
-                            shell.links.find((l) => l.label === "Emitir con OBS")
-                                ?.url
-                        }
-                    >
-                        Ir a Emitir con OBS ↗
-                    </a>
+                    {shell.links.find((l) => l.label === "Emitir con OBS") && <a className="studio-text-link" href={shell.links.find((l) => l.label === "Emitir con OBS").url}>Ir a Emitir con OBS ↗</a>}
                 </aside>
             </div>
         </div>
@@ -281,9 +296,7 @@ function StreamCard({ event: e }) {
                 <a href={e.url} className="studio-text-link">
                     Ver sala ↗
                 </a>
-                <a href={e.detailUrl} className="studio-text-link">
-                    Evento y grabación
-                </a>
+                {e.detailUrl && <a href={e.detailUrl} className="studio-text-link">Evento y grabación</a>}
                 {e.finishUrl && (
                     <Action
                         url={e.finishUrl}
@@ -293,6 +306,11 @@ function StreamCard({ event: e }) {
                         Finalizar transmisión
                     </Action>
                 )}
+                {e.chatToggleUrl && <form method="POST" action={e.chatToggleUrl}>
+                    <Token />
+                    <input type="hidden" name="enabled" value={e.chatEnabled ? "0" : "1"} />
+                    <button className="studio-button studio-button--light" type="submit">{e.chatEnabled ? "Desactivar comentarios" : "Activar comentarios"}</button>
+                </form>}
             </div>
         </article>
     );

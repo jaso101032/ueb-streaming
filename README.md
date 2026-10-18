@@ -16,6 +16,28 @@ pasos de actualización](docs/ENTREGA_2026-10-14.md).
 
 Para desplegar en Dokploy, sigue [la guía de producción](docs/despliegue-dokploy.md).
 
+Las grabaciones automáticas admiten un límite de FPS para el MP4 archivado,
+muestran su tamaño y ficha técnica al administrador y cuentan con indicador de
+almacenamiento. La cuota institucional es opcional y debe configurarse según
+el límite real del alojamiento; consulta [grabación y almacenamiento](docs/grabacion-automatica.md).
+
+En `/admin/medios`, el administrador consulta grabaciones, programación y
+publicidad en una biblioteca visual con filtros por título, origen, categoría
+y fecha de creación o grabación. La vista previa de archivos programados e
+incluso anuncios inactivos requiere sesión de administrador; los anuncios
+inactivos continúan inaccesibles para el público.
+
+Los operadores tienen permisos individuales para gestionar eventos, emitir
+con OBS, retirar mensajes y activar/desactivar comentarios. El administrador
+los asigna en **Gestionar usuarios** y puede restringir la participación de
+una cuenta en el chat. Los directos conservan los mensajes aun cuando el chat
+se desactive. Para reglas de acceso, compatibilidad de cuentas anteriores y
+despliegue consulta [operadores y comentarios](docs/operadores-y-chat.md).
+
+El administrador ve debajo del reproductor de cada evento la curva de visitas
+de 7, 30 o 90 días, el crecimiento y los videos más y menos vistos. La API de
+estadísticas y esta sección no están disponibles para operadores ni público.
+
 El administrador puede personalizar la **Marca de agua** del reproductor con un PNG
 transparente. Consulta [formatos, validación y despliegue](docs/marca-de-agua.md).
 
@@ -327,6 +349,12 @@ que Nginx/RTMP esté recibiendo señal.
 Abre `/senal` para ver la programación continua: el directo tiene prioridad y, al
 terminar, el pregrabado continúa desde el punto interrumpido. En **Contenido
 programado** se muestran la duración total y los minutos de video pendientes.
+
+En computadora, el reproductor admite `Espacio` para reproducir/pausar, `F`
+para alternar pantalla completa y `Esc` para salir. Las flechas izquierda y
+derecha retroceden o adelantan cinco segundos solo en videos bajo demanda y
+directos con DVR; no permiten saltar publicidad ni la programación sincronizada.
+Los atajos no se activan mientras se escribe en formularios.
 
 Para subir videos de hasta 500 MB localmente, detén el servidor anterior y usa
 `bash scripts/serve-local.sh` o `composer run dev`. El PHP por defecto puede

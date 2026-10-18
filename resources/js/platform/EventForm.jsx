@@ -10,6 +10,8 @@ export default function EventForm({
     careers,
     image,
     back,
+    recordingSettingsLocked = false,
+    canToggleChat = false,
 }) {
     const [v, setV] = useState(values),
         [file, setFile] = useState(null),
@@ -189,6 +191,12 @@ export default function EventForm({
                                         placeholder="¿Qué compartiremos con nuestra comunidad?"
                                     />
                                 </Field>
+                                {canToggleChat && <div className="uebtv-form-field uebtv-form-field--wide">
+                                    <label htmlFor="chat_enabled">Comentarios durante el directo</label>
+                                    <input type="hidden" name="chat_enabled" value="0" />
+                                    <label className="uebtv-event-chat-check" htmlFor="chat_enabled"><input id="chat_enabled" type="checkbox" name="chat_enabled" value="1" defaultChecked={Boolean(Number(v.chat_enabled)) || v.chat_enabled === true} /> Permitir que la comunidad comente</label>
+                                    <small>También puedes cambiarlo durante la transmisión desde el detalle del evento.</small>
+                                </div>}
                             </div>
                         </section>
                         <section className="uebtv-form-section">
@@ -248,6 +256,14 @@ export default function EventForm({
                                         Opcional. Se utiliza cuando no hay una
                                         grabación automática.
                                     </small>
+                                </Field>
+                                <Field wide name="recording_fps_limit" label="FPS máximos de la grabación automática">
+                                    <select {...bind("recording_fps_limit")} disabled={recordingSettingsLocked}>
+                                        <option value="">Conservar FPS originales de OBS</option>
+                                        <option value="30">Máximo 30 FPS · menos almacenamiento</option>
+                                        <option value="60">Máximo 60 FPS</option>
+                                    </select>
+                                    <small>{recordingSettingsLocked ? "No se puede cambiar después de iniciar la transmisión." : "Solo afecta al MP4 archivado; no cambia el directo ni aumenta los FPS de origen."}</small>
                                 </Field>
                             </div>
                         </section>

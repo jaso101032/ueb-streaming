@@ -2,6 +2,23 @@
 
 No hay revisión ni botón de aprobación: el usuario confirmó publicación automática. Nginx conserva el FLV desde el inicio y Laravel prepara un MP4 H.264/AAC al terminar. El original se mantiene. La sala pública da prioridad a ese MP4 y usa `video_url` como alternativa si no está disponible. El campo manual no se sobrescribe.
 
+## Calidad y ficha de cada grabación
+
+Al crear o editar un evento antes de que OBS haya iniciado, se puede elegir el
+límite de FPS del **MP4 archivado**: conservar la tasa original (predeterminado),
+máximo 30 o máximo 60. El límite no cambia la señal en vivo, no crea fotogramas
+adicionales si OBS entrega menos y queda bloqueado después del primer inicio.
+FFmpeg codifica H.264 (`libx264`, CRF 23, preset `veryfast`, `yuv420p`) y AAC a
+160 kb/s en MP4 con `faststart`. La opción de FPS es un límite, no una promesa
+de calidad fija; conviene probar los eventos con movimiento antes de elegir 30.
+
+Al terminar la conversión, el sistema registra tamaño del FLV original y del
+MP4, duración, resolución, FPS y códecs. El administrador ve esta ficha en el
+detalle del evento. Para grabaciones anteriores a la migración, los tamaños se
+leen directamente de los archivos cuando aún existen; sus FPS y códecs antiguos
+no se inventan. Durante un directo, el tamaño del FLV se actualiza al recargar
+el panel. Aplique `php artisan migrate --force` antes de desplegar esta versión.
+
 ## Activación en Debian
 
 Los campos de la base de datos ya fueron migrados en el equipo de desarrollo. En otro despliegue ejecutar `php artisan migrate --force` con el usuario de la aplicación.
@@ -37,6 +54,19 @@ El aviso de PHP sobre `soap` duplicado es independiente. Si Laravel usa caché d
 - La clave de OBS no se puede cambiar después de iniciar: identifica el archivo conservado.
 - El proceso usa el propietario del proyecto (javier), no root. Nginx escribe como www-data. El instalador establece permisos sólo en los directorios dedicados.
 - Reservar disco para el original y el MP4; la aplicación no borra grabaciones antiguas para hacer espacio. La eliminación administrativa del evento lo oculta pero conserva los archivos para recuperación.
+
+El indicador administrativo cuenta los archivos de grabaciones y los de
+`storage/app` (videos programados, anuncios y otros medios). Si se define
+`STREAMING_MEDIA_QUOTA_GB=30`, muestra el uso frente a ese cupo de **30 GiB**
+y avisa cuando queda el 10 % o menos. Comprueba también el espacio físico libre
+de ambos volúmenes y muestra el menor disponible. La cuota debe configurarse
+según el contrato real: PHP puede medir el tamaño de un sistema de archivos,
+pero no conocer automáticamente una cuota externa del proveedor. Sin esa
+variable, el indicador se etiqueta como volumen físico de grabaciones, que
+puede incluir archivos de otras aplicaciones del host. El recuento se calcula
+al abrir o recargar una página administrativa; no elimina contenido ni bloquea
+grabaciones por sí solo. Si el volumen no puede leerse, muestra «no disponible»
+en vez de afirmar que queda espacio.
 
 Comprobaciones del administrador:
 

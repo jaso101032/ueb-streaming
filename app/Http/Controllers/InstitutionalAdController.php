@@ -59,7 +59,18 @@ class InstitutionalAdController extends Controller
 
     public function media(InstitutionalAd $ad)
     {
-        abort_unless($ad->is_active && $ad->processing_status === 'ready' && $ad->path
+        abort_unless($ad->is_active, 404);
+        return $this->serveVideo($ad);
+    }
+
+    public function adminPreview(InstitutionalAd $ad)
+    {
+        return $this->serveVideo($ad);
+    }
+
+    private function serveVideo(InstitutionalAd $ad)
+    {
+        abort_unless($ad->processing_status === 'ready' && $ad->path
             && Storage::disk('local')->exists($ad->path), 404);
 
         if (config('streaming.x_accel_media') && preg_match('~^institutional-ads/([a-f0-9-]{36}\.mp4)$~D', $ad->path, $matches)) {

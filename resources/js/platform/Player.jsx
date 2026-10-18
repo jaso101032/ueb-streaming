@@ -62,10 +62,30 @@ export function BrandedVideo({ videoRef, src, poster, mediaTitle, live = false, 
         }
     };
     const setProgress = (event) => { const v = video(); if (!v || !(seekable || dvr)) return; v.currentTime = Number(event.target.value); setCurrent(v.currentTime); };
+    const seekBy = (seconds) => {
+        if (!(seekable || dvr)) return false;
+        const v = video();
+        if (!v || v.readyState < 1) return false;
+        const range = v.seekable;
+        const start = dvr && range.length ? range.start(range.length - 1) : 0;
+        const end = dvr && range.length ? range.end(range.length - 1) : v.duration;
+        if (!Number.isFinite(end) || end <= start) return false;
+        v.currentTime = Math.max(start, Math.min(v.currentTime + seconds, end - 0.25));
+        setCurrent(v.currentTime);
+        showControls();
+        return true;
+    };
+    const onTimelineKeyDown = (event) => {
+        if (event.key === "ArrowLeft" && seekBy(-5)) event.preventDefault();
+        if (event.key === "ArrowRight" && seekBy(5)) event.preventDefault();
+    };
     const setAudio = (event) => { const v = video(), next = Number(event.target.value); if (!v) return; v.volume = next; v.muted = next === 0; setVolume(next); setMuted(next === 0); };
     const toggleMute = () => { const v = video(); if (!v) return; v.muted = !v.muted; setMuted(v.muted); };
     const changeRate = (event) => { const v = video(), next = Number(event.target.value); if (!v) return; v.playbackRate = next; setRate(next); };
-    const fullscreen = () => document.fullscreenElement ? document.exitFullscreen?.() : shell.current?.requestFullscreen?.();
+    const fullscreen = () => {
+        const action = document.fullscreenElement ? document.exitFullscreen?.() : shell.current?.requestFullscreen?.();
+        action?.catch?.(() => {});
+    };
     const pictureInPicture = async () => { const v = video(); if (!v || !document.pictureInPictureEnabled) return; try { document.pictureInPictureElement ? await document.exitPictureInPicture() : await v.requestPictureInPicture(); } catch {} };
     useEffect(() => { const v = video(); if (!v) return; const entered = () => setInPictureInPicture(true), left = () => setInPictureInPicture(false); v.addEventListener("enterpictureinpicture", entered); v.addEventListener("leavepictureinpicture", left); return () => { v.removeEventListener("enterpictureinpicture", entered); v.removeEventListener("leavepictureinpicture", left); }; }, [videoRef]);
     useEffect(() => { const changed = () => setIsFullscreen(document.fullscreenElement === shell.current); document.addEventListener("fullscreenchange", changed); return () => document.removeEventListener("fullscreenchange", changed); }, []);
@@ -104,11 +124,40 @@ export function BrandedVideo({ videoRef, src, poster, mediaTitle, live = false, 
         controlsTimer.current = window.setTimeout(() => setControlsVisible(false), 2200);
         return () => window.clearTimeout(controlsTimer.current);
     }, [playing]);
+    useEffect(() => {
+        const onKeyDown = (event) => {
+            if (hidden || event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || !shell.current) return;
+            // Only the visible player owns page-level shortcuts. Native keyboard
+            // behavior must remain available in forms, links and player controls.
+            if (document.querySelector(".uebtv-player-shell:not(.is-hidden)") !== shell.current) return;
+            if (event.key === "Escape" && document.fullscreenElement === shell.current) {
+                event.preventDefault();
+                fullscreen();
+                return;
+            }
+            const key = event.key.toLowerCase();
+            const target = event.target instanceof Element ? event.target : null;
+            if (target?.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="textbox"], [role="combobox"], [role="slider"]')) return;
+            const interactive = target?.closest("button, a, summary");
+            if (interactive && (!shell.current.contains(interactive) || key === " " || key === "spacebar")) return;
+            if (key === "f" && !event.repeat) {
+                event.preventDefault();
+                fullscreen();
+            } else if ((key === " " || key === "spacebar") && !event.repeat) {
+                event.preventDefault();
+                togglePlay();
+            } else if (key === "arrowleft" || key === "arrowright") {
+                if (seekBy(key === "arrowright" ? 5 : -5)) event.preventDefault();
+            }
+        };
+        document.addEventListener("keydown", onKeyDown);
+        return () => document.removeEventListener("keydown", onKeyDown);
+    }, [hidden, seekable, dvr, playing]);
     return <div ref={shell} className={`uebtv-player-shell ${hidden ? "is-hidden" : ""} ${controlsVisible ? "is-chrome-visible" : ""}`} onPointerMove={showControls} onPointerDown={showControls}>
         <video ref={videoRef} className="uebtv-video" src={src} poster={poster} defaultMuted={startMuted} autoPlay={autoStart} playsInline preload="metadata" disableRemotePlayback hidden={hidden}
             onCanPlay={(event) => attemptLiveAutoplay(event.currentTarget)} onLoadedMetadata={(event) => { attemptLiveAutoplay(event.currentTarget); updateProgress(); onLoadedMetadata?.(event); }} onTimeUpdate={(event) => { updateProgress(); onTimeUpdate?.(event); }} onDurationChange={updateProgress}
             onVolumeChange={(event) => { setVolume(event.currentTarget.volume); setMuted(event.currentTarget.muted); onMuteChange?.(event.currentTarget.muted || event.currentTarget.volume === 0); }}
-            onPlay={(event) => { setPlaying(true); setAutoplayBlocked(false); onPlay?.(event); }} onPlaying={onPlaying} onPause={(event) => { setPlaying(false); onPause?.(event); }} onWaiting={onWaiting} onSeeking={onSeeking} onSeeked={onSeeked} onEnded={onEnded} onError={onError} />
+            onPlay={(event) => { playbackChanging.current = false; setPlaying(true); setAutoplayBlocked(false); onPlay?.(event); }} onPlaying={onPlaying} onPause={(event) => { playbackChanging.current = false; setPlaying(false); onPause?.(event); }} onWaiting={onWaiting} onSeeking={onSeeking} onSeeked={onSeeked} onEnded={onEnded} onError={onError} />
         {!hidden && <>
             <PlayerWatermark />
             {live && <span className="uebtv-player-live">● EN VIVO</span>}
@@ -119,16 +168,16 @@ export function BrandedVideo({ videoRef, src, poster, mediaTitle, live = false, 
             </button>}
             {live && autoplayBlocked && <div className="react-player-notice" role="status"><p>Tu navegador bloqueó la reproducción automática. Toca reproducir para continuar.</p><button className="studio-button" onClick={togglePlay}>Reproducir</button></div>}
             <div className={`uebtv-player-controls ${live ? "is-live-controls" : ""}`} aria-label="Controles del reproductor">
-                <div className={`uebtv-player-timeline ${seekable ? "is-vod-timeline" : !hasDvr ? "is-signal-only" : ""}`}>{seekable ? <><input aria-label="Posición del video" className="uebtv-player-range uebtv-player-range--progress" type="range" min="0" max={duration || 0} step="0.1" value={Math.min(current, duration || 0)} onChange={setProgress} style={{ "--player-progress": `${duration ? (current / duration) * 100 : 0}%` }} /><span>{timeLabel(current)} / {timeLabel(duration)}</span></> : hasDvr ? <><input aria-label="Retroceder en la transmisión en vivo" className="uebtv-player-range uebtv-player-range--progress uebtv-player-range--live" type="range" min={liveWindow.start} max={liveWindow.end} step="0.1" value={Math.min(Math.max(displayedLivePosition, liveWindow.start), liveWindow.end)} onChange={setProgress} /><span className={`uebtv-player-live-position ${behindLive ? "is-behind" : ""}`}>{behindLive ? `Hace ${Math.ceil(liveWindow.end - current)} s` : "EN DIRECTO"}</span></> : <><span className="uebtv-player-live-static" aria-hidden="true"><i /></span><span className="uebtv-player-now">{live ? "EN DIRECTO" : "EMISIÓN SINCRONIZADA"}</span></>}</div>
+                <div className={`uebtv-player-timeline ${seekable ? "is-vod-timeline" : !hasDvr ? "is-signal-only" : ""}`}>{seekable ? <><input aria-label="Posición del video" title="Flechas izquierda/derecha: saltar 5 segundos" className="uebtv-player-range uebtv-player-range--progress" type="range" min="0" max={duration || 0} step="0.1" value={Math.min(current, duration || 0)} onChange={setProgress} onKeyDown={onTimelineKeyDown} style={{ "--player-progress": `${duration ? (current / duration) * 100 : 0}%` }} /><span>{timeLabel(current)} / {timeLabel(duration)}</span></> : hasDvr ? <><input aria-label="Retroceder en la transmisión en vivo" title="Flechas izquierda/derecha: saltar 5 segundos" className="uebtv-player-range uebtv-player-range--progress uebtv-player-range--live" type="range" min={liveWindow.start} max={liveWindow.end} step="0.1" value={Math.min(Math.max(displayedLivePosition, liveWindow.start), liveWindow.end)} onChange={setProgress} onKeyDown={onTimelineKeyDown} /><span className={`uebtv-player-live-position ${behindLive ? "is-behind" : ""}`}>{behindLive ? `Hace ${Math.ceil(liveWindow.end - current)} s` : "EN DIRECTO"}</span></> : <><span className="uebtv-player-live-static" aria-hidden="true"><i /></span><span className="uebtv-player-now">{live ? "EN DIRECTO" : "EMISIÓN SINCRONIZADA"}</span></>}</div>
                 <div className="uebtv-player-actions">
-                    <button type="button" className="uebtv-player-icon-button uebtv-player-icon-button--primary" onClick={togglePlay} aria-label={playing ? "Pausar" : "Reproducir"} title={playing ? "Pausar" : "Reproducir"}><PlayerIcon name={playing ? "pause" : "play"} /></button>
+                    <button type="button" className="uebtv-player-icon-button uebtv-player-icon-button--primary" onClick={togglePlay} aria-label={playing ? "Pausar" : "Reproducir"} title={playing ? "Pausar (Espacio)" : "Reproducir (Espacio)"}><PlayerIcon name={playing ? "pause" : "play"} /></button>
                     <button type="button" className="uebtv-player-icon-button" onClick={toggleMute} aria-label={muted ? "Activar sonido" : "Silenciar"} title={muted ? "Activar sonido" : "Silenciar"}><PlayerIcon name={muted || volume === 0 ? "muted" : "volume"} /></button>
                     <input aria-label="Volumen" className="uebtv-player-range uebtv-player-range--volume" type="range" min="0" max="1" step="0.05" value={muted ? 0 : volume} onChange={setAudio} style={{ "--player-progress": `${(muted ? 0 : volume) * 100}%` }} />
                     {seekable && <select className="uebtv-player-speed" value={rate} onChange={changeRate} aria-label="Velocidad de reproducción"><option value="0.75">0.75×</option><option value="1">1×</option><option value="1.25">1.25×</option><option value="1.5">1.5×</option><option value="2">2×</option></select>}
                     <span className="uebtv-player-actions-spacer" />
                     {behindLive && <button type="button" className="uebtv-player-go-live" onClick={goLive} title="Ir al momento actual de la transmisión"><i aria-hidden="true" />Volver al directo</button>}
                     {canPictureInPicture && <button type="button" className={`uebtv-player-icon-button ${inPictureInPicture ? "is-active" : ""}`} onClick={pictureInPicture} aria-label={inPictureInPicture ? "Volver al reproductor" : "Imagen en imagen"} title={inPictureInPicture ? "Volver al reproductor" : "Imagen en imagen"}><PlayerIcon name="pip" /></button>}
-                    <button type="button" className="uebtv-player-icon-button" onClick={fullscreen} aria-label="Pantalla completa" title="Pantalla completa"><PlayerIcon name="fullscreen" /></button>
+                    <button type="button" className="uebtv-player-icon-button" onClick={fullscreen} aria-label="Pantalla completa" title="Pantalla completa (F); salir con Esc"><PlayerIcon name="fullscreen" /></button>
                 </div>
             </div>
             {children}

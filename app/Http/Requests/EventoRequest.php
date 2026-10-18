@@ -11,7 +11,7 @@ class EventoRequest extends FormRequest
     public function authorize(): bool
     {
         if ($this->route('evento') instanceof Evento && $this->route('evento')->scheduledVideo) return false;
-        return in_array($this->user()?->role, ['admin', 'operador'], true);
+        return (bool) $this->user()?->allowsOperatorAction('events');
     }
 
     protected function prepareForValidation(): void
@@ -42,6 +42,8 @@ class EventoRequest extends FormRequest
             'carrera_id' => ['nullable', 'integer', Rule::exists('carreras', 'id')->where('facultad_id', $this->input('facultad_id'))],
             'estado' => ['sometimes', 'required', Rule::in(['programado', 'en_vivo', 'finalizado', 'cancelado'])],
             'video_url' => ['nullable', 'url:http,https', 'max:255'],
+            'recording_fps_limit' => ['sometimes', 'nullable', 'integer', Rule::in([30, 60])],
+            'chat_enabled' => ['sometimes', 'boolean'],
             'miniatura' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048', 'dimensions:max_width=4096,max_height=4096'],
         ];
     }
@@ -59,6 +61,7 @@ class EventoRequest extends FormRequest
             'carrera_id.exists' => 'La carrera debe pertenecer a la facultad seleccionada.',
             'estado.in' => 'Selecciona un estado válido.',
             'video_url.url' => 'El video debe tener un enlace HTTP o HTTPS válido.',
+            'recording_fps_limit.in' => 'Selecciona conservar los FPS originales, 30 o 60.',
             'miniatura.image' => 'La miniatura debe ser una imagen válida.',
             'miniatura.mimes' => 'La miniatura debe ser JPG, PNG o WebP.',
             'miniatura.max' => 'La miniatura no puede superar 2 MB.',

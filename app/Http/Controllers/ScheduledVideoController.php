@@ -110,6 +110,18 @@ class ScheduledVideoController extends Controller
     {
         $scheduled = $evento->scheduledVideo;
         abort_unless($scheduled && $evento->estado !== 'cancelado' && in_array($scheduled->playback()['state'], ['playing', 'paused', 'ended']), 404);
+        return $this->serveVideo($scheduled);
+    }
+
+    public function adminPreview(Evento $evento)
+    {
+        $scheduled = $evento->scheduledVideo;
+        abort_unless($scheduled && $scheduled->processing_status === 'ready', 404);
+        return $this->serveVideo($scheduled);
+    }
+
+    private function serveVideo($scheduled)
+    {
         abort_unless(Storage::disk('local')->exists($scheduled->path), 404);
 
         if (config('streaming.x_accel_media') && preg_match('~^scheduled-videos/([a-f0-9-]{36}\.mp4)$~D', $scheduled->path, $matches)) {

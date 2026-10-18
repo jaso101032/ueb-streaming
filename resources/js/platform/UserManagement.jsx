@@ -2,8 +2,30 @@ import React from "react";
 import { Action, Feedback, Field, Heading, Pagination, Token } from "./shared";
 
 const roleNames = { admin: "Administrador", operador: "Operador", usuario: "Usuario" };
+const permissionNames = {
+    events: "Crear y editar eventos",
+    stream: "Emitir con OBS y finalizar directos",
+    moderate_chat: "Retirar mensajes del chat",
+    toggle_chat: "Activar o desactivar comentarios",
+};
 
-function UserEdit({ user, roles }) {
+function AccountControls({ role, permissions = [], restricted = false, actions }) {
+    return <>
+        {role === "operador" && <fieldset className="users-permissions">
+            <legend>Permisos del operador</legend>
+            <input type="hidden" name="permissions_present" value="1" />
+            {actions.map((action) => <label key={action}>
+                <input type="checkbox" name="permissions[]" value={action} defaultChecked={permissions.includes(action)} />
+                <span>{permissionNames[action]}</span>
+            </label>)}
+            <small>La descarga y eliminación de grabaciones, la biblioteca y la gestión de usuarios siguen siendo exclusivas del administrador.</small>
+        </fieldset>}
+        <label className="users-restriction"><input type="hidden" name="chat_restricted" value="0" /><input type="checkbox" name="chat_restricted" value="1" defaultChecked={restricted} /> Restringir comentarios de esta cuenta</label>
+    </>;
+}
+
+function UserEdit({ user, roles, actions }) {
+    const [role, setRole] = React.useState(user.role);
     return (
         <details className="users-edit">
             <summary>Editar</summary>
@@ -16,10 +38,11 @@ function UserEdit({ user, roles }) {
                     <input id={`email-${user.id}`} name="email" type="email" defaultValue={user.email} required maxLength="255" />
                 </Field>
                 <Field name={`role-${user.id}`} label="Rol">
-                    <select id={`role-${user.id}`} name="role" defaultValue={user.role}>
+                    <select id={`role-${user.id}`} name="role" value={role} onChange={(event) => setRole(event.target.value)}>
                         {roles.map((role) => <option key={role} value={role}>{roleNames[role]}</option>)}
                     </select>
                 </Field>
+                <AccountControls role={role} permissions={user.permissions} restricted={user.chatRestricted} actions={actions} />
                 <Field name={`password-${user.id}`} label="Nueva contraseña (opcional)">
                     <input id={`password-${user.id}`} name="password" type="password" autoComplete="new-password" />
                 </Field>
@@ -32,7 +55,8 @@ function UserEdit({ user, roles }) {
     );
 }
 
-export default function UserManagement({ users, pagination, filters, roles, storeUrl }) {
+export default function UserManagement({ users, pagination, filters, roles, storeUrl, operatorActions }) {
+    const [newRole, setNewRole] = React.useState("usuario");
     return (
         <div className="studio-page users-page">
             <Heading eyebrow="ADMINISTRACIÓN" title="Gestión de usuarios">
@@ -45,7 +69,8 @@ export default function UserManagement({ users, pagination, filters, roles, stor
                     <Token />
                     <Field name="name" label="Nombre completo"><input id="name" name="name" autoComplete="name" required maxLength="255" /></Field>
                     <Field name="email" label="Correo electrónico"><input id="email" name="email" type="email" autoComplete="email" required maxLength="255" /></Field>
-                    <Field name="role" label="Rol"><select id="role" name="role" defaultValue="usuario">{roles.map((role) => <option key={role} value={role}>{roleNames[role]}</option>)}</select></Field>
+                    <Field name="role" label="Rol"><select id="role" name="role" value={newRole} onChange={(event) => setNewRole(event.target.value)}>{roles.map((role) => <option key={role} value={role}>{roleNames[role]}</option>)}</select></Field>
+                    <AccountControls role={newRole} actions={operatorActions} />
                     <Field name="password" label="Contraseña"><input id="password" name="password" type="password" autoComplete="new-password" required /></Field>
                     <Field name="password_confirmation" label="Confirmar contraseña"><input id="password_confirmation" name="password_confirmation" type="password" autoComplete="new-password" required /></Field>
                     <div className="users-form-actions"><button className="studio-button">Crear cuenta</button></div>
@@ -66,7 +91,7 @@ export default function UserManagement({ users, pagination, filters, roles, stor
                         <div className="users-identity"><h3>{user.name}{user.isCurrent && <small>Tu cuenta</small>}</h3><p>{user.email}</p></div>
                         <span className={`users-role users-role--${user.role}`}>{roleNames[user.role] || user.role}</span>
                         <span className="users-verified">{user.verified ? "Verificada" : "Sin verificar"}</span>
-                        <div className="users-actions"><UserEdit user={user} roles={roles} />
+                        <div className="users-actions"><UserEdit user={user} roles={roles} actions={operatorActions} />
                             {!user.isCurrent && !user.hasEvents && !user.hasMessages && <Action url={user.deleteUrl} method="DELETE" confirm={`¿Eliminar la cuenta de ${user.name}?`} className="studio-delete">Eliminar</Action>}
                         </div>
                         {user.hasEvents && <p className="users-protected">Conserva eventos asociados.</p>}

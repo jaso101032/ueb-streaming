@@ -64,11 +64,18 @@ html:not([data-theme="dark"]) .studio-signout { border-color:#4f88c6; background
 html:not([data-theme="dark"]) .studio-signout:hover { border-color:#2768ad; background:#83b9ec; color:#082e5a; }
 
 html[data-theme="dark"] { color-scheme:dark; --uebtv-line:#263c59; --uebtv-ink:#edf4ff; --uebtv-navy:#edf4ff; --uebtv-blue:#8fc2ff; }
+html[data-theme="dark"] .users-permissions { border-color:#42658b; background:#142b47; color:#e8f3ff; }
+html[data-theme="dark"] .users-permissions small { color:#b7cce4; }
 html[data-theme="dark"] body { background:#081426; color:#dce8f7; }
 html[data-theme="dark"] :is(.studio-text-link,.studio-button-soft,.studio-row-actions :is(a,button):not(.studio-delete),.react-credentials button) { border-color:#6aa6e4; background:#205b95; color:#f3f9ff; box-shadow:0 2px 8px #0005; }
 html[data-theme="dark"] :is(.studio-text-link,.studio-button-soft,.studio-row-actions :is(a,button):not(.studio-delete),.react-credentials button):hover { border-color:#a5d0f7; background:#3175b5; color:#fff; }
 html[data-theme="dark"] .studio-signout { border-color:#6aa6e4; background:#205b95; color:#f3f9ff; }
 html[data-theme="dark"] .studio-signout:hover { border-color:#a5d0f7; background:#3175b5; color:#fff; }
+.studio-signout-short { display:none; }
+@media (max-width:640px) {
+    .studio-signout-full { display:none; }
+    .studio-signout-short { display:inline; }
+}
 html[data-theme="dark"] .min-h-screen, html[data-theme="dark"] .studio-workspace { background:#081426; }
 html[data-theme="dark"] .studio-header { background:#061126; box-shadow:0 4px 24px #0008; }
 html[data-theme="dark"] .studio-sidebar { background:#0a1b34; border-color:#1e3653; }

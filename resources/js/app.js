@@ -15,7 +15,9 @@ import Channel from "./platform/Channel";
 import UploadError from "./platform/UploadError";
 import WatermarkSettings from "./platform/WatermarkSettings";
 import UserManagement from "./platform/UserManagement";
+import MediaLibrary from "./platform/MediaLibrary";
 const pages = {
+    MediaLibrary,
     UserManagement,
     WatermarkSettings,
     UploadError,

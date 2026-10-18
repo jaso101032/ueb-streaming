@@ -94,7 +94,7 @@ class EventoPublicoController extends Controller
             ->get();
 
         $chatMessages = $feed->messages($evento);
-        $canModerate = in_array(auth()->user()?->role, ['admin', 'operador'], true);
+        $canModerate = (bool) auth()->user()?->allowsOperatorAction('moderate_chat');
         $videoViews = DB::table('event_video_views')->where('evento_id', $evento->id)->count();
 
         return view('eventos.show', compact('evento', 'eventosRelacionados', 'chatMessages', 'canModerate', 'videoViews'));

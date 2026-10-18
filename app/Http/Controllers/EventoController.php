@@ -25,6 +25,7 @@ class EventoController extends Controller
 
     private function formData(Evento $evento): array
     {
+        $evento->loadMissing('transmision');
         return [
             'evento' => $evento,
             'categorias' => Categoria::orderBy('nombre')->get(),
@@ -41,7 +42,8 @@ class EventoController extends Controller
 
     public function store(EventoRequest $request)
     {
-        $data = $request->safe()->except('miniatura');
+        abort_if($request->has('chat_enabled') && ! $request->boolean('chat_enabled') && ! $request->user()->allowsOperatorAction('toggle_chat'), 403);
+        $data = $request->safe()->except('miniatura', 'recording_fps_limit');
         $thumbnail = $this->storeThumbnail($request);
 
         try {
@@ -58,6 +60,7 @@ class EventoController extends Controller
                     'rtmp_server' => config('streaming.rtmp_url') ?: 'rtmp://'.$request->getHost().':1935/live',
                     'hls_url' => (config('streaming.hls_base_url') ?: 'http://'.$request->getHost().':8080/hls').'/'.$key.'.m3u8',
                     'activo' => false,
+                    'recording_fps_limit' => $request->input('recording_fps_limit') ?: null,
                 ]);
 
                 return $evento;
@@ -86,7 +89,19 @@ class EventoController extends Controller
 
     public function update(EventoRequest $request, Evento $evento)
     {
-        $data = $request->safe()->except('miniatura');
+        if ($request->has('chat_enabled') && (bool) $request->boolean('chat_enabled') !== (bool) $evento->chat_enabled) {
+            abort_unless($request->user()->allowsOperatorAction('toggle_chat'), 403);
+        }
+        if ($request->has('estado') && $request->input('estado') !== $evento->estado) {
+            abort_unless($request->user()->allowsOperatorAction('stream'), 403);
+        }
+        $data = $request->safe()->except('miniatura', 'recording_fps_limit');
+        $stream = $evento->transmision;
+        if ($request->exists('recording_fps_limit') && $stream?->iniciado_en) {
+            if ((int) $request->input('recording_fps_limit') !== (int) $stream->recording_fps_limit) {
+                throw ValidationException::withMessages(['recording_fps_limit' => 'No se puede cambiar el límite de FPS después de iniciar la transmisión.']);
+            }
+        }
         $thumbnail = $this->storeThumbnail($request);
         $previousThumbnail = $evento->miniatura;
         if ($thumbnail) {
@@ -94,7 +109,12 @@ class EventoController extends Controller
         }
 
         try {
-            DB::transaction(fn () => $evento->update($data));
+            DB::transaction(function () use ($evento, $data, $request, $stream) {
+                $evento->update($data);
+                if ($request->exists('recording_fps_limit') && $stream && ! $stream->iniciado_en) {
+                    $stream->update(['recording_fps_limit' => $request->input('recording_fps_limit') ?: null]);
+                }
+            });
         } catch (Throwable $exception) {
             if ($thumbnail) {
                 Storage::disk('public')->delete($thumbnail);

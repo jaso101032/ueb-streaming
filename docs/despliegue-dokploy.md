@@ -70,6 +70,7 @@ Git ni las pegues en chats:
 | `DB_PASSWORD` | Contraseña aleatoria fuerte; puedes generar una con `openssl rand -hex 32`. |
 | `DB_DATABASE` | `uebtv` o el nombre de base de datos que prefieras. |
 | `DB_USERNAME` | `uebtv` o el usuario que prefieras. |
+| `STREAMING_MEDIA_QUOTA_GB` | Opcional: cupo asignado a los medios UEBTV en GiB, por ejemplo `30`. No lo configures sin confirmar el límite real del host. |
 
 La configuración del Compose obliga a definir las cinco variables secretas/de
 conexión antes de desplegar. Usa los mismos valores de base de datos en ambos

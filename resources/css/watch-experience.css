@@ -124,6 +124,23 @@ button.uebtv-chat-time:focus-visible { outline:3px solid #bfd9f7; outline-offset
 }
 
 /* Admin-only audience analytics beneath the player. */
+.video-analytics-inline { margin-top:20px; padding:clamp(16px,2vw,24px); border:1px solid #a9bfd7; border-radius:18px; background:#edf4fb; box-shadow:0 12px 28px #102a4912; color:#10233f; }
+.video-analytics-inline__heading { display:flex; justify-content:space-between; gap:16px; align-items:end; }
+.video-analytics-inline__heading h2 { margin-top:5px; font-size:clamp(18px,2vw,24px); }
+.video-analytics-inline__heading p:last-child { margin-top:5px; color:#617c99; font-size:11px; }
+.video-analytics-inline__heading label { display:grid; gap:5px; color:#405f82; font-size:11px; font-weight:700; }
+.video-analytics-inline__heading select { min-height:38px; padding:0 10px; border:1px solid #91b3d5; border-radius:9px; background:#fff; color:#143b64; }
+.video-analytics-inline .video-analytics-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); }
+html[data-theme="dark"] .video-analytics-inline { border-color:#355777; background:#10243e; color:#eaf4ff; }
+html[data-theme="dark"] .video-analytics-inline__heading :is(h2,p),html[data-theme="dark"] .video-analytics-inline__heading label { color:#e0eeff; }
+html[data-theme="dark"] .video-analytics-inline__heading select { border-color:#658bb1; background:#183758; color:#fff; }
+html[data-theme="dark"] .video-analytics-inline :is(.video-analytics-metrics article,.video-analytics-chart-card,.video-analytics-ranking) { border-color:#355777; background:#182f4c; box-shadow:none; }
+html[data-theme="dark"] .video-analytics-inline :is(.video-analytics-metrics strong,.video-analytics-chart-summary strong,.video-analytics-section-title h3,.video-analytics-ranking h3,.video-analytics-ranking li>strong,.video-analytics-ranking__title a) { color:#eef7ff; }
+html[data-theme="dark"] .video-analytics-inline :is(.video-analytics-metrics span,.video-analytics-metrics small,.video-analytics-section-title p,.video-analytics-chart-summary,.video-analytics-footnote,.video-analytics-ranking__title small) { color:#b5c9e0; }
+html[data-theme="dark"] .video-analytics-inline .video-analytics-chart g line { stroke:#35516e; }
+html[data-theme="dark"] .video-analytics-inline .video-analytics-chart text { fill:#b5c9e0; }
+html[data-theme="dark"] .video-analytics-inline .video-analytics-ranking li { border-color:#35516e; }
+@media(max-width:560px) { .video-analytics-inline__heading { align-items:start; flex-wrap:wrap; }.video-analytics-inline .video-analytics-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); } }
 .video-analytics-trigger { display:inline-flex; align-items:center; justify-content:center; gap:7px; min-height:36px; padding:0 11px; border:1px solid #bad2ee; border-radius:9px; background:#f2f7fd; color:#17559a; font:inherit; font-size:10px; font-weight:750; white-space:nowrap; cursor:pointer; transition:background .16s,border-color .16s,transform .16s; }
 .video-analytics-trigger:hover { transform:translateY(-1px); border-color:#8cb7e5; background:#e6f1fd; }
 .video-analytics-trigger svg { width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
