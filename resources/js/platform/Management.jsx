@@ -99,7 +99,8 @@ function Recording({ event: e }) {
                 <dl className="react-facts" aria-label="Datos técnicos de la grabación">
                     {Object.entries({
                         ...(metadata.mp4Bytes != null ? { "Archivo publicado": `MP4 · ${formatBytes(metadata.mp4Bytes)}` } : {}),
-                        ...(metadata.rawBytes != null ? { "Original conservado": `FLV · ${formatBytes(metadata.rawBytes)}` } : {}),
+                        ...(metadata.rawBytes != null ? { [metadata.rawPresent ? "FLV original almacenado" : "Origen temporal procesado"]: `FLV · ${formatBytes(metadata.rawBytes)}` } : {}),
+                        ...(metadata.rawCleanupPending ? { "Limpieza pendiente": "El MP4 ya está disponible; se reintentará eliminar el FLV temporal." } : {}),
                         ...(metadata.videoCodec ? { "Video": `${metadata.videoCodec.toUpperCase()} · ${metadata.width || "?"} × ${metadata.height || "?"} · ${metadata.fps ?? "?"} FPS` } : {}),
                         ...(metadata.audioCodec ? { "Audio": metadata.audioCodec.toUpperCase() } : {}),
                         ...(metadata.durationSeconds != null ? { "Duración": `${Math.round(metadata.durationSeconds)} s` } : {}),

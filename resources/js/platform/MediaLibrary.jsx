@@ -36,7 +36,7 @@ export default function MediaLibrary({ items, pagination, filters, categories })
                     <div className="media-library-card__meta"><span>{item.category}</span><time dateTime={item.date}>{item.date}</time></div>
                     <h3>{item.title}</h3>
                     <span className="media-library-card__state">{states[item.status] || item.status}</span>
-                    <dl><div><dt>Original</dt><dd>{item.sourceFormat} · {bytes(item.sourceBytes)}</dd></div><div><dt>Preparado</dt><dd>{item.readyFormat} · {bytes(item.readyBytes)}</dd></div></dl>
+                    <dl><div><dt>{item.kind === "recording" && !item.sourcePresent ? "Origen procesado" : "Original"}</dt><dd>{item.sourceFormat} · {bytes(item.sourceBytes)}</dd></div><div><dt>Preparado</dt><dd>{item.readyFormat} · {bytes(item.readyBytes)}</dd></div></dl>
                     <a href={item.detailsUrl}>Gestionar archivo ↗</a>
                 </div>
             </article>)}

@@ -26,6 +26,35 @@ class ChatMessageController extends Controller
         return $response;
     }
 
+    public function replay(Request $request, Evento $evento): JsonResponse
+    {
+        abort_unless($evento->estado === 'finalizado', 404);
+        $data = $request->validate(['after_id' => ['sometimes', 'integer', 'min:0']]);
+        $afterId = (int) ($data['after_id'] ?? 0);
+
+        // El feed del directo conserva solo los últimos 80 mensajes. La grabación
+        // necesita el historial completo, paginado para no generar respuestas enormes.
+        $page = ChatMessage::with('user:id,name')
+            ->where('evento_id', $evento->id)
+            ->where('id', '>', $afterId)
+            ->orderBy('id')
+            ->limit(201)
+            ->get();
+        $hasMore = $page->count() > 200;
+        $messages = $page->take(200)->map(fn (ChatMessage $message) => [
+            'id' => $message->id,
+            'user' => $message->user?->name ?? 'Usuario',
+            'message' => $message->message,
+            'created_at' => $message->created_at->toIso8601String(),
+            'playback_seconds' => $message->playback_seconds,
+        ])->values();
+
+        return response()->json([
+            'messages' => $messages,
+            'next_after_id' => $hasMore ? $messages->last()['id'] : null,
+        ])->header('Cache-Control', 'private, no-cache');
+    }
+
     public function store(Request $request, Evento $evento, ChatFeed $feed): JsonResponse
     {
         $validated = $request->validate([

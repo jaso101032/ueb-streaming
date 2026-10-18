@@ -39,6 +39,21 @@ class ScheduledVideoTest extends TestCase {
         $event->delete();
         $this->get(route('scheduled.media',$event))->assertNotFound();
     }
+    public function test_coverage_reports_the_next_gap_and_active_ad_fallback(): void {
+        $event = $this->event();
+        $event->update(['fecha_inicio' => now()->subSeconds(30)]);
+        $summary = app(\App\Services\ChannelSchedule::class)->summary(null, true);
+        $this->assertSame(now()->addSeconds(90)->timestamp, \Carbon\Carbon::parse($summary['firstGapAt'])->timestamp);
+        $this->assertFalse($summary['hasAdFallback']);
+
+        Storage::disk('local')->put('institutional-ads/active.mp4', 'ad');
+        \App\Models\InstitutionalAd::create([
+            'title' => 'Mensaje institucional', 'path' => 'institutional-ads/active.mp4',
+            'duration' => 30, 'processing_status' => 'ready', 'is_active' => true,
+        ]);
+        $summary = app(\App\Services\ChannelSchedule::class)->summary(null, true);
+        $this->assertTrue($summary['hasAdFallback']);
+    }
     public function test_admin_only_upload_and_validation(): void {
         $this->event();
         foreach(['operador','estudiante'] as $role) {

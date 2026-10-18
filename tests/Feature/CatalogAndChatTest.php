@@ -182,6 +182,40 @@ class CatalogAndChatTest extends TestCase
             ->assertJsonPath('0.message', 'Mensaje conservado');
     }
 
+    public function test_recording_replay_pages_all_messages_without_mixing_events_or_deleted_comments(): void
+    {
+        $evento = $this->evento(['estado' => 'finalizado']);
+        for ($i = 1; $i <= 205; $i++) {
+            ChatMessage::create([
+                'evento_id' => $evento->id,
+                'user_id' => $this->user->id,
+                'message' => 'Momento '.$i,
+                'playback_seconds' => $i,
+            ]);
+        }
+        $removed = $this->message($evento, 'Retirado');
+        $removed->delete();
+        $this->message($this->evento(['estado' => 'finalizado']), 'De otra sala');
+
+        $first = $this->getJson(route('eventos.chat.replay', $evento))->assertOk()
+            ->assertJsonCount(200, 'messages')
+            ->assertJsonPath('messages.0.message', 'Momento 1')
+            ->assertJsonPath('messages.199.playback_seconds', 200);
+        $this->assertNotNull($first->json('next_after_id'));
+        $this->getJson(route('eventos.chat.replay', ['evento' => $evento, 'after_id' => $first->json('next_after_id')]))
+            ->assertOk()->assertJsonCount(5, 'messages')
+            ->assertJsonPath('messages.4.message', 'Momento 205')
+            ->assertJsonPath('next_after_id', null);
+    }
+
+    public function test_replay_is_only_available_for_finished_events_and_validates_cursor(): void
+    {
+        $upcoming = $this->evento();
+        $this->getJson(route('eventos.chat.replay', $upcoming))->assertNotFound();
+        $finished = $this->evento(['estado' => 'finalizado']);
+        $this->getJson(route('eventos.chat.replay', ['evento' => $finished, 'after_id' => -1]))->assertUnprocessable();
+    }
+
     public function test_only_moderators_can_remove_messages_and_deletion_propagates(): void
     {
         $evento = $this->evento();

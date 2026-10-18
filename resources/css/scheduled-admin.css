@@ -98,6 +98,8 @@
 @media(max-width:640px) { .schedule-progress { flex-wrap:wrap; gap:12px; }.schedule-progress > div { order:3; width:100%; justify-content:space-between; gap:8px; }.schedule-progress > small { margin-left:auto; } }
 
 .schedule-content-switch { display:flex; flex-wrap:wrap; gap:10px; margin:0 0 24px; }
+.schedule-totals .has-coverage-gap { border-color:#e1a75d; background:#fff7eb; }
+.schedule-totals .has-coverage-gap small { color:#925318; }
 .schedule-content-switch a { display:inline-flex; align-items:center; gap:9px; min-height:42px; padding:9px 14px; border:1px solid #9bbadb; border-radius:11px; background:#e8f1fc; color:#174d89; font-size:12px; font-weight:750; text-decoration:none; }
 .schedule-content-switch a:hover { background:#d7e9fc; border-color:#6294cb; }
 .schedule-content-switch a > span { display:grid; place-items:center; width:20px; height:20px; border-radius:5px; background:#174d89; color:white; font-size:12px; }

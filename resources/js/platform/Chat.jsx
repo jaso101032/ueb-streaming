@@ -11,11 +11,12 @@ export default function Chat({
     chatRestricted = false,
     chatToggleUrl = null,
     seekable = false,
+    playbackSeconds = 0,
     onSeek,
     onDraft,
 }) {
     const { user, login, csrf } = useShell(),
-        [messages, setMessages] = useState(initial),
+        [messages, setMessages] = useState(isRecording && seekable ? [] : initial),
         [draft, setDraft] = useState(""),
         [error, setError] = useState(""),
         [connection, setConnection] = useState(""),
@@ -23,7 +24,9 @@ export default function Chat({
         [removing, setRemoving] = useState(null),
         [enabled, setEnabled] = useState(chatEnabled),
         [restricted, setRestricted] = useState(chatRestricted),
+        [visibleLimit, setVisibleLimit] = useState(80),
         [version, setVersion] = useState(0);
+    const replay = isRecording && seekable;
     const commentsOpen = canComment && enabled && !restricted;
     const list = useRef(),
         bottom = useRef(true),
@@ -75,6 +78,30 @@ export default function Chat({
                   ? b?.errors?.message?.[0] || "Revisa el mensaje."
                   : "No se pudo completar la operación.";
     useEffect(() => {
+        if (!replay) return;
+        let stopped = false;
+        async function loadReplay() {
+            setMessages([]);
+            setConnection("Cargando historial de comentarios…");
+            let after = 0;
+            try {
+                do {
+                    const { r, body } = await request(`${endpoint}/replay?after_id=${after}`);
+                    if (!r.ok || !Array.isArray(body?.messages)) throw Error();
+                    if (stopped) return;
+                    setMessages((current) => [...current, ...body.messages]);
+                    after = body.next_after_id;
+                } while (after !== null);
+                if (!stopped) setConnection("");
+            } catch {
+                if (!stopped) setConnection("No se pudo cargar todo el historial. Reintenta la conexión.");
+            }
+        }
+        loadReplay();
+        return () => { stopped = true; };
+    }, [endpoint, replay, version]);
+    useEffect(() => {
+        if (replay) return undefined;
         let stopped = false,
             timer,
             etag = null,
@@ -120,11 +147,16 @@ export default function Chat({
             clearTimeout(timer);
             document.removeEventListener("visibilitychange", visible);
         };
-    }, [endpoint, version]);
+    }, [endpoint, version, replay]);
     useLayoutEffect(() => {
         if (bottom.current && list.current)
             list.current.scrollTop = list.current.scrollHeight;
-    }, [messages]);
+    }, [messages, playbackSeconds]);
+    const reachedMessages = replay
+        ? messages.filter((m) => m.playback_seconds == null || m.playback_seconds <= playbackSeconds)
+        : messages;
+    const visibleMessages = replay ? reachedMessages.slice(-visibleLimit) : reachedMessages;
+    const earlierCount = reachedMessages.length - visibleMessages.length;
     async function send(e) {
         e.preventDefault();
         if (busy) return;
@@ -211,7 +243,11 @@ export default function Chat({
                         l.scrollHeight - l.scrollTop - l.clientHeight < 60;
                 }}
             >
-                {messages.map((m) => (
+                {earlierCount > 0 && <button type="button" className="uebtv-chat-history" onClick={() => {
+                    bottom.current = false;
+                    setVisibleLimit((limit) => limit + 80);
+                }}>Ver {Math.min(earlierCount, 80)} comentarios anteriores</button>}
+                {visibleMessages.map((m) => (
                     <div className="uebtv-chat-message" key={m.id}>
                         <span className="uebtv-chat-avatar">
                             {Array.from(m.user)[0]?.toUpperCase()}
@@ -252,9 +288,9 @@ export default function Chat({
                         </div>
                     </div>
                 ))}
-                {!messages.length && (
+                {!visibleMessages.length && !connection && (
                     <div className="uebtv-chat-empty">
-                        Sé el primero en compartir una idea.
+                        {replay ? "Los comentarios aparecerán al llegar a su momento en el video." : "Sé el primero en compartir una idea."}
                     </div>
                 )}
             </div>

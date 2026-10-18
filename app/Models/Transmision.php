@@ -52,6 +52,7 @@ class Transmision extends Model
                 clearstatcache(true, $raw);
                 $bytes = @filesize($raw);
                 if (is_int($bytes)) $metadata['rawBytes'] = $bytes;
+                $metadata['rawPresent'] = true;
             }
         }
         $mp4 = $this->recordingPath();
@@ -60,6 +61,8 @@ class Transmision extends Model
             $bytes = @filesize($mp4);
             if (is_int($bytes)) $metadata['mp4Bytes'] = $bytes;
         }
+
+        if ($metadata) $metadata['rawPresent'] = $metadata['rawPresent'] ?? false;
 
         return $metadata ?: null;
     }

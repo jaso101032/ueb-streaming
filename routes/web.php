@@ -33,6 +33,7 @@ Route::post('/eventos/{evento}/visualizaciones', [\App\Http\Controllers\VideoVie
     ->name('eventos.video-views');
 Route::get('/eventos/{evento}', [EventoPublicoController::class, 'show'])->name('eventos.show');
 Route::get('/eventos/{evento}/chat', [ChatMessageController::class, 'index'])->name('eventos.chat.index');
+Route::get('/eventos/{evento}/chat/replay', [ChatMessageController::class, 'replay'])->name('eventos.chat.replay');
 Route::post('/eventos/{evento}/chat', [ChatMessageController::class, 'store'])->middleware(['auth', 'throttle:30,1'])->name('eventos.chat.store');
 
 Route::delete('/eventos/{evento}/chat/{message}', [ChatMessageController::class, 'destroy'])->middleware(['auth', 'role:admin,operador', 'operator.permission:moderate_chat', 'throttle:60,1'])->name('eventos.chat.destroy');

@@ -229,6 +229,9 @@ html[data-theme="dark"] .channel-next h2 span { background:#193c63; color:#b9dcf
 html[data-theme="dark"] .schedule-pill { border-color:#365c82; background:#16385e; color:#afd3ff; }
 html[data-theme="dark"] .schedule-totals article, html[data-theme="dark"] .schedule-progress, html[data-theme="dark"] .schedule-form, html[data-theme="dark"] .schedule-preview { border-color:#294b6b; background:#10243e; box-shadow:0 14px 32px -22px #000c; }
 html[data-theme="dark"] .schedule-totals article { background:linear-gradient(145deg,#142e4c,#10233b); }
+html[data-theme="dark"] .schedule-totals article.has-coverage-gap { border-color:#b98547; background:linear-gradient(145deg,#403018,#19283d); }
+html[data-theme="dark"] .schedule-totals .has-coverage-gap small { color:#ffd190; }
+html[data-theme="dark"] .watch-experience .uebtv-chat-history { border-color:#5279a5; background:#18385f; color:#d7ebff; }
 html[data-theme="dark"] .schedule-totals :is(strong,h2,h3), html[data-theme="dark"] .schedule-section-title h2, html[data-theme="dark"] .schedule-preview-body h2, html[data-theme="dark"] .schedule-guide h3, html[data-theme="dark"] .schedule-empty h3 { color:#eef6ff; }
 html[data-theme="dark"] .schedule-totals p, html[data-theme="dark"] .schedule-section-title p, html[data-theme="dark"] .schedule-zone, html[data-theme="dark"] .schedule-help, html[data-theme="dark"] .schedule-submit p, html[data-theme="dark"] .schedule-preview-date, html[data-theme="dark"] .schedule-preview-body > small, html[data-theme="dark"] .schedule-guide p, html[data-theme="dark"] .schedule-empty p { color:#a7bdd6; }
 html[data-theme="dark"] .schedule-progress { color:#aec2da; }

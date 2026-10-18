@@ -96,14 +96,35 @@ class ChannelSchedule
         return null;
     }
 
-    public function summary(?array $items = null): array
+    public function summary(?array $items = null, bool $includeCoverage = false): array
     {
         $items ??= $this->timeline();
         $available = array_filter($items, fn ($i) => $i['state'] !== 'cancelled');
         $endsAt = collect($available)->max('ends_at');
-
-        return ['count' => count($available), 'totalSeconds' => array_sum(array_column($available, 'duration')),
+        $summary = ['count' => count($available), 'totalSeconds' => array_sum(array_column($available, 'duration')),
             'remainingSeconds' => array_sum(array_map(fn ($i) => $i['duration'] - $i['position'], $available)),
             'endsAt' => $endsAt];
+        if (! $includeCoverage) return $summary;
+
+        $cursor = now()->timestamp;
+        $horizon = $cursor + 24 * 3600;
+        $firstGap = null;
+        foreach ($available as $item) {
+            $start = Carbon::parse($item['starts_at'])->timestamp;
+            $end = Carbon::parse($item['ends_at'])->timestamp;
+            if ($end <= $cursor) continue;
+            if ($start > $cursor) {
+                $firstGap = $cursor;
+                break;
+            }
+            $cursor = max($cursor, $end);
+            if ($cursor >= $horizon) break;
+        }
+        if ($firstGap === null && $cursor < $horizon) $firstGap = $cursor;
+        $hasAdFallback = $firstGap !== null && $this->advertisement() !== null;
+
+        return $summary + [
+            'firstGapAt' => $firstGap === null ? null : Carbon::createFromTimestamp($firstGap)->toIso8601String(),
+            'hasAdFallback' => $hasAdFallback];
     }
 }

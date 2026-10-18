@@ -72,6 +72,8 @@
 .watch-experience .uebtv-live-chat__note { background:#fff; font-size:9px; }
 .watch-experience .uebtv-chat-message__content { display:grid; flex:1; min-width:0; gap:3px; }
 .watch-experience .uebtv-chat-time { display:inline-flex; align-items:center; justify-self:start; gap:5px; margin-top:5px; padding:3px 7px; border:1px solid #dce8f6; border-radius:999px; background:#f3f7fd; color:#527095; font-family:inherit; font-size:10px; font-weight:600; line-height:1.2; font-variant-numeric:tabular-nums; text-decoration:none; }
+.watch-experience .uebtv-chat-history { justify-self:center; padding:7px 12px; border:1px solid #a9c7e9; border-radius:999px; background:#e5f0ff; color:#17589f; font-family:inherit; font-size:11px; font-weight:700; line-height:1.2; cursor:pointer; }
+.watch-experience .uebtv-chat-history:hover,.watch-experience .uebtv-chat-history:focus-visible { background:#cfe4ff; outline:2px solid #78a9df; outline-offset:2px; }
 button.uebtv-chat-time { cursor:pointer; transition:background .16s,border-color .16s,color .16s; }
 button.uebtv-chat-time:hover { border-color:#a9c7e9; background:#e7f1ff; color:#1558a4; }
 button.uebtv-chat-time:focus-visible { outline:3px solid #bfd9f7; outline-offset:2px; }

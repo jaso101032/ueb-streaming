@@ -25,6 +25,11 @@ class PrepareRecordings extends Command
                 ->where(fn ($query) => $query->where('recording_attempts', '<', 3)->orWhere('recording_status', 'processing'))->orderBy('id')->chunkById(50, function ($streams) use ($processor) {
                     foreach ($streams as $stream) $processor->process($stream->id);
                 });
+            Transmision::where('recording_status', 'ready')
+                ->where('recording_metadata->rawCleanupPending', true)
+                ->orderBy('id')->chunkById(50, function ($streams) use ($processor) {
+                    foreach ($streams as $stream) $processor->process($stream->id);
+                });
         } finally {
             flock($lock, LOCK_UN);
             fclose($lock);

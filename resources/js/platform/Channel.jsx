@@ -99,7 +99,7 @@ function ChannelVideo({ snapshot, received, startMuted, onMuteChange }) {
             const v = video.current;
             if (document.hidden || !v || manualPause.current || autoplayBlocked.current || latest.current.snapshot.playback.state !== "playing") return;
             const idle = performance.now() - lastProgress.current.at;
-            if (idle > 6000 && v.readyState < 3 && !v.paused && !retryTimer.current) setNotice("Cargando la señal…");
+            // BrandedVideo muestra el búfer sin tapar el anuncio ni pedir un clic.
             if (idle > 30000 && (!v.paused || v.readyState < 2)) reconnect();
         }, 2000);
         return () => { window.clearInterval(timer); window.clearTimeout(retryTimer.current); };

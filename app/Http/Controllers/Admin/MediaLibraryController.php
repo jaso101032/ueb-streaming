@@ -43,6 +43,7 @@ class MediaLibraryController extends Controller
                     'category' => $event->categoria?->nombre ?? 'Institucional', 'date' => $date->toDateString(),
                     'sortAt' => $date->getTimestamp(), 'image' => $event->miniatura ? asset('storage/'.$event->miniatura) : null,
                     'sourceBytes' => $metadata['rawBytes'] ?? null, 'readyBytes' => $metadata['mp4Bytes'] ?? null,
+                    'sourcePresent' => $metadata['rawPresent'] ?? false,
                     'sourceFormat' => 'FLV', 'readyFormat' => 'MP4',
                     'status' => $event->transmision->recording_status,
                     'detailsUrl' => route('admin.eventos.show', $event),

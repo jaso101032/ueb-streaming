@@ -85,7 +85,10 @@ servicios automáticamente; el servicio Postgres no debe exponerse públicamente
   luego inicia Nginx/PHP. Los workers procesan las colas, videos programados y
   grabaciones.
 - Los videos programados admiten hasta 500 MB; verifica que el volumen `app_storage`
-  tenga espacio suficiente para originales y archivos procesados.
+  tenga espacio suficiente para originales y archivos procesados durante la
+  conversión. Para grabaciones en vivo, el volumen de grabaciones también debe
+  alojar temporalmente el FLV y el MP4 a la vez; tras validar el MP4, el FLV
+  nuevo se elimina automáticamente.
 - Crea o asigna la cuenta administradora después del primer despliegue siguiendo
   el procedimiento institucional; no ejecutes seeders de desarrollo en producción.
 - Prueba el sitio HTTPS, la subida de un video pequeño y una emisión OBS corta.

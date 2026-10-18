@@ -20,7 +20,7 @@ class ScheduledVideoController extends Controller
     {
         return view('admin.scheduled.index', ['events' => Evento::whereHas('scheduledVideo')->with('scheduledVideo')->latest()->paginate(12),
             'ads' => InstitutionalAd::latest()->get(), 'categories' => Categoria::orderBy('nombre')->get(),
-            'timeline' => ($timeline = app(ChannelSchedule::class)->timeline()), 'summary' => app(ChannelSchedule::class)->summary($timeline)]);
+            'timeline' => ($timeline = app(ChannelSchedule::class)->timeline()), 'summary' => app(ChannelSchedule::class)->summary($timeline, true)]);
     }
 
     public function progress(Request $request)

@@ -40,6 +40,7 @@ export default function Watch({
         [scheduledState, setScheduledState] = useState(e.scheduled?.state),
         [viewerCount, setViewerCount] = useState(e.viewers ?? 0),
         [viewCount, setViewCount] = useState(videoViews),
+        [playbackSeconds, setPlaybackSeconds] = useState(0),
         [detailsOpen, setDetailsOpen] = useState(false);
     useEffect(() => {
         const resize = () => {
@@ -130,6 +131,8 @@ export default function Watch({
         const video = event.currentTarget;
         const progress = viewProgress.current;
         const current = video.currentTime;
+        if (e.status === "finalizado" && Number.isFinite(current))
+            setPlaybackSeconds(Math.max(0, Math.floor(current)));
         if (video.paused || video.seeking || !Number.isFinite(current)) {
             progress.last = current;
             return;
@@ -316,10 +319,12 @@ export default function Watch({
                         chatRestricted={e.chatRestricted}
                         chatToggleUrl={e.chatToggleUrl}
                         seekable={e.status === "finalizado" && Boolean(e.videoUrl)}
+                        playbackSeconds={playbackSeconds}
                         onSeek={(seconds) => {
                             const video = recordingVideo.current;
                             if (!video) return;
                             video.currentTime = seconds;
+                            setPlaybackSeconds(Math.max(0, Math.floor(seconds)));
                             video.play().catch(() => {});
                         }}
                         isRecording={

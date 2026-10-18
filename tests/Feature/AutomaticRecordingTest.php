@@ -79,6 +79,7 @@ class AutomaticRecordingTest extends TestCase
             '-f', 'lavfi', '-i', 'sine=frequency=440:sample_rate=44100', '-t', '1',
             '-c:v', 'libx264', '-threads', '1', '-c:a', 'aac', '-f', 'flv', $this->root.'/raw/ueb_test.flv']);
         $fixture->mustRun();
+        $rawBytes = filesize($this->root.'/raw/ueb_test.flv');
         $this->disconnect()->assertNoContent();
         $this->travel(91)->seconds();
         $this->artisan('streaming:prepare-recordings')->assertSuccessful();
@@ -89,10 +90,12 @@ class AutomaticRecordingTest extends TestCase
         $this->assertSame('aac', $stream->recording_metadata['audioCodec']);
         $this->assertSame(160, $stream->recording_metadata['width']);
         $this->assertEqualsWithDelta(30, $stream->recording_metadata['fps'], 0.1);
-        $this->assertSame(filesize($this->root.'/raw/ueb_test.flv'), $stream->recording_metadata['rawBytes']);
+        $this->assertSame($rawBytes, $stream->recording_metadata['rawBytes']);
         $this->assertSame(filesize($stream->recordingPath()), $stream->recording_metadata['mp4Bytes']);
         $this->assertFileExists($stream->recordingPath());
-        $this->assertFileExists($this->root.'/raw/ueb_test.flv');
+        $this->assertFileDoesNotExist($this->root.'/raw/ueb_test.flv');
+        $this->assertFalse($stream->recording_metadata['rawCleanupPending']);
+        $this->assertFalse($stream->displayRecordingMetadata()['rawPresent']);
         $this->assertSame('https://example.com/manual.mp4', $this->event->fresh()->video_url);
         $this->assertSame('finalizado', $this->event->fresh()->estado);
         $this->actingAs(User::where('role', 'admin')->first());
@@ -125,6 +128,38 @@ class AutomaticRecordingTest extends TestCase
         $this->actingAs(User::factory()->create(['role' => 'admin']));
         $this->post(route('streaming.recording.retry', $this->event))->assertSessionHas('success');
         $this->assertSame('waiting', $this->event->transmision()->first()->recording_status);
+    }
+
+    public function test_raw_cleanup_waits_for_a_playable_mp4_and_is_retried_by_worker(): void
+    {
+        $stream = $this->event->transmision()->first();
+        $filename = Str::uuid().'.mp4';
+        file_put_contents($this->root.'/raw/ueb_test.flv', 'original');
+        $stream->update(['recording_status' => 'ready', 'recording_file' => $filename,
+            'recording_metadata' => ['rawBytes' => 8, 'rawCleanupPending' => true]]);
+
+        $this->artisan('streaming:prepare-recordings')->assertSuccessful();
+        $this->assertFileExists($this->root.'/raw/ueb_test.flv');
+        $this->assertTrue($stream->fresh()->recording_metadata['rawCleanupPending']);
+
+        file_put_contents($this->root.'/vod/'.$filename, 'mp4');
+        $this->artisan('streaming:prepare-recordings')->assertSuccessful();
+        $this->assertFileDoesNotExist($this->root.'/raw/ueb_test.flv');
+        $this->assertFalse($stream->fresh()->recording_metadata['rawCleanupPending']);
+        $this->assertFileExists($this->root.'/vod/'.$filename);
+    }
+
+    public function test_legacy_ready_recordings_are_not_cleaned_without_the_pending_marker(): void
+    {
+        $stream = $this->event->transmision()->first();
+        $filename = Str::uuid().'.mp4';
+        file_put_contents($this->root.'/raw/ueb_test.flv', 'legacy');
+        file_put_contents($this->root.'/vod/'.$filename, 'mp4');
+        $stream->update(['recording_status' => 'ready', 'recording_file' => $filename,
+            'recording_metadata' => ['rawBytes' => 6]]);
+
+        $this->artisan('streaming:prepare-recordings')->assertSuccessful();
+        $this->assertFileExists($this->root.'/raw/ueb_test.flv');
     }
 
     public function test_missing_disconnect_callback_is_recovered_after_grace(): void

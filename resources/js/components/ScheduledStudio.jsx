@@ -293,6 +293,9 @@ export default function ScheduledStudio({
     const coverageEnd = summary.endsAt
         ? new Date(summary.endsAt).toLocaleString("es-EC", { dateStyle: "short", timeStyle: "short" })
         : null;
+    const firstGap = summary.firstGapAt
+        ? new Date(summary.firstGapAt).toLocaleString("es-EC", { dateStyle: "short", timeStyle: "short" })
+        : null;
     return (
         <div className="studio-page schedule-page schedule-react">
             <div className="studio-heading">
@@ -347,10 +350,14 @@ export default function ScheduledStudio({
                         esperas.
                     </p>
                 </article>
-                <article>
-                    <small>COBERTURA PREVISTA</small>
-                    <strong>{coverageEnd || "Sin contenido listo"}</strong>
-                    <p>{coverageEnd ? "La programación llega hasta esta hora; un directo puede desplazarla." : "Sube contenido para calcular la cobertura del canal."}</p>
+                <article className={firstGap && !summary.hasAdFallback ? "has-coverage-gap" : ""}>
+                    <small>COBERTURA PREVISTA · PRÓXIMAS 24 H</small>
+                    <strong>{firstGap && !summary.hasAdFallback ? `Hueco: ${firstGap}` : summary.hasAdFallback ? "Continuidad con anuncios" : "Sin huecos previstos"}</strong>
+                    <p>{summary.hasAdFallback
+                        ? `La publicidad institucional activa cubre los huecos; los videos llegan hasta ${coverageEnd || "la hora programada"}.`
+                        : firstGap
+                          ? "Sin publicidad activa, la señal quedará en espera desde esta hora si no hay un directo."
+                          : `Los videos cubren las próximas 24 horas. Último fin: ${coverageEnd}.`}</p>
                 </article>
             </div>
             <div

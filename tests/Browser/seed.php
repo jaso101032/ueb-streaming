@@ -22,6 +22,8 @@ $faculty = Facultad::create(['nombre' => 'Ingeniería', 'slug' => 'ingenieria'])
 Carrera::create(['nombre' => 'Software', 'slug' => 'software', 'facultad_id' => $faculty->id]);
 $event = Evento::create(['titulo' => 'Conferencia inaugural UEB 2026', 'slug' => 'conferencia', 'estado' => 'finalizado', 'categoria_id' => $category->id, 'facultad_id' => $faculty->id, 'organizador_id' => $admin->id, 'tipo_evento' => 'Conferencias', 'fecha_inicio' => now()->subDay(), 'descripcion' => 'Ideas que se convierten en conocimiento. Un encuentro para compartir experiencias con nuestra comunidad.', 'video_url' => '/test-video.mp4']);
 ChatMessage::create(['evento_id' => $event->id, 'user_id' => $admin->id, 'message' => 'Bienvenidos a nuestra comunidad.']);
+ChatMessage::create(['evento_id' => $event->id, 'user_id' => $admin->id, 'message' => 'Comentario del minuto cinco.', 'playback_seconds' => 5]);
+ChatMessage::create(['evento_id' => $event->id, 'user_id' => $admin->id, 'message' => 'Comentario del minuto cuarenta.', 'playback_seconds' => 40]);
 // The archived event above deliberately has closed chat. Keep a separate
 // upcoming room to exercise sending and moderation in browser tests.
 $chatEvent = Evento::create(['titulo' => 'Encuentro de la comunidad', 'slug' => 'encuentro-comunidad',

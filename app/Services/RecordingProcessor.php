@@ -15,6 +15,10 @@ class RecordingProcessor
     {
         $stream = Transmision::find($id);
         if (!$stream) return;
+        if ($stream->recording_status === 'ready') {
+            try { $this->cleanupSource($stream); } catch (Throwable $exception) { report($exception); }
+            return;
+        }
         $claimed = DB::transaction(function () use ($stream) {
             $event = Evento::whereKey($stream->evento_id)->lockForUpdate()->first();
             $stream = Transmision::whereKey($stream->id)->lockForUpdate()->firstOrFail();
@@ -72,13 +76,35 @@ class RecordingProcessor
             chmod($temporary, 0640);
             if (!rename($temporary, $root.'/vod/'.$filename)) throw new \RuntimeException('Publish failed');
             // File is served through a guarded route; .mp4 alone never exposes it.
+            // Keep the FLV until the validated MP4 is durably marked ready. A
+            // pending marker lets the worker retry cleanup after a crash or a
+            // temporary filesystem error without re-encoding the video.
+            $metadata['rawCleanupPending'] = true;
             $claimed->update(['recording_status' => 'ready', 'recording_file' => $filename,
                 'recording_metadata' => $metadata,
                 'recording_ready_at' => now(), 'recording_error' => null]);
+            try { $this->cleanupSource($claimed); } catch (Throwable $exception) { report($exception); }
         } catch (Throwable $exception) {
             if ($temporary && is_file($temporary)) unlink($temporary);
             $claimed->update(['recording_status' => 'failed',
                 'recording_error' => 'No se pudo preparar el video. Revisa el archivo original, el espacio disponible y FFmpeg.']);
         }
+    }
+
+    private function cleanupSource(Transmision $stream): void
+    {
+        $metadata = $stream->recording_metadata ?? [];
+        if (! ($metadata['rawCleanupPending'] ?? false) || ! $stream->recordingPath() ||
+            ! preg_match('/^[A-Za-z0-9_-]{1,100}$/D', $stream->stream_key ?? '')) return;
+
+        $source = rtrim(config('streaming.recordings_root'), '/').'/raw/'.$stream->stream_key.'.flv';
+        if (is_link($source)) return;
+        if (is_file($source) && ! @unlink($source)) return;
+        clearstatcache(true, $source);
+        if (file_exists($source) || is_link($source)) return;
+
+        $metadata['rawCleanupPending'] = false;
+        $metadata['rawRemovedAt'] = now()->toIso8601String();
+        $stream->update(['recording_metadata' => $metadata]);
     }
 }

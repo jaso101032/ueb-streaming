@@ -37,8 +37,24 @@ function PlayerIcon({ name }) {
 }
 
 export function BrandedVideo({ videoRef, src, poster, mediaTitle, live = false, dvr = false, seekable = false, hidden = false, startMuted = live, autoStart = live || startMuted, onMuteChange, onLoadedMetadata, onSeeking, onSeeked, onPlay, onPlaying, onPause, onWaiting, onEnded, onUserPause, onUserResume, onTimeUpdate, onError, children }) {
-    const shell = useRef(null), playbackChanging = useRef(false), autoplayAttempted = useRef(false), controlsTimer = useRef();
+    const shell = useRef(null), playbackChanging = useRef(false), autoplayAttempted = useRef(false), controlsTimer = useRef(), bufferTimer = useRef(), slowBufferTimer = useRef();
     const [playing, setPlaying] = useState(false), [autoplayBlocked, setAutoplayBlocked] = useState(false), [controlsVisible, setControlsVisible] = useState(true), [current, setCurrent] = useState(0), [duration, setDuration] = useState(0), [liveWindow, setLiveWindow] = useState({ start: 0, end: 0 }), [volume, setVolume] = useState(1), [muted, setMuted] = useState(startMuted), [rate, setRate] = useState(1), [inPictureInPicture, setInPictureInPicture] = useState(false), [isFullscreen, setIsFullscreen] = useState(false);
+    const [buffering, setBuffering] = useState(0);
+    const stopBuffering = () => {
+        window.clearTimeout(bufferTimer.current);
+        window.clearTimeout(slowBufferTimer.current);
+        setBuffering(0);
+    };
+    const waitForData = (event) => {
+        const element = event.currentTarget;
+        if (hidden || element.paused || !element.currentSrc || bufferTimer.current) return;
+        bufferTimer.current = window.setTimeout(() => {
+            bufferTimer.current = undefined;
+            if (element.paused || element.readyState >= 3) return;
+            setBuffering(1);
+            slowBufferTimer.current = window.setTimeout(() => setBuffering(2), 3000);
+        }, 450);
+    };
     const video = () => videoRef.current;
     const updateProgress = () => { const v = video(); if (!v) return; setCurrent(v.currentTime || 0); setDuration(Number.isFinite(v.duration) ? v.duration : 0); if (dvr && v.seekable.length) setLiveWindow({ start: v.seekable.start(v.seekable.length - 1), end: v.seekable.end(v.seekable.length - 1) }); };
     const hideControlsSoon = () => {
@@ -88,6 +104,7 @@ export function BrandedVideo({ videoRef, src, poster, mediaTitle, live = false, 
     };
     const pictureInPicture = async () => { const v = video(); if (!v || !document.pictureInPictureEnabled) return; try { document.pictureInPictureElement ? await document.exitPictureInPicture() : await v.requestPictureInPicture(); } catch {} };
     useEffect(() => { const v = video(); if (!v) return; const entered = () => setInPictureInPicture(true), left = () => setInPictureInPicture(false); v.addEventListener("enterpictureinpicture", entered); v.addEventListener("leavepictureinpicture", left); return () => { v.removeEventListener("enterpictureinpicture", entered); v.removeEventListener("leavepictureinpicture", left); }; }, [videoRef]);
+    useEffect(() => () => { window.clearTimeout(bufferTimer.current); window.clearTimeout(slowBufferTimer.current); }, []);
     useEffect(() => { const changed = () => setIsFullscreen(document.fullscreenElement === shell.current); document.addEventListener("fullscreenchange", changed); return () => document.removeEventListener("fullscreenchange", changed); }, []);
     const goLive = () => { const v = video(); if (!v) return; onUserResume?.(); const ranges = v.seekable; if (ranges.length) v.currentTime = Math.max(ranges.start(ranges.length - 1), ranges.end(ranges.length - 1) - LIVE_EDGE_OFFSET); v.play().catch(() => {}); };
     const attemptLiveAutoplay = (element) => {
@@ -157,7 +174,7 @@ export function BrandedVideo({ videoRef, src, poster, mediaTitle, live = false, 
         <video ref={videoRef} className="uebtv-video" src={src} poster={poster} defaultMuted={startMuted} autoPlay={autoStart} playsInline preload="metadata" disableRemotePlayback hidden={hidden}
             onCanPlay={(event) => attemptLiveAutoplay(event.currentTarget)} onLoadedMetadata={(event) => { attemptLiveAutoplay(event.currentTarget); updateProgress(); onLoadedMetadata?.(event); }} onTimeUpdate={(event) => { updateProgress(); onTimeUpdate?.(event); }} onDurationChange={updateProgress}
             onVolumeChange={(event) => { setVolume(event.currentTarget.volume); setMuted(event.currentTarget.muted); onMuteChange?.(event.currentTarget.muted || event.currentTarget.volume === 0); }}
-            onPlay={(event) => { playbackChanging.current = false; setPlaying(true); setAutoplayBlocked(false); onPlay?.(event); }} onPlaying={onPlaying} onPause={(event) => { playbackChanging.current = false; setPlaying(false); onPause?.(event); }} onWaiting={onWaiting} onSeeking={onSeeking} onSeeked={onSeeked} onEnded={onEnded} onError={onError} />
+            onPlay={(event) => { playbackChanging.current = false; setPlaying(true); setAutoplayBlocked(false); onPlay?.(event); }} onPlaying={(event) => { stopBuffering(); onPlaying?.(event); }} onPause={(event) => { playbackChanging.current = false; setPlaying(false); stopBuffering(); onPause?.(event); }} onWaiting={(event) => { waitForData(event); onWaiting?.(event); }} onStalled={waitForData} onSeeking={onSeeking} onSeeked={onSeeked} onEnded={(event) => { stopBuffering(); onEnded?.(event); }} onError={(event) => { stopBuffering(); onError?.(event); }} />
         {!hidden && <>
             <PlayerWatermark />
             {live && <span className="uebtv-player-live">● EN VIVO</span>}
@@ -167,6 +184,11 @@ export function BrandedVideo({ videoRef, src, poster, mediaTitle, live = false, 
                 Volver al reproductor
             </button>}
             {live && autoplayBlocked && <div className="react-player-notice" role="status"><p>Tu navegador bloqueó la reproducción automática. Toca reproducir para continuar.</p><button className="studio-button" onClick={togglePlay}>Reproducir</button></div>}
+            {buffering > 0 && !autoplayBlocked && <div className="uebtv-player-buffering" role="status" aria-live="polite">
+                <span className="uebtv-player-buffering__wheel" aria-hidden="true" />
+                <span>{buffering === 2 ? "La señal tarda en llegar. Intentando continuar…" : "Cargando video…"}</span>
+                {buffering === 2 && <small>Si persiste, revisa tu conexión.</small>}
+            </div>}
             <div className={`uebtv-player-controls ${live ? "is-live-controls" : ""}`} aria-label="Controles del reproductor">
                 <div className={`uebtv-player-timeline ${seekable ? "is-vod-timeline" : !hasDvr ? "is-signal-only" : ""}`}>{seekable ? <><input aria-label="Posición del video" title="Flechas izquierda/derecha: saltar 5 segundos" className="uebtv-player-range uebtv-player-range--progress" type="range" min="0" max={duration || 0} step="0.1" value={Math.min(current, duration || 0)} onChange={setProgress} onKeyDown={onTimelineKeyDown} style={{ "--player-progress": `${duration ? (current / duration) * 100 : 0}%` }} /><span>{timeLabel(current)} / {timeLabel(duration)}</span></> : hasDvr ? <><input aria-label="Retroceder en la transmisión en vivo" title="Flechas izquierda/derecha: saltar 5 segundos" className="uebtv-player-range uebtv-player-range--progress uebtv-player-range--live" type="range" min={liveWindow.start} max={liveWindow.end} step="0.1" value={Math.min(Math.max(displayedLivePosition, liveWindow.start), liveWindow.end)} onChange={setProgress} onKeyDown={onTimelineKeyDown} /><span className={`uebtv-player-live-position ${behindLive ? "is-behind" : ""}`}>{behindLive ? `Hace ${Math.ceil(liveWindow.end - current)} s` : "EN DIRECTO"}</span></> : <><span className="uebtv-player-live-static" aria-hidden="true"><i /></span><span className="uebtv-player-now">{live ? "EN DIRECTO" : "EMISIÓN SINCRONIZADA"}</span></>}</div>
                 <div className="uebtv-player-actions">
@@ -315,6 +337,6 @@ export default function Player({ event: e, onScheduledState, recordingRef, onVid
     }, [e.hlsUrl, live, retry]);
     if (e.scheduled) return <ScheduledPlayer scheduled={e.scheduled} poster={e.image} onState={onScheduledState} onVideoProgress={onVideoProgress} />;
     if (live && e.hlsUrl) return <BrandedVideo videoRef={video} mediaTitle={e.title} live dvr startMuted={startMuted ?? true} onTimeUpdate={onVideoProgress} onMuteChange={onMuteChange} onUserPause={() => { manualPause.current = true; }} onUserResume={() => { manualPause.current = false; }} onPlay={() => { manualPause.current = false; }}>{error && <div className="react-player-notice" role="status"><p>{error}</p><button className="studio-button" onClick={() => { manualPause.current = false; retryAttempts.current = 0; setRetry((value) => value + 1); }}>Reconectar ahora</button></div>}</BrandedVideo>;
-    if (e.videoUrl) return <BrandedVideo videoRef={recordingRef} src={e.videoUrl} poster={e.image || undefined} mediaTitle={e.title} seekable onTimeUpdate={onVideoProgress} />;
+    if (e.videoUrl) return <BrandedVideo videoRef={recordingRef} src={e.videoUrl} poster={e.image || undefined} mediaTitle={e.title} seekable onTimeUpdate={onVideoProgress} onSeeked={onVideoProgress} />;
     return <div className="uebtv-player-empty"><span className="uebtv-player-empty__icon">▶</span><h2>{e.status === "finalizado" ? "Transmisión finalizada" : "Video próximamente"}</h2><p>{e.status === "finalizado" ? ["waiting", "processing", "recording"].includes(e.recordingStatus) ? "Estamos preparando la grabación. Estará disponible aquí automáticamente." : "La grabación todavía no está disponible." : "Esta sala se habilitará cuando comience la transmisión."}</p></div>;
 }

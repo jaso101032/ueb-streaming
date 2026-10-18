@@ -19,7 +19,9 @@ Para desplegar en Dokploy, sigue [la guía de producción](docs/despliegue-dokpl
 Las grabaciones automáticas admiten un límite de FPS para el MP4 archivado,
 muestran su tamaño y ficha técnica al administrador y cuentan con indicador de
 almacenamiento. La cuota institucional es opcional y debe configurarse según
-el límite real del alojamiento; consulta [grabación y almacenamiento](docs/grabacion-automatica.md).
+el límite real del alojamiento. El FLV del directo es temporal: tras validar el
+MP4 final se elimina, y sólo se conserva si hace falta reintentar una conversión
+fallida; consulta [grabación y almacenamiento](docs/grabacion-automatica.md).
 
 En `/admin/medios`, el administrador consulta grabaciones, programación y
 publicidad en una biblioteca visual con filtros por título, origen, categoría
@@ -181,7 +183,7 @@ para el proxy HLS/aplicación y `1935` para RTMP.
 4. OBS publica en `rtmp://IP_DEL_SERVIDOR:1935/live`.
 5. Nginx genera el playlist HLS.
 6. La sala pública reproduce la señal en `/eventos/{evento}`.
-7. Al terminar, edita el evento y registra un enlace MP4 en **Video grabado**.
+7. Al terminar, el procesador prepara y publica automáticamente el MP4 de la grabación. El campo **Video grabado** permite registrar un enlace alternativo si hace falta.
 8. Los eventos finalizados con video aparecen en `/eventos?filtro=anteriores`.
 
 ## Videos archivados
@@ -287,7 +289,7 @@ El catálogo `/eventos` permite combinar `q` (título), `facultad_id`, `categori
 
 Administradores y operadores pueden pulsar **Retirar** junto a un mensaje en la sala. La eliminación es lógica: se guardan la fecha y el usuario moderador; no se muestra el mensaje a los espectadores. Los usuarios normales no pueden moderar y cada mensaje se valida contra su evento.
 
-El chat conserva un máximo de 80 mensajes en cada respuesta. Usa una caché compartida de 3 segundos por evento y ETag para responder sin cuerpo si no cambió. Los envíos y la moderación invalidan esa caché. El navegador consulta cada 5 segundos, pausa las consultas al ocultar la pestaña y aumenta la espera hasta 30 segundos ante fallos. Las retiradas también se reflejan en las otras sesiones durante sus actualizaciones. No utiliza WebSockets y no se ha realizado una prueba de carga concurrente; estos cambios reducen consultas y transferencia, pero no certifican una capacidad de espectadores.
+El chat en vivo muestra como máximo los últimos 80 mensajes por respuesta. Usa una caché compartida de 3 segundos por evento y ETag para responder sin cuerpo si no cambió. Los envíos y la moderación invalidan esa caché. El navegador consulta cada 5 segundos, pausa las consultas al ocultar la pestaña y aumenta la espera hasta 30 segundos ante fallos. En grabaciones finalizadas, `/eventos/{evento}/chat/replay` entrega el historial completo en páginas de hasta 200 mensajes; el visor revela solo los comentarios correspondientes al segundo reproducido y actualiza el panel al adelantar o retroceder. Los comentarios anteriores al inicio del vivo, sin segundo asociado, aparecen desde el comienzo. La grabación no admite mensajes nuevos. No utiliza WebSockets y no se ha realizado una prueba de carga concurrente; estos cambios reducen consultas y transferencia, pero no certifican una capacidad de espectadores.
 
 La sala muestra **espectadores conectados** únicamente en un directo. En una
 grabación o video programado muestra **visualizaciones**: se registra una tras
@@ -348,7 +350,17 @@ que Nginx/RTMP esté recibiendo señal.
 
 Abre `/senal` para ver la programación continua: el directo tiene prioridad y, al
 terminar, el pregrabado continúa desde el punto interrumpido. En **Contenido
-programado** se muestran la duración total y los minutos de video pendientes.
+programado** se muestran la duración total, los minutos pendientes y el primer
+hueco previsto de las próximas 24 horas. Si hay publicidad institucional activa
+y preparada, el panel indica que cubrirá los huecos. Los directos pueden mover
+estos horarios y su duración futura no se puede predecir. Sin video ni anuncios
+activos, el canal muestra la espera; no se debe anunciar cobertura 24/7 real
+hasta cargar material oficial y probar el ciclo completo en el servidor.
+
+El reproductor muestra una rueda tras una espera perceptible de datos (no durante
+una pausa normal), y avisa si la espera se prolonga. Es una señal de búfer, no un
+diagnóstico definitivo de la red; si persisten los cortes hay que revisar OBS,
+Nginx, el servidor y la conexión de los espectadores.
 
 En computadora, el reproductor admite `Espacio` para reproducir/pausar, `F`
 para alternar pantalla completa y `Esc` para salir. Las flechas izquierda y
