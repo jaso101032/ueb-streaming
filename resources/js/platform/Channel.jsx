@@ -112,6 +112,8 @@ function ChannelVideo({ snapshot, received, startMuted, onMuteChange }) {
                 src={mediaUrl}
                 mediaTitle={isAd ? `Publicidad institucional · ${media.title}` : snapshot.event.title}
                 live={false}
+                allowPause={!isAd}
+                allowPictureInPicture={!isAd}
                 startMuted={startMuted}
                 autoStart={false}
                 onMuteChange={onMuteChange}

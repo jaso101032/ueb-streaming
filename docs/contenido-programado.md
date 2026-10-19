@@ -52,7 +52,11 @@ Los anuncios activos rotan con el reloj compartido del servidor cuando no hay
 una emisión de mayor prioridad. En pantalla se muestra una **P** durante la
 publicidad, nunca durante un programa o directo. La señal no presenta barra de
 avance para anuncios ni programas en curso: las posiciones se corrigen con el
-reloj del servidor. El usuario sí puede ajustar volumen o pantalla completa.
+reloj del servidor. Durante la publicidad no se ofrece pausa ni imagen en
+imagen; si el navegador impide el inicio automático, se muestra un botón para
+reanudar. El usuario sí puede silenciar o poner pantalla completa. La barra de
+volumen se muestra en computadora y se oculta en teléfonos, donde se utiliza
+el control de volumen del dispositivo.
 El inicio automático se intenta silenciado para respetar las restricciones del
 navegador; cuando el usuario habilita sonido, la preferencia se conserva en
 las transiciones dentro de la página. No es DRM: cualquier archivo reproducible

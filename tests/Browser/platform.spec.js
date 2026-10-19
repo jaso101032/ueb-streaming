@@ -138,6 +138,28 @@ test("desktop player shortcuts control recorded video without hijacking text fie
     await page.keyboard.press("Escape");
     await expect.poll(() => page.evaluate(() => document.fullscreenElement)).toBeNull();
 });
+test("fullscreen controls hide while the pointer is still and return when it moves", async ({ page }) => {
+    await page.route("**/test-video.mp4", (route) => route.fulfill({
+        body: readFileSync("/tmp/uebtv-react-test.mp4"),
+        contentType: "video/mp4",
+        headers: { "Accept-Ranges": "bytes" },
+    }));
+    await page.goto("/eventos/1");
+    await page.getByRole("button", { name: "Reproducir", exact: true }).click();
+    await expect(page.locator("video")).toHaveJSProperty("paused", false);
+
+    const shell = page.locator(".uebtv-player-shell");
+    const controls = shell.locator(".uebtv-player-controls");
+    await shell.getByRole("button", { name: "Pantalla completa" }).click();
+    await expect.poll(() => shell.evaluate((element) => document.fullscreenElement === element)).toBe(true);
+    await expect.poll(() => controls.evaluate((element) => getComputedStyle(element).opacity)).toBe("0");
+    await expect(controls).toHaveCSS("pointer-events", "none");
+
+    await page.mouse.move(200, 200);
+    await expect(controls).toHaveCSS("opacity", "1");
+    await page.keyboard.press("Escape");
+    await expect.poll(() => page.evaluate(() => document.fullscreenElement)).toBeNull();
+});
 test("arrow shortcuts do not seek institutional advertising", async ({ page }) => {
     await page.route("**/senal/estado", (route) => route.fulfill({ json: {
         mode: "advertisement", event: null,
@@ -694,6 +716,19 @@ test("institutional advertising fills a channel gap with a P and no seek control
     await expect(page.getByText("P · Publicidad institucional")).toBeVisible();
     await expect(page.getByRole("heading", { name: "Campaña institucional" })).toBeVisible();
     await expect(page.getByRole("slider", { name: "Posición del video" })).toHaveCount(0);
+    const video = page.locator(".channel-screen video");
+    await expect(video).toHaveJSProperty("paused", false);
+    await expect(page.getByRole("button", { name: "Pausar", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Imagen en imagen" })).toHaveCount(0);
+    await expect(video).toHaveJSProperty("disablePictureInPicture", true);
+    await page.keyboard.press("Space");
+    await expect(video).toHaveJSProperty("paused", false);
+    const volume = page.locator('input[aria-label="Volumen"]');
+    await expect(volume).toBeVisible();
+    await expect(volume).toHaveCSS("height", "6px");
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect(volume).toBeHidden();
+    await expect(page.getByRole("button", { name: "Activar sonido" })).toBeVisible();
     expect(errors).toEqual([]);
 });
 

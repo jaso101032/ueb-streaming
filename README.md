@@ -363,7 +363,8 @@ diagnóstico definitivo de la red; si persisten los cortes hay que revisar OBS,
 Nginx, el servidor y la conexión de los espectadores.
 
 En computadora, el reproductor admite `Espacio` para reproducir/pausar, `F`
-para alternar pantalla completa y `Esc` para salir. Las flechas izquierda y
+para alternar pantalla completa y `Esc` para salir; durante la publicidad,
+`Espacio` no pausa el anuncio. Las flechas izquierda y
 derecha retroceden o adelantan cinco segundos solo en videos bajo demanda y
 directos con DVR; no permiten saltar publicidad ni la programación sincronizada.
 Los atajos no se activan mientras se escribe en formularios.

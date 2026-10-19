@@ -383,6 +383,10 @@ html[data-theme="dark"] .watch-experience .uebtv-chat-message__meta strong { col
     .uebtv-player-actions { gap:7px; }
     .uebtv-player-icon-button { width:32px; height:32px; border-color:#ffffff3d; background:#071a35cc; box-shadow:0 3px 10px #0005; }
     .uebtv-player-icon-button--primary { border-color:#ff9aaa; background:#ff3152; }
+    .uebtv-player-range--volume { height:6px; }
+    .uebtv-player-range--volume::-webkit-slider-thumb { width:14px; height:14px; }
+    .uebtv-player-range--volume::-moz-range-thumb { width:13px; height:13px; }
+    .uebtv-player-range--volume::-moz-range-track,.uebtv-player-range--volume::-moz-range-progress { height:6px; }
     .uebtv-player-speed { width:42px; max-width:42px; height:32px; padding:0 6px; border:1px solid #ffffff3d; border-radius:16px; background:#071a35cc; color:#fff; font-size:11px; }
     .uebtv-player-icon-svg { width:18px; height:18px; }
     .uebtv-player-go-live { min-height:32px; height:32px; padding-inline:8px; font-size:9px; }

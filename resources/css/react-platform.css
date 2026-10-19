@@ -609,9 +609,11 @@ button:disabled {
     opacity: 0;
     transform: translateY(6px);
     transition: opacity .2s ease, transform .2s ease;
+    pointer-events: none;
 }
 .uebtv-player-shell:focus-visible .uebtv-player-controls,
-.uebtv-player-shell.is-chrome-visible .uebtv-player-controls { opacity:1; transform:none; }
+.uebtv-player-shell:has(.uebtv-player-controls :focus-visible) .uebtv-player-controls,
+.uebtv-player-shell.is-chrome-visible .uebtv-player-controls { opacity:1; transform:none; pointer-events:auto; }
 /* La marca institucional y el distintivo de directo permanecen visibles.
    Solo el título contextual de pantalla completa se desvanece con controles. */
 .uebtv-player-shell:not(.is-chrome-visible) .uebtv-player-title { opacity:0; transform:translateY(-5px); }
@@ -650,15 +652,12 @@ button:disabled {
 .uebtv-player-live-position::before { content:""; display:inline-block; width:6px; height:6px; margin:0 5px 1px 0; border-radius:50%; background:#e64f5b; box-shadow:0 0 0 3px #e64f5b2e; }
 .uebtv-player-live-position.is-behind { color:#e9edf5; letter-spacing:0; }
 .uebtv-player-live-position.is-behind::before { background:#a8b6c7; box-shadow:none; }
-.uebtv-player-range--volume { width: clamp(52px, 8vw, 92px); }
-.uebtv-player-range--volume { background:linear-gradient(to right,#dceaff var(--player-progress),#607995 var(--player-progress)); }
-.uebtv-player-range--volume::-webkit-slider-thumb { background:#dceaff; border-color:#193a63; box-shadow:0 1px 5px #0008,0 0 7px #8fc2ff80; }
-.uebtv-player-range--volume::-moz-range-thumb { background:#dceaff; border-color:#193a63; box-shadow:0 1px 5px #0008,0 0 7px #8fc2ff80; }
+.uebtv-player-range--volume { flex:0 0 auto; width:clamp(76px,8vw,104px); height:6px; margin-right:6px; background:linear-gradient(to right,#dceaff var(--player-progress),#607995 var(--player-progress)); box-shadow:0 0 0 1px #ffffff42; }
+.uebtv-player-range--volume::-webkit-slider-thumb { width:16px; height:16px; background:#dceaff; border-color:#193a63; box-shadow:0 1px 5px #0008,0 0 7px #8fc2ff80; }
+.uebtv-player-range--volume::-moz-range-thumb { width:14px; height:14px; background:#dceaff; border-color:#193a63; box-shadow:0 1px 5px #0008,0 0 7px #8fc2ff80; }
 .uebtv-player-range--volume::-moz-range-track { background:#607995; }
 .uebtv-player-range--volume::-moz-range-progress { background:#dceaff; }
-@media (hover:hover) {
-    .uebtv-player-shell:hover .uebtv-player-controls { opacity:1; transform:none; }
-}
+.uebtv-player-range--volume:focus-visible { outline:2px solid #8fc2ff; outline-offset:5px; }
 .uebtv-player-actions { display: flex; align-items: center; gap: 10px; }
 .uebtv-player-icon-button, .uebtv-player-speed {
     height: 42px;
@@ -695,6 +694,9 @@ button:disabled {
     .uebtv-player-range--volume { display:none; }
     .uebtv-player-speed { font-size: 10px; max-width: 46px; }
     .uebtv-player-go-live { height:34px; padding:0 9px; font-size:10px; }
+}
+@media (hover:none) and (pointer:coarse) {
+    .uebtv-player-range--volume { display:none; }
 }
 .uebtv-watch-player {
     position: relative;
