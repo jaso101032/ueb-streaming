@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">UEBTV</string>
+    <string name="channel_url" translatable="false">https://uebtv.devs-ueb.tech/senal?modo=tv</string>
+</resources>

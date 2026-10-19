@@ -16,6 +16,11 @@ pasos de actualización](docs/ENTREGA_2026-10-14.md).
 
 Para desplegar en Dokploy, sigue [la guía de producción](docs/despliegue-dokploy.md).
 
+Hay un [prototipo Android/Android TV](android/README.md) que abre la señal web
+en modo TV (`/senal?modo=tv`). El APK incluido en `public/descargas` está
+firmado para depuración: aún no es una versión de producción, no tiene enlace
+ni QR en la interfaz y falta probarlo en dispositivos reales.
+
 Las grabaciones automáticas admiten un límite de FPS para el MP4 archivado,
 muestran su tamaño y ficha técnica al administrador y cuentan con indicador de
 almacenamiento. La cuota institucional es opcional y debe configurarse según

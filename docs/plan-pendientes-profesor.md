@@ -18,7 +18,7 @@ dispositivos de destino. No confundir ambos estados.
 | P1 | Distinguir directo, pregrabado y archivo; contador | Implementado en la interfaz: el directo tiene indicador y espectadores conectados fuera del visor; las grabaciones/videos programados usan visualizaciones. | Verificarlo con usuarios reales y en despliegue. Aplicar las migraciones recientes antes de evaluar las visualizaciones. |
 | P1 | OBS y operación de producción | Hay guía de configuración y scripts locales, no una certificación del entorno final. | Comprobar versión soportada de OBS, códecs, audio, red, reconexión, grabación y workers en el equipo/servidor definitivo; dejar resultados reproducibles. |
 | P1 | Protocolos, formatos y licencias | Documentado en `arquitectura-multimedia.md`: RTMP/HLS/HTTP usan TCP; la plataforma no usa UDP. Se justifica H.264/AAC y se identifican licencias. | Revisar avisos de licencia de las compilaciones y dependencias realmente distribuidas (`ffmpeg -L`, hls.js) y anexar evidencia del despliegue. |
-| P2 | APK para Android TV / Google TV | No implementado; requisito opcional. | Investigar experiencia de mando a distancia, reproducción HLS, instalación y mantenimiento; prototipo solo después de estabilizar la web y la señal. |
+| P2 | APK para Android TV / Google TV | Prototipo añadido: WebView abre `/senal?modo=tv`, con proyecto Android y APK de depuración en el repositorio. No equivale a una app nativa ni a una publicación final. | Probar en teléfono y televisor reales, navegación con mando y continuidad HLS; corregir errores de conexión, generar APK de distribución firmado, definir mantenimiento y añadir enlace/QR público sólo cuando se apruebe la versión. |
 
 ## Orden de ejecución
 
@@ -26,7 +26,7 @@ dispositivos de destino. No confundir ambos estados.
 2. Conseguir y cargar cortinas/anuncios oficiales autorizados; validar la rotación y la proyección de cobertura ya implementadas.
 3. Medir un directo real antes de cambiar el pipeline; definir perfiles de transcodificación en vivo según calidad, recursos y latencia observados. Después, añadir calidades adaptativas a los videos bajo demanda reutilizando el mismo reproductor.
 4. Auditar permisos de descarga, identidad y despliegue; cerrar documentación y evidencias.
-5. Evaluar el APK únicamente como extensión opcional.
+5. Validar y preparar para distribución el prototipo APK únicamente como extensión opcional.
 
 Referencias: [arquitectura multimedia](arquitectura-multimedia.md),
 [contenido programado](contenido-programado.md) y

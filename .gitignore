@@ -20,6 +20,9 @@
 /public/fonts-manifest.dev.json
 /public/hot
 /public/storage
+android/.gradle/
+android/local.properties
+android/**/build/
 /storage/*.key
 /storage/pail
 /vendor
