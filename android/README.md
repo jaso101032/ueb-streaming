@@ -4,8 +4,9 @@ La app abre directamente la señal continua en `https://uebtv.devs-ueb.tech/sena
 
 El archivo `public/descargas/uebtv.apk` incluido en el repositorio está firmado
 con un certificado **Android Debug**. Es un prototipo para pruebas, no una
-versión de distribución. Todavía no existe enlace ni QR público en la web y
-falta comprobar reproducción y navegación con mando en dispositivos reales.
+versión de distribución. La portada `/senal` muestra un QR y un enlace que
+descargan este archivo; antes de distribuirlo como versión definitiva falta
+comprobar instalación, reproducción y navegación con mando en dispositivos reales.
 
 El modo TV llena la pantalla, esconde navegación y paneles de gestión, mantiene la pantalla encendida y deja los controles del reproductor accesibles con el mando. La app incluye launcher para Android y Android TV, siempre que el dispositivo tenga Android System WebView actualizado.
 

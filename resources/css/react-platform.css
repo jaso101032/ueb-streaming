@@ -882,6 +882,23 @@ button:disabled {
 .channel-catalog { display:flex; align-items:center; gap:12px; border:1px solid #4c7fb8; padding:11px 14px; border-radius:10px; color:#174f90; font-size:12px; font-weight:750; background:#f8fbffcc; transition:background .2s,transform .2s; white-space:nowrap; }
 .channel-catalog:hover { color:#123e70; background:#fff; transform:translateY(-2px); }
 .channel-layout { grid-template-columns:minmax(0,1fr) 330px; gap:26px; }
+.channel-rail { display:grid; align-content:start; gap:18px; min-width:0; }
+.channel-app-card { overflow:hidden; border:1px solid #2e5480; border-radius:24px; color:#f4f9ff; background:linear-gradient(155deg,#102f56,#0a1b34 77%); box-shadow:0 16px 36px #071a3520; }
+.channel-app-art { position:relative; height:290px; overflow:hidden; background:radial-gradient(circle at 65% 40%,#326aab66,transparent 67%); }
+.channel-app-art-inner { position:relative; width:100%; aspect-ratio:960 / 800; }
+.channel-app-mascot { display:block; width:100%; height:auto; }
+.channel-app-qr { position:absolute; left:70.25%; top:46.8%; display:block; box-sizing:border-box; width:38%; aspect-ratio:1; padding:6px; transform:translate(-50%,-50%); border-radius:5px; background:#fff; box-shadow:0 5px 16px #071a3540; }
+.channel-app-qr img { display:block; width:100%; height:100%; object-fit:contain; image-rendering:crisp-edges; }
+.channel-app-copy { padding:0 21px 22px; }
+.channel-app-eyebrow { margin:0 0 8px; color:#9ecaff; font-size:10px; font-weight:800; letter-spacing:.16em; }
+.channel-app-copy h2 { margin:0; color:#fff; font-size:clamp(23px,2vw,29px); font-weight:750; line-height:1.12; letter-spacing:-.045em; }
+.channel-app-copy h2 span { color:#a7d3ff; animation:channel-app-glow 3.6s ease-in-out infinite; }
+@keyframes channel-app-glow { 50% { color:#fff; text-shadow:0 0 15px #8ac8ff9c; } }
+.channel-app-copy > p:not(.channel-app-eyebrow) { margin:12px 0 16px; color:#c3d6ee; font-size:12px; line-height:1.55; }
+.channel-app-download { display:flex; align-items:center; justify-content:space-between; min-height:42px; padding:10px 14px; border:1px solid #95c8ff; border-radius:10px; background:#e9f4ff; color:#123967; font-size:12px; font-weight:800; text-decoration:none; transition:background .18s,transform .18s; }
+.channel-app-download:hover { background:#fff; color:#0c2c55; transform:translateY(-2px); }
+.channel-app-copy small { display:block; margin-top:10px; color:#9db9d9; font-size:10px; line-height:1.4; }
+@media(prefers-reduced-motion:reduce) { .channel-app-copy h2 span { animation:none; } .channel-app-download { transition:none; } }
 .channel-main { min-width:0; overflow:hidden; border:1px solid #d7e4f3; border-radius:24px; background:#fff; box-shadow:0 18px 45px #071a3520; }
 .channel-screen-frame { background:#07172c; border:0; border-radius:0; overflow:hidden; box-shadow:none; }
 .channel-screen-bar { height:52px; padding:0 22px; display:flex; align-items:center; justify-content:space-between; gap:12px; color:#f5f9ff; }
@@ -933,17 +950,19 @@ button:disabled {
 .channel-total p { font-size:11px; color:#b0c6df; line-height:1.7; margin-top:10px; }
 .channel-agenda-note { margin:18px 24px 24px; color:#7c8ca2; font-size:10px; line-height:1.7; }
 @media(min-width:1001px) and (max-width:1200px) { .channel-layout { grid-template-columns:minmax(0,1fr) 280px; gap:20px; } .channel-idle-caption { margin-bottom:18px; } .channel-screen.is-idle { aspect-ratio:auto; min-height:380px; } }
-@media(max-width:1000px) { .channel-layout { grid-template-columns:minmax(0,1fr); } .channel-next { max-width:none; } .channel-idle { min-height:100%; } }
+@media(max-width:1000px) { .channel-layout { grid-template-columns:minmax(0,1fr); } .channel-rail { grid-template-columns:repeat(2,minmax(0,1fr)); } .channel-next { max-width:none; } .channel-idle { min-height:100%; } }
+@media(max-width:700px) { .channel-rail { grid-template-columns:minmax(0,1fr); } .channel-app-art { height:clamp(275px,80vw,315px); } }
 @media(max-width:600px) { .uebtv-catalog-search { display:block; padding:0; overflow:hidden; } .uebtv-catalog-filter-toggle { display:flex; align-items:center; width:100%; min-height:48px; gap:9px; padding:12px 15px; border:0; border-radius:0; background:transparent; color:#174f90; box-shadow:none; font-size:13px; font-weight:750; text-align:left; } .uebtv-catalog-filter-toggle:hover { background:#eff6ff; transform:none; } .uebtv-catalog-filter-toggle > span { display:grid; place-items:center; width:23px; height:23px; border-radius:7px; background:#e2efff; color:#1a61aa; font-size:18px; line-height:1; } .uebtv-catalog-filter-toggle small { display:grid; place-items:center; min-width:18px; height:18px; padding:0 5px; border-radius:10px; background:#e63756; color:#fff; font-size:10px; } .uebtv-catalog-filter-toggle b { margin-left:auto; font-size:17px; font-weight:500; transition:transform .2s; } .uebtv-catalog-search.is-open .uebtv-catalog-filter-toggle b { transform:rotate(180deg); } .uebtv-catalog-search-fields { display:none; padding:0 16px 16px; } .uebtv-catalog-search.is-open .uebtv-catalog-search-fields { display:flex; flex-wrap:wrap; align-items:stretch; gap:12px; border-top:1px solid #dce8f5; } .uebtv-catalog-search-fields > div { flex:1 1 100%; } .uebtv-catalog-search-fields > :is(button,a) { display:inline-flex; flex:1 1 calc(50% - 6px); align-items:center; justify-content:center; min-height:44px; padding-inline:10px; } .uebtv-catalog-card__visual { height:auto; aspect-ratio:16 / 9; } .uebtv-catalog-card__body { min-height:0; padding:15px; } .uebtv-catalog-card__body h3 { margin-top:7px; font-size:17px; } .uebtv-catalog-card__meta { margin-top:11px; padding-top:10px; border-top:1px solid #e2ebf5; } .uebtv-catalog-card__status { top:10px; right:10px; font-size:9px; } .channel-heading { align-items:flex-start; flex-direction:column; gap:9px; margin-bottom:12px; padding:14px 15px 13px; border-radius:15px; } .channel-heading .studio-eyebrow { font-size:7px; } .channel-heading h1 { margin:5px 0 0; font-size:clamp(23px,7.5vw,27px); } .channel-heading > div > p:last-child { display:none; } .channel-heading-actions { width:100%; justify-content:space-between; gap:10px; } .channel-institution-mark { width:92px; max-height:38px; } .channel-catalog { align-self:flex-start; min-height:34px; padding:7px 10px; font-size:10px; } .channel-page { padding-top:16px; } .channel-main { border-radius:16px; } .channel-screen-bar { height:38px; padding-inline:12px; } .channel-screen-bar small { display:none; } .channel-screen.is-idle { aspect-ratio:auto; min-height:370px; } .channel-idle { min-height:370px; padding:32px 22px 60px; } .channel-idle-footer { left:20px; right:20px; font-size:8px; } .channel-idle-footer span:last-child { display:none; } .channel-now { padding:15px 14px 18px; } .channel-now h2 { margin:0 0 7px; font-size:21px; } .channel-now p { margin:0; font-size:12px; line-height:1.6; } .channel-auto { font-size:10px; } .channel-next { border-radius:16px; } }
 
 /* Full-screen audience view used by the Android TV remote app. */
 html.uebtv-tv-mode,html.uebtv-tv-mode body { width:100%; height:100%; margin:0; overflow:hidden; background:#000; }
 html.uebtv-tv-mode #uebtv-platform,html.uebtv-tv-mode #uebtv-platform > .min-h-screen { display:block!important; width:100%; height:100%; min-height:0!important; overflow:hidden; }
 html.uebtv-tv-mode #uebtv-platform > .min-h-screen > div.flex-grow { height:100%; min-height:0; }
-html.uebtv-tv-mode :is(.studio-skip,.studio-header,.studio-sidebar,.uebtv-footer,.studio-alert,.channel-heading,.channel-now,.channel-next) { display:none!important; }
+html.uebtv-tv-mode :is(.studio-skip,.studio-header,.studio-sidebar,.uebtv-footer,.studio-alert,.channel-heading,.channel-now,.channel-next,.channel-app-card) { display:none!important; }
 html.uebtv-tv-mode #contenido { width:100%; height:100%; min-height:0; margin:0; overflow:hidden; }
 html.uebtv-tv-mode .channel-page--tv { display:block; width:100%; max-width:none; height:100%; margin:0; padding:0; }
 html.uebtv-tv-mode .channel-layout { display:block; width:100%; height:100%; }
+html.uebtv-tv-mode .channel-rail { display:none!important; }
 html.uebtv-tv-mode .channel-main { width:100%; height:100%; border:0; border-radius:0; box-shadow:none; background:#000; }
 html.uebtv-tv-mode .channel-screen-frame { display:flex; width:100%; height:100%; flex-direction:column; background:#000; }
 html.uebtv-tv-mode .channel-screen-bar,html.uebtv-tv-mode .react-player-label { display:none!important; }

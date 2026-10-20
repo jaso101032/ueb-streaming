@@ -409,3 +409,46 @@ html[data-theme="dark"] .watch-experience .uebtv-chat-message__meta strong { col
     .studio-header--operator .studio-menu-toggle { width:36px; height:36px; }
 }
 @media(prefers-reduced-motion:reduce) { .studio-theme-toggle { transition:none; } }
+
+/* Conversation cards, with a compact expandable presentation on phones. */
+.watch-experience .uebtv-live-chat__content { display:flex; flex:1 1 auto; min-height:0; flex-direction:column; }
+.watch-experience .uebtv-live-chat__header-actions { display:flex; align-items:center; gap:9px; flex:0 0 auto; }
+.watch-experience .uebtv-chat-expand,.watch-experience .uebtv-chat-preview { display:none; }
+.watch-experience .uebtv-live-chat__messages { gap:10px; padding:13px; background:#edf3fa; }
+.watch-experience .uebtv-chat-message { width:100%; max-width:none; gap:11px; padding:12px; border:1px solid #d5e2f0; border-radius:14px; background:#fff; box-shadow:0 3px 12px #173c6710; }
+.watch-experience .uebtv-chat-avatar { flex:0 0 34px; width:34px; height:34px; border-color:#b5d0ed; background:#e5f1ff; font-size:12px; }
+.watch-experience .uebtv-chat-message__meta { min-height:18px; padding:0; }
+.watch-experience .uebtv-chat-message__meta strong { color:#173c66; font-size:12px; font-weight:750; }
+.watch-experience .uebtv-chat-bubble { width:auto; margin:4px 0 0; padding:0; border:0; border-radius:0; background:transparent; color:#203b5c; font-size:14px; font-weight:450; line-height:1.55; box-shadow:none; }
+.watch-experience .uebtv-chat-bubble::before { display:none; }
+.watch-experience .uebtv-chat-time { margin-top:8px; }
+.watch-experience .uebtv-live-chat__form input { border-color:#afc5df; background:#fff; font-size:14px; }
+html[data-theme="dark"] .watch-experience .uebtv-live-chat__messages { background:#0b1b30; }
+html[data-theme="dark"] .watch-experience .uebtv-chat-message { border-color:#345574; background:#142d4a; box-shadow:0 3px 12px #0003; }
+html[data-theme="dark"] .watch-experience .uebtv-chat-avatar { border-color:#426f9e; background:#204b76; color:#e3f2ff; }
+html[data-theme="dark"] .watch-experience .uebtv-chat-message__meta strong { color:#c6e0ff; }
+html[data-theme="dark"] .watch-experience .uebtv-chat-bubble { border:0; background:transparent; color:#f1f6ff; box-shadow:none; }
+
+@media(max-width:650px) {
+    .watch-experience .uebtv-watch-main { order:1; }
+    .watch-experience .uebtv-live-chat { order:2; }
+    .watch-experience .uebtv-watch-aside--left { order:3; }
+    .watch-experience .uebtv-live-chat { min-height:0; height:auto!important; }
+    .watch-experience .uebtv-live-chat.is-mobile-collapsed .uebtv-live-chat__content { display:none; }
+    .watch-experience .uebtv-live-chat__content { flex:0 0 auto; }
+    .watch-experience .uebtv-live-chat__header { padding:13px 14px; }
+    .watch-experience .uebtv-live-chat__header h2 { font-size:17px; }
+    .watch-experience .uebtv-chat-expand { display:grid; place-items:center; flex:0 0 40px; width:40px; height:40px; padding:0; border:1px solid #668ab2; border-radius:10px; background:#194371; color:#f5faff; cursor:pointer; }
+    .watch-experience .uebtv-chat-expand svg { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; transition:transform .18s; }
+    .watch-experience .is-mobile-open .uebtv-chat-expand svg { transform:rotate(180deg); }
+    .watch-experience .uebtv-chat-expand:focus-visible { outline:3px solid #9bc9ff; outline-offset:2px; }
+    .watch-experience .is-mobile-collapsed .uebtv-chat-preview { display:flex; gap:7px; min-width:0; margin:0; padding:10px 14px 13px; border-top:1px solid #d5e2f0; color:#4c6887; font-size:12px; line-height:1.35; }
+    .watch-experience .uebtv-chat-preview strong { flex:0 0 auto; color:#174a80; }
+    .watch-experience .uebtv-chat-preview span { overflow:hidden; min-width:0; text-overflow:ellipsis; white-space:nowrap; }
+    .watch-experience .uebtv-live-chat__messages { flex:0 1 auto; gap:9px; padding:10px; min-height:130px; max-height:340px; }
+    .watch-experience .uebtv-chat-message { padding:11px; }
+    .watch-experience .uebtv-chat-bubble { font-size:14px; }
+    html[data-theme="dark"] .watch-experience .is-mobile-collapsed .uebtv-chat-preview { border-color:#345574; color:#b5cde6; }
+    html[data-theme="dark"] .watch-experience .uebtv-chat-preview strong { color:#a7d0ff; }
+}
+@media(prefers-reduced-motion:reduce) { .watch-experience .uebtv-chat-expand svg { transition:none; } }

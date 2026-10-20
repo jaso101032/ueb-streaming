@@ -45,6 +45,32 @@ test("Android TV mode keeps advertising non-pausable and its controls reachable"
     await page.keyboard.press("Space");
     await expect(video).toHaveJSProperty("paused", false);
 });
+test("channel download card keeps its QR visible on desktop and mobile without entering TV mode", async ({ page }) => {
+    await page.goto("/senal");
+    const card = page.locator(".channel-app-card");
+    const qr = card.getByRole("img", { name: "Código QR para descargar UEBTV" });
+    await expect(card).toBeVisible();
+    await expect(qr).toHaveJSProperty("naturalWidth", 400);
+    const art = await card.locator(".channel-app-art").boundingBox();
+    const mascot = await card.locator(".channel-app-mascot").boundingBox();
+    expect(mascot.x).toBeGreaterThanOrEqual(art.x);
+    expect(mascot.x + mascot.width).toBeLessThanOrEqual(art.x + art.width);
+    await expect(card.getByRole("link", { name: "Descargar APK" })).toHaveAttribute("href", "/descargas/uebtv.apk");
+    await expect(card.getByRole("link")).toHaveCount(1);
+    await expect(qr.locator("xpath=ancestor::a")).toHaveCount(0);
+    await card.screenshot({ path: "/tmp/uebtv-download-card-desktop.png" });
+    const apk = await page.request.get("/descargas/uebtv.apk");
+    expect(apk.status()).toBe(200);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect(card).toBeVisible();
+    await expect(page.locator("body")).toHaveJSProperty("scrollWidth", 390);
+    await card.screenshot({ path: "/tmp/uebtv-download-card-mobile.png" });
+    await page.setViewportSize({ width: 320, height: 720 });
+    await expect(page.locator("body")).toHaveJSProperty("scrollWidth", 320);
+    await expect(qr).toBeVisible();
+    await page.goto("/senal?modo=tv");
+    await expect(card).toHaveCount(0);
+});
 test("public navigation menu is usable on mobile and desktop", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/senal");
@@ -329,6 +355,39 @@ test("chat sends and moderates safely; regular user has no destructive controls"
     await expect(
         page.getByRole("button", { name: "Eliminar evento" }),
     ).toHaveCount(0);
+});
+
+test("mobile conversation folds below the video without losing its contents", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.route("**/eventos/2/chat", (route) => route.request().method() === "GET"
+        ? route.fulfill({ json: [{ id: 901, user: "María", message: "Qué buena transmisión de nuestra universidad." }] })
+        : route.continue());
+    await page.goto("/eventos/2");
+    const chat = page.locator(".uebtv-live-chat");
+    const toggle = chat.getByRole("button", { name: "Mostrar comentarios" });
+    await expect(chat).toBeVisible();
+    await expect(chat.locator(".uebtv-live-chat__content")).toBeHidden();
+    await expect(chat.locator(".uebtv-chat-preview")).toBeVisible();
+    await expect(chat.locator(".uebtv-chat-preview")).toContainText("María");
+    const player = await page.locator(".uebtv-watch-main").boundingBox();
+    const panel = await chat.boundingBox();
+    expect(panel.y).toBeGreaterThanOrEqual(player.y + player.height);
+    await expect(page.locator("body")).toHaveJSProperty("scrollWidth", 390);
+    await chat.screenshot({ path: "/tmp/uebtv-chat-mobile-collapsed.png" });
+    await toggle.click();
+    await expect(chat.getByRole("button", { name: "Ocultar comentarios" })).toHaveAttribute("aria-expanded", "true");
+    await expect(chat.locator(".uebtv-live-chat__messages")).toBeVisible();
+    await expect(chat.locator(".uebtv-chat-message")).toContainText("Qué buena transmisión");
+    await chat.screenshot({ path: "/tmp/uebtv-chat-mobile-open.png" });
+    await page.locator("html").evaluate((root) => root.setAttribute("data-theme", "dark"));
+    await expect(chat.locator(".uebtv-live-chat__messages")).toBeVisible();
+    await chat.screenshot({ path: "/tmp/uebtv-chat-mobile-dark.png" });
+    await page.setViewportSize({ width: 320, height: 720 });
+    await expect(page.locator("body")).toHaveJSProperty("scrollWidth", 320);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await expect(chat.locator(".uebtv-live-chat__messages")).toBeVisible();
+    await expect(chat.locator(".uebtv-chat-expand")).toBeHidden();
+    await chat.screenshot({ path: "/tmp/uebtv-chat-desktop-dark.png" });
 });
 
 test("chat preserves drafts on rejected sends, escapes content and reconnects", async ({

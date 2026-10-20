@@ -2,28 +2,29 @@ import { test, expect } from "@playwright/test";
 
 test("the archived chat follows recording time, including backward seeks", async ({ page }) => {
     await page.goto("/eventos/1");
+    const comments = page.locator(".uebtv-live-chat__messages");
     await expect(page.locator(".uebtv-chat-message")).toHaveCount(1);
-    await expect(page.getByText("Comentario del minuto cinco.")).toHaveCount(0);
+    await expect(comments.getByText("Comentario del minuto cinco.")).toHaveCount(0);
 
     await page.locator("video").evaluate((video) => {
         video.currentTime = 6;
         video.dispatchEvent(new Event("timeupdate"));
     });
-    await expect(page.getByText("Comentario del minuto cinco.")).toBeVisible();
-    await expect(page.getByText("Comentario del minuto cuarenta.")).toHaveCount(0);
+    await expect(comments.getByText("Comentario del minuto cinco.")).toBeVisible();
+    await expect(comments.getByText("Comentario del minuto cuarenta.")).toHaveCount(0);
 
     await page.locator("video").evaluate((video) => {
         video.currentTime = 42;
         video.dispatchEvent(new Event("seeked"));
     });
-    await expect(page.getByText("Comentario del minuto cuarenta.")).toBeVisible();
+    await expect(comments.getByText("Comentario del minuto cuarenta.")).toBeVisible();
 
     await page.locator("video").evaluate((video) => {
         video.currentTime = 0;
         video.dispatchEvent(new Event("seeked"));
     });
-    await expect(page.getByText("Comentario del minuto cinco.")).toHaveCount(0);
-    await expect(page.getByText("Comentario del minuto cuarenta.")).toHaveCount(0);
+    await expect(comments.getByText("Comentario del minuto cinco.")).toHaveCount(0);
+    await expect(comments.getByText("Comentario del minuto cuarenta.")).toHaveCount(0);
 });
 
 test("older archived comments remain accessible without rendering every message at once", async ({ page }) => {

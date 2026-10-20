@@ -366,6 +366,24 @@ export default function Channel({ stateUrl }) {
                         )}
                     </div>
                 </section>
+                <div className="channel-rail">
+                    {!tvMode && <section className="channel-app-card" aria-labelledby="channel-app-title">
+                        <div className="channel-app-art">
+                            <div className="channel-app-art-inner">
+                                <img className="channel-app-mascot" src="/images/download/zorrito-qr-gafas.webp" alt="" width="960" height="800" loading="lazy" />
+                                <div className="channel-app-qr">
+                                    <img src="/images/download/uebtv-apk-qr.png" alt="Código QR para descargar UEBTV" width="400" height="400" />
+                                </div>
+                            </div>
+                        </div>
+                        <div className="channel-app-copy">
+                            <p className="channel-app-eyebrow">UEBTV EN TU PANTALLA</p>
+                            <h2 id="channel-app-title">Lleva la señal <span>contigo.</span></h2>
+                            <p>Escanea el QR desde otro dispositivo o descarga el APK aquí.</p>
+                            <a className="channel-app-download" href="/descargas/uebtv.apk" download>Descargar APK <span aria-hidden="true">↗</span></a>
+                            <small>Para Android y Android TV.</small>
+                        </div>
+                    </section>}
                 <aside className="channel-next" aria-label="Próximas emisiones">
                     <div className="channel-next-heading">
                         <p className="studio-eyebrow">LA PROGRAMACIÓN</p>
@@ -461,6 +479,7 @@ export default function Channel({ stateUrl }) {
                         desplazar estos horarios.
                     </p>
                 </aside>
+                </div>
             </div>
         </div>
     );

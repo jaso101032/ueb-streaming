@@ -24,6 +24,7 @@ export default function Chat({
         [removing, setRemoving] = useState(null),
         [enabled, setEnabled] = useState(chatEnabled),
         [restricted, setRestricted] = useState(chatRestricted),
+        [mobileOpen, setMobileOpen] = useState(false),
         [visibleLimit, setVisibleLimit] = useState(80),
         [version, setVersion] = useState(0);
     const replay = isRecording && seekable;
@@ -211,8 +212,9 @@ export default function Chat({
             setRemoving(null);
         }
     }
+    const latestMessage = visibleMessages.at(-1);
     return (
-        <aside className="uebtv-live-chat" ref={panelRef}>
+        <aside className={`uebtv-live-chat ${mobileOpen ? "is-mobile-open" : "is-mobile-collapsed"}`} ref={panelRef}>
             <div className="uebtv-live-chat__header">
                 <div>
                     <p className="uebtv-kicker">
@@ -224,10 +226,19 @@ export default function Chat({
                         {commentsOpen ? "Comparte el momento con la comunidad." : !canComment ? "Mensajes conservados junto a cada momento del video." : restricted ? "Tu cuenta no puede comentar; puedes leer la conversación." : "Los comentarios están desactivados; el historial sigue visible."}
                     </p>
                 </div>
-                <span className={`uebtv-chat-status ${commentsOpen ? "is-open" : "is-closed"}`}>
-                    <i aria-hidden="true" />{commentsOpen ? "Activo" : "Solo lectura"}
-                </span>
+                <div className="uebtv-live-chat__header-actions">
+                    <span className={`uebtv-chat-status ${commentsOpen ? "is-open" : "is-closed"}`}>
+                        <i aria-hidden="true" />{commentsOpen ? "Activo" : "Solo lectura"}
+                    </span>
+                    <button type="button" className="uebtv-chat-expand" aria-controls="uebtv-chat-content" aria-expanded={mobileOpen} aria-label={mobileOpen ? "Ocultar comentarios" : "Mostrar comentarios"} onClick={() => setMobileOpen((open) => !open)}>
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+                    </button>
+                </div>
             </div>
+            <p className="uebtv-chat-preview">
+                {latestMessage ? <><strong>{latestMessage.user}</strong><span>{latestMessage.message}</span></> : replay ? "Los comentarios aparecerán mientras avanza el video." : "Abre el chat para participar en la conversación."}
+            </p>
+            <div className="uebtv-live-chat__content" id="uebtv-chat-content">
             {chatToggleUrl && canComment && <form method="POST" action={chatToggleUrl} className="uebtv-chat-control">
                 <input type="hidden" name="_token" value={csrf} />
                 <input type="hidden" name="enabled" value={enabled ? "0" : "1"} />
@@ -352,6 +363,7 @@ export default function Chat({
                     </a>
                 </div>
             )}
+            </div>
         </aside>
     );
 }
