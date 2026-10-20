@@ -359,7 +359,7 @@ button:disabled {
 }
 .studio-brand--facagei { gap:0; }
 .studio-brand--facagei .studio-brand-mascot { margin-right:-10px; }
-.facagei-brand-logo--header { display:block; box-sizing:border-box; width:230px; height:104px; object-fit:fill; }
+.facagei-brand-logo--header { display:block; box-sizing:border-box; width:auto; height:104px; object-fit:contain; }
 /* On desktop the channel identity starts at the viewport edge, while the
    account controls retain their previous right-hand alignment. */
 @media (min-width:1101px) {
@@ -411,7 +411,7 @@ button:disabled {
     min-height: 58px;
 }
 .uebtv-brand-logo--auth { width:188px; height:94px; background:transparent; }
-.facagei-brand-logo--auth { display:block; width:230px; height:104px; object-fit:fill; }
+.facagei-brand-logo--auth { display:block; width:auto; height:104px; object-fit:contain; }
 .ueb-brand-logo--auth { display:block; width:220px; height:auto; object-fit:contain; filter:brightness(0) invert(1); }
 .react-auth-mascot {
     display:block;

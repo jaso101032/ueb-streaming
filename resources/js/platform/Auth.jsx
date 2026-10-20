@@ -67,8 +67,8 @@ export default function Auth({ mode, action, name, email, token, forgotUrl }) {
                         className={useUebLogo ? "ueb-brand-logo--auth" : "facagei-brand-logo--auth"}
                         src={useUebLogo ? shell.logo : shell.headerLogo}
                         alt={useUebLogo ? "Universidad Estatal de Bolívar" : "FACAGEI · Facultad de Ciencias Administrativas, Gestión Empresarial e Informática"}
-                        width={useUebLogo ? "200" : "230"}
-                        height={useUebLogo ? "42" : "104"}
+                        width={useUebLogo ? "200" : "1665"}
+                        height={useUebLogo ? "42" : "945"}
                     />
                 </a>
                 <div>

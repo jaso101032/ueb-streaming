@@ -283,7 +283,7 @@ html[data-theme="dark"] .watch-experience .uebtv-chat-message__meta strong { col
 /* Phone-first refinement: preserve the important action, avoid compressed desktop rows. */
 @media (max-width:640px) {
     .studio-header-inner { min-height:82px; padding-inline:14px; gap:10px; }
-    .facagei-brand-logo--header { width:clamp(120px,36vw,160px); height:auto; aspect-ratio:2.2; }
+    .facagei-brand-logo--header { width:clamp(120px,36vw,145px); height:auto; }
     .uebtv-brand-logo--header { width:138px; height:73px; padding:0; border-radius:0; }
     .studio-brand-mascot { width:40px; height:60px; margin-right:-8px; transform:translate(3px,4px) rotate(6deg); }
     .studio-header--operator .uebtv-brand-logo--header { width:105px; height:53px; }

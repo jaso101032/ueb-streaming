@@ -108,8 +108,8 @@ export default function Shell({ shell, children }) {
                                 className="facagei-brand-logo--header"
                                 src={shell.headerLogo}
                                 alt="FACAGEI · Facultad de Ciencias Administrativas, Gestión Empresarial e Informática"
-                                width="230"
-                                height="104"
+                                width="1665"
+                                height="945"
                             />
                         </a>
                         <div className="studio-account">

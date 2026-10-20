@@ -71,6 +71,17 @@ test("channel download card keeps its QR visible on desktop and mobile without e
     await page.goto("/senal?modo=tv");
     await expect(card).toHaveCount(0);
 });
+test("FACAGEI wordmark keeps the original proportions on desktop and mobile", async ({ page }) => {
+    await page.goto("/senal");
+    const logo = page.locator(".facagei-brand-logo--header");
+    await expect(logo).toHaveJSProperty("naturalWidth", 1665);
+    for (const width of [1440, 390, 320]) {
+        await page.setViewportSize({ width, height: 900 });
+        const box = await logo.boundingBox();
+        expect(box.width / box.height).toBeCloseTo(1665 / 945, 2);
+        await page.locator(".studio-header").screenshot({ path: `/tmp/uebtv-header-facagei-${width}.png` });
+    }
+});
 test("public navigation menu is usable on mobile and desktop", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/senal");
