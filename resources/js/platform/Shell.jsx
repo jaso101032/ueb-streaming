@@ -183,6 +183,7 @@ export default function Shell({ shell, children }) {
                                 <a href={shell.user ? shell.profile : shell.register}>
                                     {shell.user ? "Mi perfil" : "Crear cuenta"}<span aria-hidden="true">↗</span>
                                 </a>
+                                {shell.user && <Action url={shell.logout} className="studio-menu-signout" ariaLabel="Cerrar sesión desde el menú">Cerrar sesión <span aria-hidden="true">↗</span></Action>}
                             </div>
                         </nav>
                     )}
@@ -225,6 +226,7 @@ export default function Shell({ shell, children }) {
                             </a>
                         </nav>
                         {shell.user?.role === "admin" && <StorageMeter storage={shell.storage} />}
+                        <Action url={shell.logout} className="studio-sidebar-signout" ariaLabel="Cerrar sesión desde el menú">Cerrar sesión <span aria-hidden="true">↗</span></Action>
                         <div className="studio-sidebar-footer">
                             <UniversityMark className="university-mark--sidebar" />
                         </div>

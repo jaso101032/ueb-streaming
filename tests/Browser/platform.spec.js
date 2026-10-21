@@ -11,6 +11,22 @@ test("notification bell keeps preferences and fits a narrow mobile header", asyn
     await page.setViewportSize({ width: 320, height: 720 });
     await login(page);
     await page.goto("/senal");
+    for (const width of [320, 393]) {
+        await page.setViewportSize({ width, height: 720 });
+        const brand = await page.locator(".studio-header .studio-brand").boundingBox();
+        const bell = await page.locator(".studio-notifications__toggle").boundingBox();
+        const theme = await page.locator(".studio-theme-toggle").boundingBox();
+        const menu = await page.locator(".studio-menu-toggle").boundingBox();
+        expect(brand.x + brand.width).toBeLessThanOrEqual(bell.x + 1);
+        expect(bell.x + bell.width).toBeLessThanOrEqual(theme.x + 1);
+        expect(theme.x + theme.width).toBeLessThanOrEqual(menu.x + 1);
+        await expect(page.locator(".studio-account .studio-signout")).toBeHidden();
+        await expect(page.locator("body")).toHaveJSProperty("scrollWidth", width);
+    }
+    await page.setViewportSize({ width: 320, height: 720 });
+    await page.locator(".studio-menu-toggle").click();
+    await expect(page.getByRole("button", { name: "Cerrar sesión desde el menú" })).toBeVisible();
+    await page.locator(".studio-menu-toggle").click();
     await page.getByRole("button", { name: /Notificaciones/ }).click();
     await expect(page.getByRole("heading", { name: "Notificaciones" })).toBeVisible();
     const live = page.getByRole("checkbox", { name: "Directos" });
@@ -21,6 +37,16 @@ test("notification bell keeps preferences and fits a narrow mobile header", asyn
     await page.getByRole("button", { name: /Notificaciones/ }).click();
     await expect(page.getByRole("checkbox", { name: "Directos" })).not.toBeChecked();
     await page.getByRole("checkbox", { name: "Directos" }).check();
+    await expect(page.locator("body")).toHaveJSProperty("scrollWidth", 320);
+});
+test("student mobile menu keeps account actions outside the compact header", async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 720 });
+    await login(page, "student@ui.test");
+    await page.goto("/eventos");
+    await expect(page.locator(".studio-account .studio-signout")).toBeHidden();
+    await page.locator(".studio-menu-toggle").click();
+    await expect(page.getByRole("link", { name: /Mi perfil/ })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Cerrar sesión desde el menú" })).toBeVisible();
     await expect(page.locator("body")).toHaveJSProperty("scrollWidth", 320);
 });
 test("Android TV channel mode shows a full-screen viewer without the website shell", async ({ page }) => {

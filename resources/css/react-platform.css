@@ -1012,10 +1012,3 @@ html[data-theme="dark"] .studio-notifications__item-type { color:#95c9ff; }
 html[data-theme="dark"] .studio-notifications__item > span:not(.studio-notifications__item-type) { color:#c7d9ed; }
 html[data-theme="dark"] .studio-notifications__heading button { background:#25476e; color:#fff; }
 @media(max-width:640px) { .studio-notifications__toggle { width:34px; height:34px; } .studio-notifications__panel { position:fixed; top:82px; left:12px; right:12px; width:auto; max-height:calc(100dvh - 95px); } }
-@media(max-width:380px) {
-    .studio-header .studio-account .studio-avatar { display:none; }
-    .studio-header.studio-header--operator .studio-brand-mascot,.studio-header:not(.studio-header--operator) .studio-brand-mascot { width:28px; height:auto; margin-right:-6px; }
-    .studio-header.studio-header--operator .facagei-brand-logo--header,.studio-header:not(.studio-header--operator) .facagei-brand-logo--header { width:110px; height:auto; }
-    .studio-header .studio-notifications__toggle { width:30px; height:30px; }
-    .studio-header.studio-header--operator .studio-account,.studio-header:not(.studio-header--operator) .studio-account { gap:3px; }
-}

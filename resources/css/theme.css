@@ -395,19 +395,6 @@ html[data-theme="dark"] .watch-experience .uebtv-chat-message__meta strong { col
 }
 
 @media(max-width:640px) { .studio-theme-toggle { width:34px; height:34px; } .studio-theme-toggle svg { width:16px; height:16px; } }
-@media(max-width:380px) {
-    .studio-header:not(.studio-header--operator) .studio-header-inner { gap:4px; padding-inline:8px; }
-    .studio-header:not(.studio-header--operator) .facagei-brand-logo--header { width:clamp(120px,36vw,160px); }
-    .studio-header:not(.studio-header--operator) .studio-account { gap:4px; }
-    .studio-header:not(.studio-header--operator) .studio-theme-toggle { width:30px; height:30px; }
-    .studio-header:not(.studio-header--operator) .studio-signout { padding-inline:6px; font-size:10px; }
-    .studio-header:not(.studio-header--operator) .studio-menu-toggle { width:34px; height:34px; }
-    .studio-header--operator .studio-header-inner { gap:4px; padding-inline:8px; }
-    .studio-header--operator .facagei-brand-logo--header { width:clamp(120px,36vw,160px); }
-    .studio-header--operator .studio-theme-toggle { width:30px; height:30px; }
-    .studio-header--operator .studio-signout { padding-inline:5px; font-size:10px; }
-    .studio-header--operator .studio-menu-toggle { width:36px; height:36px; }
-}
 @media(prefers-reduced-motion:reduce) { .studio-theme-toggle { transition:none; } }
 
 /* Conversation cards, with a compact expandable presentation on phones. */
@@ -452,3 +439,27 @@ html[data-theme="dark"] .watch-experience .uebtv-chat-bubble { border:0; backgro
     html[data-theme="dark"] .watch-experience .uebtv-chat-preview strong { color:#a7d0ff; }
 }
 @media(prefers-reduced-motion:reduce) { .watch-experience .uebtv-chat-expand svg { transition:none; } }
+
+/* Keep the institutional mark legible without squeezing phone navigation. */
+.studio-guest-menu__account > form,.studio-sidebar > form { display:none; }
+@media(max-width:640px) {
+    .studio-header .studio-header-inner { min-height:68px; padding-inline:12px; gap:8px; }
+    .studio-header .studio-brand--facagei { flex:0 1 auto; min-width:0; gap:0; }
+    .studio-header .studio-brand--facagei .studio-brand-mascot { width:30px; height:46px; margin-right:-5px; transform:translate(2px,3px) rotate(5deg); }
+    .studio-header .facagei-brand-logo--header { width:clamp(112px,31vw,132px); height:auto; max-height:70px; }
+    .studio-header .studio-account { flex:0 0 auto; gap:6px; margin-left:auto; }
+    .studio-header .studio-account .studio-avatar,.studio-header .studio-account > form { display:none; }
+    .studio-header .studio-notifications__toggle,.studio-header .studio-theme-toggle,.studio-header .studio-menu-toggle { width:38px; height:38px; min-width:38px; }
+    .studio-notifications__panel { top:76px; max-height:calc(100dvh - 88px); }
+    .studio-guest-menu__account > form,.studio-sidebar > form { display:block; }
+    .studio-menu-signout,.studio-sidebar-signout { display:flex; align-items:center; justify-content:space-between; width:100%; min-height:42px; padding:0 14px; border:1px solid #5483b6; border-radius:9px; background:#183d65; color:#eff6ff; font-size:13px; font-weight:700; text-align:left; }
+    .studio-menu-signout:hover,.studio-sidebar-signout:hover { background:#245580; }
+    .studio-sidebar > form { margin-top:12px; }
+}
+@media(max-width:350px) {
+    .studio-header .studio-header-inner { padding-inline:8px; gap:4px; }
+    .studio-header .facagei-brand-logo--header { width:108px; }
+    .studio-header .studio-brand--facagei .studio-brand-mascot { width:26px; height:42px; }
+    .studio-header .studio-account { gap:4px; }
+    .studio-header .studio-notifications__toggle,.studio-header .studio-theme-toggle,.studio-header .studio-menu-toggle { width:36px; height:36px; min-width:36px; }
+}
