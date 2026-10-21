@@ -124,6 +124,32 @@ test("FACAGEI wordmark keeps the original proportions on desktop and mobile", as
         await page.locator(".studio-header").screenshot({ path: `/tmp/uebtv-header-facagei-${width}.png` });
     }
 });
+test("video analytics exports a complete print-ready PDF report for the selected period", async ({ page }) => {
+    await page.addInitScript(() => {
+        window.__printRequested = false;
+        window.print = () => { window.__printRequested = true; };
+    });
+    await page.route("**/admin/eventos/*/estadisticas*", (route) => route.fulfill({ json: {
+        period: 7,
+        current: { views: 3, allTime: 12, peakDay: { date: "2026-10-19", label: "19/10", views: 2 }, growthPercent: 50, previousViews: 2 },
+        daily: [
+            { date: "2026-10-18", label: "18/10", views: 1 },
+            { date: "2026-10-19", label: "19/10", views: 2 },
+        ],
+        mostViewed: [{ id: 1, title: "Conferencia UEB", url: "/eventos/1", views: 3, type: "Grabación" }],
+        leastViewed: [{ id: 2, title: "Himno UEB", url: "/eventos/2", views: 0, type: "Programado" }],
+    } }));
+    await login(page);
+    await page.goto("/eventos");
+    await page.getByRole("button", { name: "Ver estadísticas" }).first().click();
+    await expect(page.getByRole("heading", { name: "Estadísticas de reproducción" })).toBeVisible();
+    const report = page.locator(".video-analytics-report");
+    await expect(report).toContainText("Conferencia UEB");
+    await expect(report).toContainText("Registro diario");
+    await expect(report).toContainText("Metodología.");
+    await page.getByRole("button", { name: "Exportar estadísticas a PDF" }).click();
+    await expect.poll(() => page.evaluate(() => window.__printRequested)).toBe(true);
+});
 test("public navigation menu is usable on mobile and desktop", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/senal");

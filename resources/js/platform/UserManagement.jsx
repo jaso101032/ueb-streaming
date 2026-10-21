@@ -28,7 +28,7 @@ function UserEdit({ user, roles, actions }) {
     const [role, setRole] = React.useState(user.role);
     return (
         <details className="users-edit">
-            <summary>Editar</summary>
+            <summary aria-label={`Editar cuenta de ${user.name}`} title={`Editar cuenta de ${user.name}`}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 5 5 5M4 20l4.2-.8L19 8.4a2.1 2.1 0 0 0-3-3L5.2 16.2 4 20Z" /></svg><span className="users-action-tooltip" role="tooltip">Editar</span></summary>
             <form method="POST" action={user.updateUrl} className="users-form">
                 <Token method="PUT" />
                 <Field name={`name-${user.id}`} label="Nombre">
@@ -92,7 +92,9 @@ export default function UserManagement({ users, pagination, filters, roles, stor
                         <span className={`users-role users-role--${user.role}`}>{roleNames[user.role] || user.role}</span>
                         <span className="users-verified">{user.verified ? "Verificada" : "Sin verificar"}</span>
                         <div className="users-actions"><UserEdit user={user} roles={roles} actions={operatorActions} />
-                            {!user.isCurrent && !user.hasEvents && !user.hasMessages && <Action url={user.deleteUrl} method="DELETE" confirm={`¿Eliminar la cuenta de ${user.name}?`} className="studio-delete">Eliminar</Action>}
+                            {!user.isCurrent && !user.hasEvents && !user.hasMessages
+                                ? <Action url={user.deleteUrl} method="DELETE" confirm={`¿Eliminar la cuenta de ${user.name}?`} className="studio-delete users-delete-icon" ariaLabel={`Eliminar cuenta de ${user.name}`}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6m4-6v6M6 7l1 13h10l1-13M9 7V4h6v3" /></svg><span className="users-action-tooltip" role="tooltip">Eliminar</span></Action>
+                                : <button type="button" className="studio-delete users-delete-disabled users-delete-icon" disabled aria-label={`No se puede eliminar la cuenta de ${user.name}`} title={user.isCurrent ? "No puedes eliminar tu propia cuenta" : "La cuenta tiene eventos o mensajes asociados"}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6m4-6v6M6 7l1 13h10l1-13M9 7V4h6v3" /></svg><span className="users-action-tooltip" role="tooltip">No disponible</span></button>}
                         </div>
                         {user.hasEvents && <p className="users-protected">Conserva eventos asociados.</p>}
                     </article>

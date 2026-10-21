@@ -75,8 +75,12 @@ export default function Catalog({
                         <p className="uebtv-kicker">
                             EXPLORA EL CONTENIDO
                         </p>
-                        <h1>
-                            Catálogo <em>UEBTV.</em>
+                        <h1 className="uebtv-catalog-title" aria-label="Catálogo UEB - TV">
+                            <span>Catálogo</span>
+                            <span className="channel-heading-title__mark" aria-hidden="true">
+                                <img src="/images/brand/ueb-wordmark.png" alt="" />
+                            </span>
+                            <span className="channel-heading-title__suffix">- TV</span>
                         </h1>
                         <p>
                             Eventos en vivo, próximos encuentros y grabaciones

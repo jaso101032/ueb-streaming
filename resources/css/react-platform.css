@@ -875,7 +875,10 @@ button:disabled {
 .channel-heading::after { content:""; position:absolute; width:300px; aspect-ratio:1; right:-130px; bottom:-210px; border:1px solid #7cace04d; border-radius:50%; box-shadow:0 0 0 34px #8eb9e315,0 0 0 68px #8eb9e30a; pointer-events:none; }
 .channel-heading > * { position:relative; z-index:1; }
 .channel-heading h1 { font-size:clamp(30px,3.2vw,46px); line-height:1.07; letter-spacing:-.055em; font-weight:750; margin:11px 0; color:#102744; }
-.channel-heading h1 em { font-style:normal; color:#2864ad; }
+.channel-heading .channel-heading-title { display:flex; align-items:center; flex-wrap:wrap; gap:0 .04em; letter-spacing:-.055em; }
+.channel-heading-title__mark { position:relative; display:block; flex:0 0 auto; width:2.2em; height:.9em; overflow:hidden; }
+.channel-heading-title__mark img { position:absolute; inset:0 auto auto 0; display:block; width:auto; max-width:none; height:100%; }
+.channel-heading-title__suffix { color:#102744; font-size:1em; font-weight:750; letter-spacing:-.055em; white-space:nowrap; }
 .channel-heading > div > p:last-child { color:#637892; font-size:15px; }
 .channel-heading-actions { display:flex; align-items:center; justify-content:flex-end; gap:20px; }
 .channel-institution-mark { display:block; width:clamp(180px,17vw,210px); height:auto; object-fit:contain; }

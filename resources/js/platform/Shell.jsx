@@ -56,7 +56,9 @@ function StorageMeter({ storage }) {
 
 export default function Shell({ shell, children }) {
     const [menu, setMenu] = useState(false);
+    const [creditsOpen, setCreditsOpen] = useState(false);
     const menuRef = useRef(null), menuButtonRef = useRef(null);
+    const creditsRef = useRef(null), creditsButtonRef = useRef(null);
     const currentPath = typeof window === "undefined" ? "" : window.location.pathname;
     const channelPath = new URL(shell.channel, "http://localhost").pathname;
     const catalogPath = new URL(shell.catalog, "http://localhost").pathname;
@@ -71,11 +73,19 @@ export default function Shell({ shell, children }) {
     });
     useEffect(() => {
         const fn = (e) => {
-            if (e.key === "Escape") setMenu(false);
+            if (e.key === "Escape") { setMenu(false); setCreditsOpen(false); }
         };
         window.addEventListener("keydown", fn);
         return () => window.removeEventListener("keydown", fn);
     }, []);
+    useEffect(() => {
+        if (!creditsOpen) return undefined;
+        const closeOutside = (event) => {
+            if (!creditsRef.current?.contains(event.target) && !creditsButtonRef.current?.contains(event.target)) setCreditsOpen(false);
+        };
+        document.addEventListener("pointerdown", closeOutside);
+        return () => document.removeEventListener("pointerdown", closeOutside);
+    }, [creditsOpen]);
     useEffect(() => {
         document.documentElement.dataset.theme = theme;
         window.localStorage.setItem("uebtv-theme", theme);
@@ -242,10 +252,13 @@ export default function Shell({ shell, children }) {
                     <main id="contenido" className="flex-grow" tabIndex="-1">
                         {children}
                     </main>
-                    <footer className="uebtv-footer">
-                        Desarrolladores · Javier Solis · Cristhian Rochina · Universidad Estatal de Bolívar
-                    </footer>
                 </div>
+            </div>
+            <div className="uebtv-credits-widget">
+                {creditsOpen && <div ref={creditsRef} id="uebtv-credits-panel" className="uebtv-credits-panel" role="status"><span className="uebtv-credits-panel__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3 14.6 8.3 20.5 9.1 16.2 13.2 17.2 19 12 16.2 6.8 19 7.8 13.2 3.5 9.1 9.4 8.3 12 3Z" /></svg></span><span className="uebtv-credits-panel__copy"><small>PLATAFORMA UEBTV</small><strong>Desarrolladores</strong><span>Javier Solis <i>·</i> Cristhian Rochina</span><em>Universidad Estatal de Bolívar</em></span></div>}
+                <button ref={creditsButtonRef} type="button" className="uebtv-credits-button" aria-label={creditsOpen ? "Cerrar créditos" : "Mostrar créditos"} aria-expanded={creditsOpen} aria-controls="uebtv-credits-panel" title="Créditos" onClick={() => setCreditsOpen((open) => !open)}>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 14.6 8.3 20.5 9.1 16.2 13.2 17.2 19 12 16.2 6.8 19 7.8 13.2 3.5 9.1 9.4 8.3 12 3Z" /></svg><span>Créditos</span>
+                </button>
             </div>
         </Context.Provider>
     );

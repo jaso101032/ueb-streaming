@@ -205,11 +205,11 @@ export default function Channel({ stateUrl }) {
         <div className={`studio-page channel-page ${tvMode ? "channel-page--tv" : ""}`}>
             <header className="channel-heading">
                 <div>
-                    <p className="studio-eyebrow">
-                        SEÑAL CONTINUA UEBTV
-                    </p>
-                    <h1>
-                        Señal <em>UEBTV.</em>
+                    <h1 className="channel-heading-title" aria-label="UEB - TV">
+                        <span className="channel-heading-title__mark" aria-hidden="true">
+                            <img src="/images/brand/ueb-wordmark.png" alt="" />
+                        </span>
+                        <span className="channel-heading-title__suffix">- TV</span>
                     </h1>
                     <p>En vivo y programación automática de la Universidad Estatal de Bolívar.</p>
                 </div>
@@ -230,15 +230,12 @@ export default function Channel({ stateUrl }) {
                 </p>
             )}
             <div className="channel-layout">
-                <section className="channel-main" aria-label="Señal de UEBTV">
+                <section className="channel-main" aria-label="UEB - TV">
                     <div className="channel-screen-frame">
                         {!live && <div className="channel-screen-bar">
                             <span>
-                                <i /> SEÑAL UEBTV
+                                <i /> UEB - TV
                                 <small>PROGRAMACIÓN CONTINUA</small>
-                            </span>
-                            <span className="channel-screen-status">
-                                {advertising ? "PUBLICIDAD INSTITUCIONAL" : playing ? "PREGRABADO" : data ? "ENTRE EMISIONES" : "CONECTANDO"}
                             </span>
                         </div>}
                         <div

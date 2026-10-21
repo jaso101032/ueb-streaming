@@ -201,6 +201,60 @@ html[data-theme="dark"] .video-analytics-inline .video-analytics-ranking li { bo
 .video-analytics-muted,.video-analytics-message { padding:18px 0; color:#71849c; font-size:12px; }
 .video-analytics-message.is-error { color:#bd3448; }
 .video-analytics-footnote { display:flex; align-items:flex-start; gap:7px; margin-top:14px; color:#8495a9; font-size:10px; line-height:1.55; }.video-analytics-footnote span { color:#3e7bb8; font-size:13px; }
+.video-analytics-export-row { display:flex; align-items:center; justify-content:flex-end; gap:12px; margin:16px 0 -5px; }
+.video-analytics-export-row > span { color:#8294aa; font-size:10px; }
+.video-analytics-export-row button { display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:38px; padding:0 13px; border:1px solid #b6d1ef; border-radius:10px; background:linear-gradient(135deg,#f5faff,#e6f1ff); color:#174f87; font:inherit; font-size:11px; font-weight:750; cursor:pointer; box-shadow:0 4px 12px #1b4c7d0b; transition:transform .16s,border-color .16s,background .16s,box-shadow .16s; }
+.video-analytics-export-row button:hover { transform:translateY(-1px); border-color:#7eafe2; background:#eaf4ff; box-shadow:0 7px 16px #1b4c7d18; }
+.video-analytics-export-row button svg { width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+.video-analytics-report { display:none; }
 @media(max-width:850px) { .video-analytics-backdrop { padding:12px; }.video-analytics { max-height:96dvh; padding:18px; border-radius:17px; }.video-analytics__header { top:-18px; margin:-18px -18px 0; padding:18px; }.video-analytics-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); }.video-analytics-rankings { grid-template-columns:1fr; } }
 @media(max-width:560px) { .video-analytics-backdrop { display:block; padding:0; }.video-analytics { width:100%; height:100dvh; max-height:100dvh; padding:16px; border:0; border-radius:0; }.video-analytics__header { top:-16px; margin:-16px -16px 0; padding:16px; gap:8px; }.video-analytics__heading { gap:9px; }.video-analytics__mark { flex-basis:34px; width:34px; height:34px; border-radius:10px; }.video-analytics__mark svg { width:18px; }.video-analytics__header h2 { font-size:17px; }.video-analytics__heading > div > p:last-child { display:grid; gap:2px; font-size:10px; }.video-analytics__heading > div > p:last-child i { display:none; }.video-analytics__controls { gap:6px; }.video-analytics__header label { width:auto; }.video-analytics__header select { min-width:82px; min-height:34px; padding-inline:6px; font-size:10px; }.video-analytics__close { flex-basis:34px; width:34px; height:34px; }.video-analytics-metrics { gap:8px; margin-top:14px; }.video-analytics-metrics article { min-height:98px; padding:12px; }.video-analytics-metrics article > span { font-size:10px; }.video-analytics-metrics strong { font-size:22px; }.video-analytics-metrics small { font-size:9px; }.video-analytics-chart-card { padding:14px 10px 8px; }.video-analytics-chart-summary { padding-top:8px; }.video-analytics-chart { min-width:520px; }.video-analytics-chart-wrap { overflow-x:auto; }.video-analytics-chart-wrap::-webkit-scrollbar { height:5px; }.video-analytics-chart-wrap::-webkit-scrollbar-thumb { border-radius:5px; background:#bfd0e4; }.video-analytics-ranking { padding:14px; }.video-analytics-trigger { min-height:33px; padding:0 8px; font-size:9px; } }
 @media(prefers-reduced-motion:reduce) { .video-analytics *, .video-analytics *:before, .video-analytics *:after { scroll-behavior:auto!important; animation-duration:.01ms!important; animation-iteration-count:1!important; transition-duration:.01ms!important; } }
+
+@page analytics { size:A4 portrait; margin:14mm 14mm 16mm; }
+@media print {
+    html, body { width:auto!important; min-width:0!important; min-height:0!important; margin:0!important; padding:0!important; overflow:visible!important; background:#fff!important; }
+    body > *:not(.video-analytics-report) { display:none!important; }
+    body > .video-analytics-report { display:block!important; page:analytics; width:100%; color:#172b45; background:#fff; font-family:Arial,Helvetica,sans-serif; font-size:9pt; line-height:1.45; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    .video-analytics-report * { box-sizing:border-box; }
+    .video-analytics-report__header { display:flex; align-items:center; justify-content:space-between; gap:20px; padding:0 0 13px; border-bottom:2px solid #123254; }
+    .video-analytics-report__header img { display:block; width:220px; height:auto; max-height:48px; object-fit:contain; object-position:left center; }
+    .video-analytics-report__header div { display:grid; gap:3px; text-align:right; }
+    .video-analytics-report__header span,.video-analytics-report__intro > p,.video-analytics-report__section-heading > div > span { color:#58718e; font-size:7pt; font-weight:700; letter-spacing:.12em; }
+    .video-analytics-report__header strong { color:#123254; font-size:9pt; letter-spacing:.04em; }
+    .video-analytics-report__intro { padding:17px 0 13px; }
+    .video-analytics-report__intro > p { margin:0 0 4px; color:#2165a4; }
+    .video-analytics-report__intro h1 { margin:0; color:#112b49; font-size:22pt; line-height:1.12; letter-spacing:-.04em; }
+    .video-analytics-report__intro div { display:flex; align-items:center; gap:8px; margin-top:7px; color:#526c88; font-size:8.5pt; }
+    .video-analytics-report__intro div i { width:4px; height:4px; border-radius:50%; background:#82a3c5; }
+    .video-analytics-report__intro small { display:block; margin-top:5px; color:#8293a7; font-size:7.5pt; }
+    .video-analytics-report__metrics { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; margin:0 0 13px; }
+    .video-analytics-report__metrics > div { display:flex; min-height:78px; flex-direction:column; gap:4px; padding:10px; border:1px solid #d7e3f0; border-top:3px solid #2c78bd; border-radius:7px; background:#f5f9fe; break-inside:avoid; }
+    .video-analytics-report__metrics span { color:#627994; font-size:7.2pt; font-weight:600; }
+    .video-analytics-report__metrics strong { color:#123254; font-size:18pt; line-height:1.1; }
+    .video-analytics-report__metrics small { color:#8293a7; font-size:7pt; }
+    .video-analytics-report__section { margin-top:11px; padding:11px 13px; border:1px solid #d9e5f1; border-radius:8px; break-inside:avoid; }
+    .video-analytics-report__section-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:5px; }
+    .video-analytics-report__section-heading h2,.video-analytics-report__rankings h2 { margin:2px 0 0; color:#173b60; font-size:11pt; }
+    .video-analytics-report__section-heading > b { color:#173b60; font-size:12pt; }
+    .video-analytics-report__section-heading > b small { color:#8193a8; font-size:7.5pt; font-weight:500; }
+    .video-analytics-report-chart { display:block; width:100%; height:auto; max-height:170px; overflow:visible; }
+    .video-analytics-report-chart line { stroke:#e4ecf5; stroke-width:1; }
+    .video-analytics-report-chart text { fill:#7489a1; font-family:Arial,Helvetica,sans-serif; font-size:10px; }
+    .video-analytics-report-chart__area { fill:url(#report-area); }
+    .video-analytics-report-chart__line { fill:none; stroke:#2878c4; stroke-width:3; stroke-linecap:round; stroke-linejoin:round; }
+    .video-analytics-report-chart circle { fill:#fff; stroke:#2878c4; stroke-width:2; }
+    .video-analytics-report__rankings { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:11px; break-inside:avoid; }
+    .video-analytics-report__rankings > div { min-width:0; padding:10px 11px; border:1px solid #d9e5f1; border-radius:8px; }
+    .video-analytics-report__rankings h2 { margin:0 0 7px; }
+    .video-analytics-report table { width:100%; border-collapse:collapse; font-size:7.5pt; }
+    .video-analytics-report th { padding:5px 6px; background:#edf4fb; color:#3d5e80; font-size:6.8pt; font-weight:700; text-align:left; }
+    .video-analytics-report td { padding:5px 6px; border-bottom:1px solid #e7edf4; color:#405a76; vertical-align:top; }
+    .video-analytics-report__rankings td:last-child,.video-analytics-report__rankings th:last-child,.video-analytics-report__daily td:nth-child(2),.video-analytics-report__daily td:last-child { text-align:right; font-variant-numeric:tabular-nums; }
+    .video-analytics-report__daily { margin-top:13px; }
+    .video-analytics-report__daily thead { display:table-header-group; }
+    .video-analytics-report__daily tr { break-inside:avoid; }
+    .video-analytics-report__footer { display:flex; align-items:flex-end; justify-content:space-between; gap:20px; margin-top:12px; padding-top:8px; border-top:1px solid #d9e5f1; color:#71849a; font-size:7pt; }
+    .video-analytics-report__footer p { max-width:72%; margin:0; }
+    .video-analytics-report__footer span { color:#416184; font-weight:700; white-space:nowrap; }
+}

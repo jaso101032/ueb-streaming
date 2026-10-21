@@ -45,18 +45,20 @@ export function EventList({ events, pagination }) {
                             {statusLabel(e)}
                         </span>
                         <div className="studio-row-actions">
-                            <a href={e.detailUrl}>Ver</a>
-                            {e.editUrl && <a href={e.editUrl}>Editar</a>}
+                            <a className="studio-icon-action" href={e.detailUrl} aria-label={`Ver evento ${e.title}`} title={`Ver ${e.title}`}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-5 9.5-5 9.5 5 9.5 5-3.5 5-9.5 5-9.5-5-9.5-5Z" /><circle cx="12" cy="12" r="2.5" /></svg><span className="studio-action-tooltip" role="tooltip">Ver</span></a>
+                            {e.editUrl ? <a className="studio-icon-action" href={e.editUrl} aria-label={`Editar evento ${e.title}`} title={`Editar ${e.title}`}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 5 5 5M4 20l4.2-.8L19 8.4a2.1 2.1 0 0 0-3-3L5.2 16.2 4 20Z" /></svg><span className="studio-action-tooltip" role="tooltip">Editar</span></a>
+                                : <button type="button" className="studio-icon-action" disabled aria-label={`No se puede editar ${e.title}`} title="Este evento no se puede editar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 5 5 5M4 20l4.2-.8L19 8.4a2.1 2.1 0 0 0-3-3L5.2 16.2 4 20Z" /></svg><span className="studio-action-tooltip" role="tooltip">No disponible</span></button>}
                             {e.deleteUrl && (
                                 <Action
                                     url={e.deleteUrl}
                                     method="DELETE"
-                                    className="studio-delete"
+                                    className="studio-delete studio-icon-action"
                                     confirm="¿Eliminar este evento del catálogo?"
+                                    ariaLabel={`Eliminar evento ${e.title}`}
                                 >
-                                    Eliminar
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6m4-6v6M6 7l1 13h10l1-13M9 7V4h6v3" /></svg><span className="studio-action-tooltip" role="tooltip">Eliminar</span>
                                 </Action>
-                            )}
+                            ) || <button type="button" className="studio-delete studio-icon-action" disabled aria-label={`No se puede eliminar ${e.title}`} title="Este evento no se puede eliminar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6m4-6v6M6 7l1 13h10l1-13M9 7V4h6v3" /></svg><span className="studio-action-tooltip" role="tooltip">No disponible</span></button>}
                         </div>
                     </article>
                 ))}
