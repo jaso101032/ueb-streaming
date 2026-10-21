@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import NavIcon from "./NavIcon";
 import { Context, Action } from "./shared";
 import UniversityMark from "./UniversityMark";
+import NotificationBell from "./NotificationBell";
 
 function ThemeIcon({ theme }) {
     return theme === "dark" ? (
@@ -113,6 +114,7 @@ export default function Shell({ shell, children }) {
                             />
                         </a>
                         <div className="studio-account">
+                            {shell.user && <NotificationBell urls={shell.notifications} csrf={shell.csrf} />}
                             <button
                                 type="button"
                                 className="studio-theme-toggle"
@@ -217,6 +219,10 @@ export default function Shell({ shell, children }) {
                                     {l.label}
                                 </a>
                             ))}
+                            <a href={shell.profile} aria-current={currentPath === new URL(shell.profile, "http://localhost").pathname ? "page" : undefined}>
+                                <span className="studio-sidebar-icon" aria-hidden="true"><NavIcon index={6} /></span>
+                                Mi perfil
+                            </a>
                         </nav>
                         {shell.user?.role === "admin" && <StorageMeter storage={shell.storage} />}
                         <div className="studio-sidebar-footer">

@@ -973,3 +973,49 @@ html.uebtv-tv-mode .channel-screen .uebtv-player-icon-button { width:58px; heigh
 html.uebtv-tv-mode .channel-screen :is(button,input,select,a):focus-visible { outline:3px solid #9fd1ff; outline-offset:4px; box-shadow:0 0 0 7px #2478c755; }
 html.uebtv-tv-mode .channel-screen .uebtv-player-icon-button:focus-visible { transform:scale(1.08); }
 html.uebtv-tv-mode .channel-idle { min-height:100%; }
+
+/* Audience inbox: a compact header control, with the same contrast in both themes. */
+.studio-notifications { position:relative; flex:none; }
+.studio-notifications__toggle { position:relative; display:grid; place-items:center; width:38px; height:38px; padding:0; border:1px solid #86b6e8; border-radius:50%; background:#173b65; color:#f3f8ff; }
+.studio-notifications__toggle:hover,.studio-notifications__toggle.is-open { background:#2865a7; }
+.studio-notifications__toggle svg { width:19px; height:19px; }
+.studio-notifications__count { position:absolute; top:-7px; right:-8px; display:grid; place-items:center; min-width:19px; height:19px; padding:0 4px; border-radius:12px; background:#ea3155; color:white; font-size:10px; font-weight:800; }
+.studio-notifications__panel { position:absolute; top:calc(100% + 15px); right:-80px; z-index:90; width:min(390px,calc(100vw - 24px)); max-height:min(76dvh,720px); overflow-y:auto; border:1px solid #a8bfdb; border-radius:18px; background:#eff5fc; color:#122946; box-shadow:0 22px 60px #020d26a6; }
+.studio-notifications__heading { display:flex; align-items:center; justify-content:space-between; padding:19px 20px 14px; border-bottom:1px solid #b9cde3; }
+.studio-notifications__heading small { color:#53739c; font-size:10px; font-weight:800; letter-spacing:.14em; }
+.studio-notifications__heading h2 { margin:3px 0 0; font-size:20px; font-weight:750; }
+.studio-notifications__heading button { width:30px; height:30px; border-radius:8px; background:#dbe8f6; color:#1d4775; font-size:24px; line-height:1; }
+.studio-notifications__list { max-height:315px; overflow-y:auto; }
+.studio-notifications__item { display:grid; width:100%; gap:5px; padding:14px 20px; border-bottom:1px solid #c9d9eb; background:transparent; color:#162e4d; text-align:left; }
+.studio-notifications__item:hover,.studio-notifications__item:focus-visible { background:#dceafa; }
+.studio-notifications__item.is-unread { background:#e1efff; border-left:3px solid #317acf; padding-left:17px; }
+.studio-notifications__item-type { color:#1a5ba1; font-size:10px; font-weight:800; letter-spacing:.09em; }
+.studio-notifications__item strong { font-size:13px; line-height:1.35; }
+.studio-notifications__item > span:not(.studio-notifications__item-type) { color:#516b89; font-size:12px; line-height:1.45; }
+.studio-notifications__item time { color:#6b8099; font-size:10px; }
+.studio-notifications__empty { margin:0; padding:28px 20px; color:#536c8a; font-size:12px; line-height:1.6; }
+.studio-notifications__settings { display:grid; gap:10px; padding:17px 20px 20px; border-top:1px solid #b9cde3; }
+.studio-notifications__settings h3 { margin:0 0 3px; font-size:13px; font-weight:750; }
+.studio-notifications__settings label { display:flex; align-items:center; gap:9px; font-size:12px; font-weight:650; }
+.studio-notifications__settings input { accent-color:#195aa3; width:16px; height:16px; }
+.studio-notifications__push { min-height:40px; margin-top:5px; padding:8px 12px; border-radius:9px; background:#175aaa; color:#fff; font-size:12px; font-weight:750; }
+.studio-notifications__push:hover { background:#2776cc; }
+.studio-notifications__hint { margin:0; color:#5c7290; font-size:11px; line-height:1.45; }
+.studio-notifications__error { margin:12px 20px; padding:9px; border-radius:7px; background:#fee8eb; color:#a21a35; font-size:12px; }
+html[data-theme="dark"] .studio-notifications__panel { border-color:#42638d; background:#102842; color:#f3f8ff; }
+html[data-theme="dark"] .studio-notifications__heading,html[data-theme="dark"] .studio-notifications__settings,html[data-theme="dark"] .studio-notifications__item { border-color:#355679; }
+html[data-theme="dark"] .studio-notifications__heading small,html[data-theme="dark"] .studio-notifications__item time,html[data-theme="dark"] .studio-notifications__hint,html[data-theme="dark"] .studio-notifications__empty { color:#b2c9e3; }
+html[data-theme="dark"] .studio-notifications__item { color:#f0f7ff; }
+html[data-theme="dark"] .studio-notifications__item.is-unread { background:#1a3b5f; }
+html[data-theme="dark"] .studio-notifications__item:hover { background:#224b77; }
+html[data-theme="dark"] .studio-notifications__item-type { color:#95c9ff; }
+html[data-theme="dark"] .studio-notifications__item > span:not(.studio-notifications__item-type) { color:#c7d9ed; }
+html[data-theme="dark"] .studio-notifications__heading button { background:#25476e; color:#fff; }
+@media(max-width:640px) { .studio-notifications__toggle { width:34px; height:34px; } .studio-notifications__panel { position:fixed; top:82px; left:12px; right:12px; width:auto; max-height:calc(100dvh - 95px); } }
+@media(max-width:380px) {
+    .studio-header .studio-account .studio-avatar { display:none; }
+    .studio-header.studio-header--operator .studio-brand-mascot,.studio-header:not(.studio-header--operator) .studio-brand-mascot { width:28px; height:auto; margin-right:-6px; }
+    .studio-header.studio-header--operator .facagei-brand-logo--header,.studio-header:not(.studio-header--operator) .facagei-brand-logo--header { width:110px; height:auto; }
+    .studio-header .studio-notifications__toggle { width:30px; height:30px; }
+    .studio-header.studio-header--operator .studio-account,.studio-header:not(.studio-header--operator) .studio-account { gap:3px; }
+}

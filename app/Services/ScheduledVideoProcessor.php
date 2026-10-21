@@ -85,6 +85,8 @@ class ScheduledVideoProcessor
                 'ready_at' => now(), 'processing_error' => null]);
             $disk->delete($video->source_path);
             $video->update(['source_path' => null]);
+            try { app(AudienceAnnouncements::class)->publish($video->evento, 'video'); }
+            catch (\Throwable $exception) { report($exception); }
         } catch (\Throwable $e) {
             $disk->delete($output);
             $video->update(['processing_status' => 'failed', 'processing_error' => 'No se pudo convertir el video. Comprueba FFmpeg, el espacio disponible y el archivo antes de reintentar.']);

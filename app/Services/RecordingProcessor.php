@@ -83,6 +83,8 @@ class RecordingProcessor
             $claimed->update(['recording_status' => 'ready', 'recording_file' => $filename,
                 'recording_metadata' => $metadata,
                 'recording_ready_at' => now(), 'recording_error' => null]);
+            try { app(AudienceAnnouncements::class)->publish($claimed->evento, 'video'); }
+            catch (Throwable $exception) { report($exception); }
             try { $this->cleanupSource($claimed); } catch (Throwable $exception) { report($exception); }
         } catch (Throwable $exception) {
             if ($temporary && is_file($temporary)) unlink($temporary);

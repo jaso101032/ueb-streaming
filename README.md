@@ -50,6 +50,10 @@ estadísticas y esta sección no están disponibles para operadores ni público.
 El administrador puede personalizar la **Marca de agua** del reproductor con un PNG
 transparente. Consulta [formatos, validación y despliegue](docs/marca-de-agua.md).
 
+Los usuarios con cuenta tienen una campana de avisos para directos y videos nuevos.
+Pueden elegir qué recibir y activar opcionalmente avisos del navegador. La
+instalación y los límites están en [notificaciones](docs/notificaciones.md).
+
 ## Tecnologías
 
 - Laravel 13 y PHP 8.3 o superior.

@@ -7,6 +7,22 @@ const login = async (page, email = "admin@ui.test") => {
     await page.getByRole("button", { name: "Entrar a UEBTV" }).click();
     await page.waitForURL(/admin\/dashboard|eventos/);
 };
+test("notification bell keeps preferences and fits a narrow mobile header", async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 720 });
+    await login(page);
+    await page.goto("/senal");
+    await page.getByRole("button", { name: /Notificaciones/ }).click();
+    await expect(page.getByRole("heading", { name: "Notificaciones" })).toBeVisible();
+    const live = page.getByRole("checkbox", { name: "Directos" });
+    await expect(live).toBeChecked();
+    await live.uncheck();
+    await expect(live).not.toBeChecked();
+    await page.reload();
+    await page.getByRole("button", { name: /Notificaciones/ }).click();
+    await expect(page.getByRole("checkbox", { name: "Directos" })).not.toBeChecked();
+    await page.getByRole("checkbox", { name: "Directos" }).check();
+    await expect(page.locator("body")).toHaveJSProperty("scrollWidth", 320);
+});
 test("Android TV channel mode shows a full-screen viewer without the website shell", async ({ page }) => {
     await page.route("**/senal/estado", (route) => route.fulfill({ json: {
         mode: "idle", event: null, playback: null, advertisement: null, next: [],

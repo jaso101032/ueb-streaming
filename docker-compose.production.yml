@@ -30,6 +30,9 @@ services:
       SESSION_SAME_SITE: lax
       CACHE_STORE: database
       QUEUE_CONNECTION: database
+      WEB_PUSH_SUBJECT: ${WEB_PUSH_SUBJECT:-}
+      WEB_PUSH_PUBLIC_KEY: ${WEB_PUSH_PUBLIC_KEY:-}
+      WEB_PUSH_PRIVATE_KEY: ${WEB_PUSH_PRIVATE_KEY:-}
       FILESYSTEM_DISK: public
       STREAMING_RTMP_URL: ${STREAMING_RTMP_URL:?Define rtmp://tu-dominio:1935/live}
       STREAMING_HLS_BASE_URL: ${APP_URL:?}/hls

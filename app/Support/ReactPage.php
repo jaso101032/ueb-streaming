@@ -92,6 +92,8 @@ class ReactPage
             'creating' => request()->routeIs('admin.eventos.create'), 'home' => $admin ? route('admin.dashboard') : ($canStream ? route('streaming.control') : ($canEvents ? route('admin.eventos.index') : route('channel.index'))),
             'login' => route('login'), 'register' => route('register'), 'logout' => route('logout'), 'profile' => route('profile.edit'),
             'channel' => route('channel.index'), 'catalog' => route('eventos.index'),
+            'notifications' => ['index' => route('notifications.index'), 'preferences' => route('notifications.preferences'),
+                'readBase' => url('/mis-notificaciones'), 'push' => route('notifications.push.subscribe')],
             'logo' => asset('images/brand/ueb-wordmark.png'),
             'headerLogo' => asset('images/brand/facagei-logo-light.png'),
             'storage' => $admin ? StorageUsage::recordings() : null,

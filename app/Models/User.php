@@ -17,6 +17,8 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
+    protected $attributes = ['notify_live' => true, 'notify_videos' => true];
+
     /**
      * Get the attributes that should be cast.
      *
@@ -29,6 +31,8 @@ class User extends Authenticatable
             'password' => 'hashed',
             'operator_permissions' => 'array',
             'chat_restricted' => 'boolean',
+            'notify_live' => 'boolean',
+            'notify_videos' => 'boolean',
         ];
     }
 

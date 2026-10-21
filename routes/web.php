@@ -64,6 +64,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::get('/mis-notificaciones', [\App\Http\Controllers\AudienceNotificationController::class, 'index'])->middleware('throttle:60,1')->name('notifications.index');
+    Route::put('/mis-notificaciones/preferencias', [\App\Http\Controllers\AudienceNotificationController::class, 'preferences'])->middleware('throttle:20,1')->name('notifications.preferences');
+    Route::patch('/mis-notificaciones/{id}/leer', [\App\Http\Controllers\AudienceNotificationController::class, 'read'])->middleware('throttle:60,1')->name('notifications.read');
+    Route::post('/mis-notificaciones/push', [\App\Http\Controllers\AudienceNotificationController::class, 'subscribe'])->middleware('throttle:10,1')->name('notifications.push.subscribe');
+    Route::delete('/mis-notificaciones/push', [\App\Http\Controllers\AudienceNotificationController::class, 'unsubscribe'])->middleware('throttle:10,1')->name('notifications.push.unsubscribe');
 });
 
 // Panel de Administrador / Operador para la Gestión de Eventos

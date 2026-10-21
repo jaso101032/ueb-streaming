@@ -71,6 +71,8 @@ Git ni las pegues en chats:
 | `DB_DATABASE` | `uebtv` o el nombre de base de datos que prefieras. |
 | `DB_USERNAME` | `uebtv` o el usuario que prefieras. |
 | `STREAMING_MEDIA_QUOTA_GB` | Opcional: cupo asignado a los medios UEBTV en GiB, por ejemplo `30`. No lo configures sin confirmar el límite real del host. |
+| `WEB_PUSH_SUBJECT` | Opcional: `mailto:correo-institucional@ejemplo.edu.ec` para avisos del navegador. |
+| `WEB_PUSH_PUBLIC_KEY`, `WEB_PUSH_PRIVATE_KEY` | Opcionales: par VAPID persistente. Generación y comprobación en [notificaciones](notificaciones.md). Sin ellas, solo funciona la campana interna. |
 
 La configuración del Compose obliga a definir las cinco variables secretas/de
 conexión antes de desplegar. Usa los mismos valores de base de datos en ambos

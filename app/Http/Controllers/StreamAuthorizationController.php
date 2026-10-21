@@ -16,7 +16,7 @@ class StreamAuthorizationController extends Controller
         $stream = Transmision::where('stream_key', $request->input('name'))->first();
         abort_unless($stream, 403);
 
-        DB::transaction(function () use ($request, $stream) {
+        $started = DB::transaction(function () use ($request, $stream) {
             // Same lock order as the finish action and recording worker.
             $event = Evento::whereKey($stream->evento_id)->lockForUpdate()->first();
             $stream = Transmision::whereKey($stream->id)->lockForUpdate()->firstOrFail();
@@ -24,7 +24,7 @@ class StreamAuthorizationController extends Controller
                 !$stream->finalizado_en && !in_array($stream->recording_status, ['processing', 'ready', 'failed']), 403);
 
             $call = $request->input('call');
-            if (!in_array($call, ['publish', 'update_publish'])) return;
+            if (!in_array($call, ['publish', 'update_publish'])) return null;
             $publisher = $request->input('clientid');
             abort_unless(is_string($publisher) && preg_match('/^\d{1,100}$/D', $publisher), 403);
             if ($call === 'update_publish' && $stream->publisher_id !== $publisher) abort(403);
@@ -37,8 +37,17 @@ class StreamAuthorizationController extends Controller
                 'activo' => true, 'publisher_id' => $publisher, 'last_signal_at' => now(),
                 'iniciado_en' => $stream->iniciado_en ?? now(), 'recording_status' => 'recording',
             ]);
-            if ($event->estado !== 'en_vivo') $event->update(['estado' => 'en_vivo']);
+            $announce = $call === 'publish' || $event->estado !== 'en_vivo';
+            if ($event->estado !== 'en_vivo') {
+                $event->update(['estado' => 'en_vivo']);
+            }
+            return $announce ? $event : null;
         });
+
+        if ($started) {
+            try { app(\App\Services\AudienceAnnouncements::class)->publish($started, 'live'); }
+            catch (\Throwable $exception) { report($exception); }
+        }
 
         return response('', 204);
     }
