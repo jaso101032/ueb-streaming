@@ -260,6 +260,7 @@ export default function Channel({ stateUrl }) {
                             <img src="/images/brand/ueb-wordmark.png" alt="" />
                         </span>
                         <span className="channel-heading-title__suffix">- TV</span>
+                        <UebtvMark className="channel-heading-title__mobile" />
                     </h1>
                     <p>En vivo y programación automática de la Universidad Estatal de Bolívar.</p>
                 </div>

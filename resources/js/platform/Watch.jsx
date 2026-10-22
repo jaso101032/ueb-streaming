@@ -276,7 +276,7 @@ export default function Watch({
                                 aria-expanded={detailsOpen}
                             >
                                 <span className="uebtv-watch-details-toggle__label">Detalles</span>
-                                <span className="uebtv-watch-details-toggle__icons" aria-label="Incluye información, compartir y catálogo">
+                                <span className="uebtv-watch-details-toggle__icons" aria-hidden="true">
                                     <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8" /><path d="M12 10.5v5m0-8v.1" /></svg>
                                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 6h4v4m0-4-7 7M8 10H6a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-2" /></svg>
                                     <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="14" rx="2" /><path d="m10 9 5 3-5 3z" /></svg>

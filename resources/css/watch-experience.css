@@ -99,11 +99,11 @@ button.uebtv-chat-time:focus-visible { outline:3px solid #bfd9f7; outline-offset
 @media(max-width:640px) {
     .watch-experience .uebtv-watch-broadcast-card { border-radius:16px; }
     .watch-experience .uebtv-watch-broadcast-card .uebtv-watch-player { border-radius:15px 15px 0 0; }
-    .watch-experience .uebtv-watch-broadcast-card .uebtv-watch-title-block { margin:0; padding:16px 14px; }
+    .watch-experience .uebtv-watch-broadcast-card .uebtv-watch-title-block { margin:0; padding:13px 14px; }
     .watch-experience .uebtv-watch-title-row { align-items:flex-start; gap:10px; }
     .watch-experience .uebtv-watch-title-row h1 { margin-top:10px; font-size:22px; }
-    .uebtv-watch-details-toggle { display:flex; align-items:center; width:100%; min-height:34px; margin-top:10px; padding:0 10px; border:1px solid #345171; border-radius:9px; background:#132b49; color:#cfe2fb; font:700 11px/1 inherit; cursor:pointer; }
-    .uebtv-watch-details-toggle__icons { display:flex; align-items:center; gap:6px; margin-left:auto; margin-right:9px; color:#d8ebff; }
+    .uebtv-watch-details-toggle { display:flex; align-items:center; justify-content:space-between; width:100%; min-height:36px; margin-top:10px; padding:7px 11px; border:1px solid #345171; border-radius:9px; background:#132b49; color:#cfe2fb; font-family:inherit; font-size:12px; font-weight:700; line-height:1.2; text-align:left; cursor:pointer; }
+    .uebtv-watch-details-toggle__icons { display:none; }
     .uebtv-watch-details-toggle__icons svg { width:19px; height:19px; padding:3px; border:1px solid #4c7098; border-radius:5px; background:#1b3c63; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
     .uebtv-watch-details-toggle__chevron { width:15px; height:15px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
     .uebtv-watch-details-toggle__chevron { transition:transform .18s ease; }

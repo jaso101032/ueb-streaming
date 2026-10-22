@@ -25,7 +25,7 @@ test("admin grants limited operator access from the responsive form", async ({ p
     await page.setViewportSize({ width: 390, height: 844 });
     const row = page.locator(".users-row").filter({ hasText: "solo-obs@ui.test" });
     await expect(row).toBeVisible();
-    await row.getByText("Editar", { exact: true }).click();
+    await row.getByLabel("Editar cuenta de Operador Solo OBS").click();
     await expect(row.getByLabel("Emitir con OBS y finalizar directos")).toBeChecked();
     await expect(row.getByLabel("Crear y editar eventos")).not.toBeChecked();
     await expect(page.locator("body")).toHaveJSProperty("scrollWidth", 390);

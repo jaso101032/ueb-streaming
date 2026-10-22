@@ -655,6 +655,7 @@ button:disabled {
 .uebtv-player-range::-moz-range-progress { height:6px; border-radius:99px; background:#ff3152; }
 .uebtv-player-range--progress { flex: 1; min-width: 30px; }
 .uebtv-player-range--progress::-webkit-slider-runnable-track { height:6px; border:0; border-radius:99px; background:linear-gradient(to right,#ff3152 var(--player-progress),#ffffff70 var(--player-progress)); }
+.uebtv-player-range--progress::-webkit-slider-thumb { margin-top:-5px; }
 .uebtv-player-range--progress::-moz-range-track { background:linear-gradient(to right,#ff3152 var(--player-progress),#ffffff70 var(--player-progress)); }
 .uebtv-player-range--live { background:linear-gradient(to right, #ff3152 0%, #ff3152 100%); }
 .uebtv-player-range--live::-webkit-slider-runnable-track { background:#ff3152; }
@@ -832,6 +833,9 @@ button:disabled {
 .channel-screen { position: relative; aspect-ratio: 16 / 9; background: #061327; border-radius: 24px; overflow: hidden; box-shadow: 0 20px 50px #071a3520; }
 .channel-screen .uebtv-video { width: 100%; height: 100%; object-fit: contain; }
 .channel-ad-indicator { position:absolute; z-index:5; top:16px; left:16px; display:grid; place-items:center; width:30px; height:30px; border:1px solid #ffffffc9; border-radius:6px; background:#071a35d9; color:#fff; font-size:20px; font-weight:800; line-height:1; box-shadow:0 3px 12px #0007; pointer-events:none; }
+/* En pantalla completa aparece el título contextual: dejar espacio real
+   para la P permanente, también si el título es largo y se trunca. */
+.uebtv-player-shell:has(.channel-ad-indicator) .uebtv-player-title { top:16px; left:54px; max-width:min(calc(54% - 38px), 482px); }
 .channel-screen .uebtv-player-empty { height: 100%; min-height: 0; }
 .channel-now { margin-top: 22px; padding: 26px; }
 .channel-now h2 { font-size: clamp(24px, 3vw, 34px); margin: 16px 0 10px; letter-spacing: -.035em; }
@@ -853,7 +857,10 @@ button:disabled {
 .schedule-totals p { color: #6a809d; font-size: 12px; }
 @media(max-width: 1000px) { .channel-layout { grid-template-columns: minmax(0,1fr); } }
 @media(max-width: 600px) { .schedule-totals { grid-template-columns: minmax(0,1fr); } .channel-screen { border-radius: 14px; } }
-@media(max-width:600px) { .channel-ad-indicator { top:9px; left:9px; width:25px; height:25px; font-size:17px; } }
+@media(max-width:600px) {
+    .channel-ad-indicator { top:9px; left:9px; width:25px; height:25px; font-size:17px; }
+    .uebtv-player-shell:has(.channel-ad-indicator) .uebtv-player-title { top:9px; left:42px; max-width:calc(58% - 33px); }
+}
 
 /* Broadcast identity: contained to the continuous channel. */
 .channel-page { max-width: 1500px; padding-top: 38px; padding-bottom: 56px; }
@@ -893,6 +900,7 @@ button:disabled {
 .channel-heading-title__mark { position:relative; display:block; flex:0 0 auto; width:2.2em; height:.9em; overflow:hidden; }
 .channel-heading-title__mark img { position:absolute; inset:0 auto auto 0; display:block; width:auto; max-width:none; height:100%; }
 .channel-heading-title__suffix { color:#102744; font-size:1em; font-weight:750; letter-spacing:-.055em; white-space:nowrap; }
+.channel-heading-title__mobile { display:none; }
 .channel-heading > div > p:last-child { color:#637892; font-size:15px; }
 .channel-heading-actions { display:flex; align-items:center; justify-content:flex-end; gap:20px; }
 .channel-institution-mark { display:block; width:clamp(180px,17vw,210px); height:auto; object-fit:contain; }
@@ -1008,6 +1016,18 @@ button:disabled {
 @media(max-width:1000px) { .channel-layout { grid-template-columns:minmax(0,1fr); } .channel-rail { grid-template-columns:repeat(2,minmax(0,1fr)); } .channel-next { max-width:none; } .channel-idle { min-height:100%; } }
 @media(max-width:700px) { .channel-rail { grid-template-columns:minmax(0,1fr); } .channel-app-art { height:clamp(275px,80vw,315px); } }
 @media(max-width:600px) { .uebtv-catalog-search { display:block; padding:0; overflow:hidden; } .uebtv-catalog-filter-toggle { display:flex; align-items:center; width:100%; min-height:48px; gap:9px; padding:12px 15px; border:0; border-radius:0; background:transparent; color:#174f90; box-shadow:none; font-size:13px; font-weight:750; text-align:left; } .uebtv-catalog-filter-toggle:hover { background:#eff6ff; transform:none; } .uebtv-catalog-filter-toggle > span { display:grid; place-items:center; width:23px; height:23px; border-radius:7px; background:#e2efff; color:#1a61aa; font-size:18px; line-height:1; } .uebtv-catalog-filter-toggle small { display:grid; place-items:center; min-width:18px; height:18px; padding:0 5px; border-radius:10px; background:#e63756; color:#fff; font-size:10px; } .uebtv-catalog-filter-toggle b { margin-left:auto; font-size:17px; font-weight:500; transition:transform .2s; } .uebtv-catalog-search.is-open .uebtv-catalog-filter-toggle b { transform:rotate(180deg); } .uebtv-catalog-search-fields { display:none; padding:0 16px 16px; } .uebtv-catalog-search.is-open .uebtv-catalog-search-fields { display:flex; flex-wrap:wrap; align-items:stretch; gap:12px; border-top:1px solid #dce8f5; } .uebtv-catalog-search-fields > div { flex:1 1 100%; } .uebtv-catalog-search-fields > :is(button,a) { display:inline-flex; flex:1 1 calc(50% - 6px); align-items:center; justify-content:center; min-height:44px; padding-inline:10px; } .uebtv-catalog-card__visual { height:auto; aspect-ratio:16 / 9; } .uebtv-catalog-card__body { min-height:0; padding:15px; } .uebtv-catalog-card__body h3 { margin-top:7px; font-size:17px; } .uebtv-catalog-card__meta { margin-top:11px; padding-top:10px; border-top:1px solid #e2ebf5; } .uebtv-catalog-card__status { top:10px; right:10px; font-size:9px; } .channel-heading { align-items:flex-start; flex-direction:column; gap:9px; margin-bottom:12px; padding:14px 15px 13px; border-radius:15px; } .channel-heading .studio-eyebrow { font-size:7px; } .channel-heading h1 { margin:5px 0 0; font-size:clamp(23px,7.5vw,27px); } .channel-heading > div > p:last-child { display:none; } .channel-heading-actions { width:100%; justify-content:space-between; gap:10px; } .channel-institution-mark { width:92px; max-height:38px; } .channel-catalog { align-self:flex-start; min-height:34px; padding:7px 10px; font-size:10px; } .channel-page { padding-top:16px; } .channel-main { border-radius:16px; } .channel-screen-bar { height:38px; padding-inline:12px; } .channel-screen-bar small { display:none; } .channel-screen.is-idle { aspect-ratio:auto; min-height:370px; } .channel-idle { min-height:370px; padding:32px 22px 60px; } .channel-idle-footer { left:20px; right:20px; font-size:8px; } .channel-idle-footer span:last-child { display:none; } .channel-now { padding:15px 14px 18px; } .channel-now h2 { margin:0 0 7px; font-size:21px; } .channel-now p { margin:0; font-size:12px; line-height:1.6; } .channel-auto { font-size:10px; } .channel-next { border-radius:16px; } }
+
+@media(max-width:640px) {
+    .channel-heading { flex-direction:row; flex-wrap:wrap; align-items:center; column-gap:10px; row-gap:4px; padding:10px 13px; }
+    .channel-heading > div:first-child { flex:1 1 115px; min-width:0; }
+    .channel-heading > div > p:last-child { display:none; }
+    .channel-heading .channel-heading-title { margin:0; }
+    .channel-heading-title__mark, .channel-heading-title__suffix { display:none; }
+    .channel-heading .channel-heading-title__mobile { display:block; width:clamp(110px,34vw,138px); max-width:100%; height:auto; }
+    .channel-heading-actions { display:contents; }
+    .channel-institution-mark { flex:0 0 auto; width:clamp(90px,27vw,118px); max-height:none; }
+    .channel-catalog { flex:0 0 100%; justify-content:center; min-height:30px; margin-top:2px; padding:5px 10px; }
+}
 
 /* Full-screen audience view used by the Android TV remote app. */
 html.uebtv-tv-mode,html.uebtv-tv-mode body { width:100%; height:100%; margin:0; overflow:hidden; background:#000; }

@@ -36,7 +36,7 @@ test("admin watermark is validated, previewed, persisted and restored on desktop
     await expect(page.locator(".watermark-previews img").first()).toHaveAttribute("src", /^blob:/);
     await save.click();
     await expect(page.getByText("Marca de agua actualizada.", { exact: false })).toBeVisible();
-    await expect(page.getByText("marca personalizada", { exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Restaurar logo oficial" })).toBeVisible();
     const image = page.locator(".watermark-previews img").first();
     await expect(image).toHaveAttribute("src", /\/storage\/player-watermarks\/[a-f0-9-]+\.png$/);
     const customUrl = await image.getAttribute("src");
