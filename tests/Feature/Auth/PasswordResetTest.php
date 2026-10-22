@@ -27,7 +27,7 @@ class PasswordResetTest extends TestCase
 
         $response = $this->post('/forgot-password', ['email' => $user->email]);
 
-        $response->assertSessionHas('status', 'Te enviamos un enlace para restablecer tu contraseña. Revisa tu correo y la carpeta de spam.');
+        $response->assertSessionHas('status', 'Si existe una cuenta asociada a ese correo, recibirás un enlace para restablecer tu contraseña. Revisa tu bandeja de entrada y la carpeta de spam.');
         Notification::assertSentTo($user, ResetPassword::class);
     }
 
@@ -64,11 +64,24 @@ class PasswordResetTest extends TestCase
         $response->assertSessionHasErrors(['email' => 'el correo electrónico debe ser una dirección de correo válida.']);
     }
 
-    public function test_unknown_email_message_is_in_spanish(): void
+    public function test_unknown_email_does_not_reveal_whether_an_account_exists(): void
     {
+        Notification::fake();
         $response = $this->post('/forgot-password', ['email' => 'desconocido@example.com']);
 
-        $response->assertSessionHasErrors(['email' => 'No encontramos una cuenta con ese correo electrónico.']);
+        $response->assertSessionHas('status', 'Si existe una cuenta asociada a ese correo, recibirás un enlace para restablecer tu contraseña. Revisa tu bandeja de entrada y la carpeta de spam.');
+        $response->assertSessionHasNoErrors();
+        Notification::assertNothingSent();
+    }
+
+    public function test_password_reset_requests_are_rate_limited(): void
+    {
+        Notification::fake();
+        for ($attempt = 0; $attempt < 5; $attempt++) {
+            $this->post('/forgot-password', ['email' => 'desconocido@example.com'])->assertRedirect();
+        }
+
+        $this->post('/forgot-password', ['email' => 'desconocido@example.com'])->assertTooManyRequests();
     }
 
     public function test_reset_password_screen_can_be_rendered(): void

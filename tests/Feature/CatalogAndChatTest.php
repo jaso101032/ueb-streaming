@@ -125,7 +125,7 @@ class CatalogAndChatTest extends TestCase
         $this->postJson(route('eventos.chat.store', $evento), ['message' => 'Hola'])->assertUnauthorized();
         $before = $this->getJson(route('eventos.chat.index', $evento));
         $this->actingAs($this->user);
-        foreach (['   ', str_repeat('a', 181)] as $invalid) {
+        foreach (['   ', str_repeat('a', 181), "Hola\x00mundo"] as $invalid) {
             $this->postJson(route('eventos.chat.store', $evento), ['message' => $invalid])->assertUnprocessable()->assertJsonValidationErrors('message');
         }
         $this->postJson(route('eventos.chat.store', $evento), ['message' => ' Hola comunidad '])->assertCreated()->assertJsonPath('message', 'Hola comunidad');

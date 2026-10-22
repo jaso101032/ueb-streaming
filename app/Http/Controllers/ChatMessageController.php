@@ -58,11 +58,12 @@ class ChatMessageController extends Controller
     public function store(Request $request, Evento $evento, ChatFeed $feed): JsonResponse
     {
         $validated = $request->validate([
-            'message' => ['required', 'string', 'max:180'],
+            'message' => ['required', 'string', 'max:180', 'not_regex:/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/'],
         ], [
             'message.required' => 'Escribe un mensaje antes de enviarlo.',
             'message.string' => 'El mensaje debe ser texto.',
             'message.max' => 'El mensaje no puede superar 180 caracteres.',
+            'message.not_regex' => 'El mensaje contiene caracteres de control no permitidos.',
         ]);
 
         // Match the lock order used by stream start/finalization so comments
