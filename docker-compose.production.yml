@@ -16,6 +16,8 @@ services:
       APP_DEBUG: "false"
       APP_KEY: ${APP_KEY:?Define una APP_KEY segura en las variables de Dokploy}
       APP_URL: ${APP_URL:?Define APP_URL con https y tu dominio}
+      APP_LOCALE: es
+      APP_FALLBACK_LOCALE: es
       APP_TIMEZONE: ${APP_TIMEZONE:-America/Guayaquil}
       LOG_CHANNEL: stderr
       LOG_LEVEL: warning
