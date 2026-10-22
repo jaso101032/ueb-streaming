@@ -141,11 +141,13 @@ test("mobile channel places the UEBTV and UEB marks side by side", async ({ page
         await page.setViewportSize({ width, height: 844 });
         const tvMark = page.locator(".channel-heading-title__mobile");
         const universityMark = page.locator(".channel-institution-mark");
-        await expect(tvMark).toBeVisible();
-        await expect(page.locator(".channel-heading-title__mark")).toBeHidden();
-        await expect(page.getByRole("img", { name: "Logotipo de UEBTV" })).toBeVisible();
+        await expect(tvMark).toBeHidden();
+        await expect(page.locator(".channel-heading-title__mark")).toBeVisible();
+        await expect(page.getByRole("img", { name: "Logotipo de UEBTV" })).toBeHidden();
         const suffix = page.locator(".channel-heading-title__suffix");
-        await expect(suffix).toBeHidden();
+        await expect(suffix).toBeVisible();
+        await expect(suffix).toHaveCSS("color", /rgb\(255, 255, 255\)|rgb\(241, 247, 255\)/);
+        await expect(page.locator(".channel-heading-title__mark img")).toHaveCSS("filter", "brightness(0) invert(1)");
         await expect(universityMark).toBeVisible();
         const tv = await page.locator(".channel-heading-title").boundingBox();
         const university = await universityMark.boundingBox();
@@ -156,8 +158,8 @@ test("mobile channel places the UEBTV and UEB marks side by side", async ({ page
     }
     await page.setViewportSize({ width: 390, height: 844 });
     await page.evaluate(() => { document.documentElement.dataset.theme = "dark"; });
-    await expect(page.locator(".channel-heading-title__mobile")).toBeVisible();
-    await expect(page.locator(".channel-heading-title__mark")).toBeHidden();
+    await expect(page.locator(".channel-heading-title__mobile")).toBeHidden();
+    await expect(page.locator(".channel-heading-title__mark")).toBeVisible();
     await expect(page.locator(".channel-institution-mark")).toBeVisible();
     await expect(page.locator("body")).toHaveJSProperty("scrollWidth", 390);
     await page.evaluate(() => { document.documentElement.dataset.theme = "light"; });
