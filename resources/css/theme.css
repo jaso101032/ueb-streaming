@@ -225,6 +225,19 @@ html[data-theme="dark"] .channel-next-heading > p:last-child, html[data-theme="d
 html[data-theme="dark"] .channel-next article { border-color:#29425f; }
 html[data-theme="dark"] .channel-next time, html[data-theme="dark"] .channel-agenda-empty a { color:#9fc9ff; }
 html[data-theme="dark"] .channel-next h2 span { background:#193c63; color:#b9dcff; }
+html[data-theme="dark"] .channel-agenda-open { border-color:#365c82; background:linear-gradient(135deg,#18385d,#112846); color:#c6e2ff; box-shadow:0 5px 14px #0003; }
+html[data-theme="dark"] .channel-agenda-open:hover { border-color:#6da5de; box-shadow:0 9px 20px #0005; }
+html[data-theme="dark"] .channel-agenda-modal { border-color:#365476; background:#10223b; color:#edf5ff; }
+html[data-theme="dark"] .channel-agenda-modal-header { border-color:#294866; background:radial-gradient(ellipse at 95% 0,#214872 0,transparent 48%),linear-gradient(130deg,#173656,#10233c); }
+html[data-theme="dark"] .channel-agenda-modal-icon { border-color:#365d84; background:#10233b; color:#9dccff; }
+html[data-theme="dark"] .channel-agenda-modal-header h2,html[data-theme="dark"] .channel-agenda-day > h3,html[data-theme="dark"] .channel-agenda-modal-item h4,html[data-theme="dark"] .channel-agenda-modal-empty h3 { color:#edf5ff; }
+html[data-theme="dark"] .channel-agenda-modal-header > div:nth-child(2) > p:last-child,html[data-theme="dark"] .channel-agenda-modal-item p,html[data-theme="dark"] .channel-agenda-modal-empty p { color:#a9bfd8; }
+html[data-theme="dark"] .channel-agenda-day > h3 span { background:#1a3b60; color:#b7d9ff; }
+html[data-theme="dark"] .channel-agenda-day-items { border-color:#365475; }
+html[data-theme="dark"] .channel-agenda-modal-item > div { border-color:#294866; }
+html[data-theme="dark"] .channel-agenda-modal-close { border-color:#365475; background:#142d4b; color:#c8d9ec; }
+html[data-theme="dark"] .channel-agenda-modal-footer { border-color:#294866; background:#0c1c31; color:#a9bfd8; }
+html[data-theme="dark"] .channel-agenda-modal-empty > span { background:#1b3b5e; color:#9dccff; }
 
 /* Scheduled content studio. Its form, preview and upload area are independent components. */
 html[data-theme="dark"] .schedule-pill { border-color:#365c82; background:#16385e; color:#afd3ff; }

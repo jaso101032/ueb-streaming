@@ -7,6 +7,20 @@
 .watermark-form .studio-button { justify-self:start; }
 .watermark-form p, .watermark-scope { font-size:13px; }
 .watermark-reset { margin-top:16px; }
+.watermark-position-form { display:grid; justify-items:start; gap:14px; margin:22px 0 26px; }
+.watermark-position-picker { width:100%; padding:0; border:0; }
+.watermark-position-picker legend { margin-bottom:12px; font-weight:650; }
+.watermark-position-options { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; }
+.watermark-position-option { display:grid; justify-items:center; gap:8px; padding:10px 6px; border:1px solid #a9bfd7; border-radius:12px; color:#183456; cursor:pointer; font-size:12px; text-align:center; }
+.watermark-position-option.is-selected { border-color:#2b70bd; background:#e5f1ff; box-shadow:0 0 0 2px #2b70bd24; }
+.watermark-position-option input { position:absolute; opacity:0; pointer-events:none; }
+.watermark-position-option:focus-within { outline:3px solid #347ed2; outline-offset:2px; }
+.watermark-position-diagram { position:relative; display:block; width:78px; height:44px; border:1px solid #6989ae; border-radius:6px; background:linear-gradient(145deg,#081426,#1b436b); }
+.watermark-position-diagram i { position:absolute; width:15px; height:8px; border-radius:2px; background:#d9eaff; box-shadow:0 1px 3px #0008; }
+.watermark-position-diagram i.is-top-left { top:5px; left:5px; }
+.watermark-position-diagram i.is-top-right { top:5px; right:5px; }
+.watermark-position-diagram i.is-bottom-left { bottom:5px; left:5px; }
+.watermark-position-diagram i.is-bottom-right { right:5px; bottom:5px; }
 .watermark-reset .studio-button-soft { padding:12px 18px; border:1px solid; border-radius:10px; font-weight:600; }
 .watermark-scope { margin-top:24px; padding-top:18px; border-top:1px solid #a9bfd7; }
 .watermark-guide ul { padding-left:20px; list-style:disc; line-height:1.7; font-size:14px; }
@@ -29,5 +43,6 @@ html[data-theme="dark"] .watermark-settings .uebtv-form-errors p { color:#ffd1de
     .watermark-settings .react-panel { padding:20px 16px; }
     .watermark-preview-grid { grid-template-columns:minmax(0,1fr); }
     .watermark-form .studio-button { width:100%; }
+    .watermark-position-options { grid-template-columns:repeat(2,minmax(0,1fr)); }
     .watermark-settings h2 { font-size:20px; }
 }

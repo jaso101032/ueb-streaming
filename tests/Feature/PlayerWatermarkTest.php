@@ -89,6 +89,7 @@ class PlayerWatermarkTest extends TestCase
         $this->assertSame(['url' => asset('images/brand/uebtv-logo-final.png'), 'custom' => false], PlayerWatermark::current());
     }
 
+
     #[DataProvider('invalidImages')]
     public function test_unsuitable_images_are_rejected_without_changing_the_current_mark(string $kind): void
     {

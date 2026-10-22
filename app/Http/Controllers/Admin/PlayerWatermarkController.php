@@ -44,6 +44,20 @@ class PlayerWatermarkController extends Controller
         return to_route('admin.watermark.edit')->with('success', 'Marca de agua actualizada. Se aplicará al abrir o recargar los reproductores.');
     }
 
+    public function updatePosition(Request $request)
+    {
+        $validated = $request->validate([
+            'position' => ['required', 'string', 'in:'.implode(',', PlayerWatermark::POSITIONS)],
+        ]);
+
+        PlayerWatermark::updateOrCreate(['id' => 1], [
+            'path' => PlayerWatermark::find(1)?->path ?? '',
+            'position' => $validated['position'],
+        ]);
+
+        return to_route('admin.watermark.edit')->with('success', 'Posición de la marca de agua actualizada. Se aplicará al abrir o recargar los reproductores.');
+    }
+
     public function destroy()
     {
         PlayerWatermark::whereKey(1)->delete();

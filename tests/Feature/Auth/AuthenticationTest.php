@@ -4,6 +4,7 @@ namespace Tests\Feature\Auth;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 class AuthenticationTest extends TestCase
@@ -46,6 +47,17 @@ class AuthenticationTest extends TestCase
     public function test_users_can_logout(): void
     {
         $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->post('/logout');
+
+        $this->assertGuest();
+        $response->assertRedirect('/');
+    }
+
+    public function test_users_can_logout_while_push_subscription_migration_is_pending(): void
+    {
+        $user = User::factory()->create();
+        Schema::dropIfExists('push_subscriptions');
 
         $response = $this->actingAs($user)->post('/logout');
 

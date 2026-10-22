@@ -2,8 +2,16 @@ import React, { useEffect, useState } from "react";
 import { Action, Feedback, Heading, Token } from "./shared";
 import PlayerWatermark from "./PlayerWatermark";
 
-export default function WatermarkSettings({ watermark, updateUrl, resetUrl }) {
+const POSITIONS = [
+    { id: "top-left", label: "Superior izquierda" },
+    { id: "top-right", label: "Superior derecha" },
+    { id: "bottom-left", label: "Inferior izquierda" },
+    { id: "bottom-right", label: "Inferior derecha" },
+];
+
+export default function WatermarkSettings({ watermark, updateUrl, positionUrl, resetUrl }) {
     const [file, setFile] = useState(null), [preview, setPreview] = useState(null);
+    const [position, setPosition] = useState(watermark.position || "top-right");
     const [error, setError] = useState(""), [busy, setBusy] = useState(false);
     useEffect(() => {
         if (!file) { setPreview(null); return; }
@@ -31,13 +39,29 @@ export default function WatermarkSettings({ watermark, updateUrl, resetUrl }) {
 
     return <div className="studio-page watermark-settings">
         <Heading eyebrow="IDENTIDAD DEL CANAL" title="Marca de agua">
-            Personaliza el sello que aparece en la esquina superior derecha del reproductor.
+            Personaliza la imagen y elige en qué esquina aparece dentro del reproductor.
         </Heading>
         <Feedback />
         <div className="watermark-settings-grid">
             <section className="studio-panel react-panel" aria-labelledby="watermark-form-title">
                 <h2 id="watermark-form-title">Imagen del reproductor</h2>
-                <p>Actualmente: <strong>{watermark.custom ? "marca personalizada" : "logo oficial de UEBTV"}</strong>.</p>
+                <form action={positionUrl} method="POST" className="watermark-position-form" onSubmit={(event) => {
+                    if (position === (watermark.position || "top-right")) { event.preventDefault(); return; }
+                    setBusy(true);
+                }}>
+                    <Token method="PUT" />
+                    <fieldset className="watermark-position-picker">
+                        <legend>Esquina del logo</legend>
+                        <div className="watermark-position-options">
+                            {POSITIONS.map(({ id, label }) => <label key={id} className={`watermark-position-option ${position === id ? "is-selected" : ""}`}>
+                                <input type="radio" name="position" value={id} checked={position === id} onChange={() => setPosition(id)} />
+                                <span className="watermark-position-diagram" aria-hidden="true"><i className={`is-${id}`} /></span>
+                                <span>{label}</span>
+                            </label>)}
+                        </div>
+                    </fieldset>
+                    <button className="studio-button" disabled={position === (watermark.position || "top-right") || busy}>{busy ? "Guardando…" : "Guardar posición"}</button>
+                </form>
                 <form action={updateUrl} method="POST" encType="multipart/form-data" className="watermark-form" onSubmit={(event) => {
                     if (!file || error) { event.preventDefault(); return; }
                     setBusy(true);
@@ -74,7 +98,7 @@ export default function WatermarkSettings({ watermark, updateUrl, resetUrl }) {
                 {["dark", "light"].map((background) => <figure key={background}>
                     <div className={`watermark-preview-stage is-${background}`}>
                         <span className="watermark-preview-caption">Área del video</span>
-                        <PlayerWatermark src={preview || watermark.url} />
+                        <PlayerWatermark src={preview || watermark.url} position={position} />
                     </div>
                     <figcaption>{background === "dark" ? "Sobre fondo oscuro" : "Sobre fondo claro y cuadrícula de transparencia"}</figcaption>
                 </figure>)}

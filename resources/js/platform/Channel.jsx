@@ -1,11 +1,59 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import Player, { BrandedVideo, clockedMediaTarget, isTimeBuffered } from "./Player";
 import { useShell } from "./shared";
 import UebtvMark from "./UebtvMark";
+import { createPortal } from "react-dom";
 
 export function durationLabel(seconds = 0) {
     const s = Math.max(0, Math.floor(seconds));
     return `${Math.floor(s / 3600)} h ${Math.floor((s % 3600) / 60)} min ${s % 60} s`;
+}
+
+function AgendaDialog({ items, onClose }) {
+    const dialog = useRef(null);
+    const groups = (items || []).reduce((result, item) => {
+        const date = new Date(item.starts_at);
+        const key = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+        (result[key] ||= { date, items: [] }).items.push(item);
+        return result;
+    }, {});
+
+    useEffect(() => {
+        const closeOnEscape = (event) => event.key === "Escape" && onClose();
+        dialog.current?.querySelector("button")?.focus();
+        document.addEventListener("keydown", closeOnEscape);
+        document.body.classList.add("has-channel-agenda-open");
+        return () => {
+            document.removeEventListener("keydown", closeOnEscape);
+            document.body.classList.remove("has-channel-agenda-open");
+        };
+    }, [onClose]);
+
+    const days = Object.values(groups);
+    return createPortal(<div className="channel-agenda-modal-backdrop" onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+    }}>
+        <section ref={dialog} className="channel-agenda-modal" role="dialog" aria-modal="true" aria-labelledby="channel-agenda-modal-title">
+            <header className="channel-agenda-modal-header">
+                <div className="channel-agenda-modal-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M7 3v4m10-4v4M3 10h18m-13 4h3m-3 3h7"/></svg>
+                </div>
+                <div><p className="studio-eyebrow">UEB · TV</p><h2 id="channel-agenda-modal-title">Programación</h2><p>Todos los contenidos que vienen en la señal.</p></div>
+                <button type="button" className="channel-agenda-modal-close" onClick={onClose} aria-label="Cerrar programación">×</button>
+            </header>
+            <div className="channel-agenda-modal-content">
+                {days.length ? days.map(({ date, items: dayItems }) => <section className="channel-agenda-day" key={`${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`}>
+                    <h3><span>{date.toLocaleDateString("es-EC", { weekday: "short" })}</span>{date.toLocaleDateString("es-EC", { day: "numeric", month: "long", year: "numeric" })}</h3>
+                    <div className="channel-agenda-day-items">{dayItems.map((item) => <article className="channel-agenda-modal-item" key={item.id}>
+                        <time>{new Date(item.starts_at).toLocaleTimeString("es-EC", { hour: "2-digit", minute: "2-digit" })}</time>
+                        <span className="channel-agenda-modal-timeline" aria-hidden="true" />
+                        <div><h4>{item.title}</h4><p>{durationLabel(item.duration)} <span>·</span> Pregrabado</p></div>
+                    </article>)}</div>
+                </section>) : <div className="channel-agenda-modal-empty"><span aria-hidden="true">✦</span><h3>Aún no hay emisiones programadas</h3><p>Cuando se agreguen contenidos, aparecerán aquí organizados por día.</p></div>}
+            </div>
+            <footer className="channel-agenda-modal-footer"><span>{items?.length || 0} {items?.length === 1 ? "emisión programada" : "emisiones programadas"}</span><button type="button" onClick={onClose}>Listo</button></footer>
+        </section>
+    </div>, document.body);
 }
 
 // The server owns the clock. Refreshes and late arrivals use the same position.
@@ -151,6 +199,7 @@ export default function Channel({ stateUrl }) {
     const shell = useShell();
     const tvMode = new URLSearchParams(window.location.search).get("modo") === "tv";
     const [data, setData] = useState(null);
+    const [agendaOpen, setAgendaOpen] = useState(false);
     const [received, setReceived] = useState(0);
     const [error, setError] = useState("");
     const [channelMuted, setChannelMuted] = useState(!tvMode);
@@ -201,6 +250,7 @@ export default function Channel({ stateUrl }) {
     const advertising = data?.mode === "advertisement";
     const playing = live || data?.mode === "scheduled" || advertising;
     const next = data?.next?.[0];
+    const closeAgenda = useCallback(() => setAgendaOpen(false), []);
     return (
         <div className={`studio-page channel-page ${tvMode ? "channel-page--tv" : ""}`}>
             <header className="channel-heading">
@@ -232,12 +282,6 @@ export default function Channel({ stateUrl }) {
             <div className="channel-layout">
                 <section className="channel-main" aria-label="UEB - TV">
                     <div className="channel-screen-frame">
-                        {!live && <div className="channel-screen-bar">
-                            <span>
-                                <i /> UEB - TV
-                                <small>PROGRAMACIÓN CONTINUA</small>
-                            </span>
-                        </div>}
                         <div
                             className={`channel-screen ${playing ? "is-playing" : "is-idle"}`}
                         >
@@ -389,6 +433,11 @@ export default function Channel({ stateUrl }) {
                             <span>{data?.next?.length || "—"}</span>
                         </h2>
                         <p>Las próximas historias de nuestra comunidad.</p>
+                        <button type="button" className="channel-agenda-open" onClick={() => setAgendaOpen(true)} aria-haspopup="dialog">
+                            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M7 3v4m10-4v4M3 10h18m-13 4h3m-3 3h7"/></svg>
+                            Ver programación completa
+                            <span aria-hidden="true">↗</span>
+                        </button>
                     </div>
                     <div className="channel-agenda">
                         {data?.next?.map((item, index) => (
@@ -476,6 +525,7 @@ export default function Channel({ stateUrl }) {
                         desplazar estos horarios.
                     </p>
                 </aside>
+                {agendaOpen && <AgendaDialog items={data?.agenda || []} onClose={closeAgenda} />}
                 </div>
             </div>
         </div>

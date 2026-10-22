@@ -8,6 +8,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
 
 class AuthenticatedSessionController extends Controller
@@ -38,7 +39,10 @@ class AuthenticatedSessionController extends Controller
     public function destroy(Request $request): RedirectResponse
     {
         // A signed-out browser must not keep receiving account-specific push content.
-        DB::table('push_subscriptions')->where('user_id', $request->user()->id)->delete();
+        // The table may not exist yet on an installation where its migration is pending.
+        if (Schema::hasTable('push_subscriptions')) {
+            DB::table('push_subscriptions')->where('user_id', $request->user()->id)->delete();
+        }
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();

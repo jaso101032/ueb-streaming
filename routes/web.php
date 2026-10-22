@@ -85,6 +85,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::delete('/usuarios/{usuario}', [\App\Http\Controllers\Admin\UserController::class, 'destroy'])->middleware('throttle:10,1')->name('usuarios.destroy');
     Route::get('/marca-de-agua', [\App\Http\Controllers\Admin\PlayerWatermarkController::class, 'edit'])->name('watermark.edit');
     Route::put('/marca-de-agua', [\App\Http\Controllers\Admin\PlayerWatermarkController::class, 'update'])->middleware('throttle:10,1')->name('watermark.update');
+    Route::put('/marca-de-agua/posicion', [\App\Http\Controllers\Admin\PlayerWatermarkController::class, 'updatePosition'])->middleware('throttle:20,1')->name('watermark.position');
     Route::delete('/marca-de-agua', [\App\Http\Controllers\Admin\PlayerWatermarkController::class, 'destroy'])->middleware('throttle:10,1')->name('watermark.destroy');
     
     Route::delete('/eventos/{evento}', [EventoController::class, 'destroy'])

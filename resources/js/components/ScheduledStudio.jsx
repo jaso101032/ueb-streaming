@@ -16,6 +16,8 @@ function Icon({ name = "play", size = 22 }) {
                 <path d="M12 7v5l3 2" />
             </>
         ),
+        plus: <path d="M12 5v14m-7-7h14" />,
+        chart: <><path d="M4 19V5m0 14h16" /><path d="m7 15 3-4 3 2 5-6" /></>,
         arrow: <path d="M5 12h14m-5-5 5 5-5 5" />,
         check: <path d="m5 12 4 4L19 6" />,
     };
@@ -314,9 +316,11 @@ export default function ScheduledStudio({
                     <Icon name="clock" size={14} /> Emisiones pregrabadas
                 </span>
             </div>
-            <nav className="schedule-content-switch" aria-label="Tipos de contenido">
-                <a href="#schedule-program-form"><Icon name="clock" size={17} /> Programación con horario</a>
-                <a href="#schedule-ads"><span aria-hidden="true">P</span> Publicidad institucional</a>
+            <nav className="schedule-quick-nav" aria-label="Navegación rápida de la parrilla">
+                <a href="#schedule-program-form"><Icon name="plus" size={17} /> Nueva programación</a>
+                <a href="#schedule-events"><Icon name="clock" size={17} /> Eventos programados <span className="schedule-quick-nav-count">{pagination.total}</span></a>
+                <a href="#schedule-ads"><span className="schedule-quick-nav-ad" aria-hidden="true">P</span> Anuncios institucionales <span className="schedule-quick-nav-count">{adRows.length}</span></a>
+                <a href="#schedule-summary"><Icon name="chart" size={17} /> Resumen de la señal</a>
             </nav>
             {success && (
                 <p className="studio-alert" role="status">
@@ -331,6 +335,7 @@ export default function ScheduledStudio({
                 </div>
             )}
             <div
+                id="schedule-summary"
                 className="schedule-totals"
                 aria-label="Duración de la programación"
             >
@@ -689,11 +694,11 @@ export default function ScheduledStudio({
                     </div>
                 </aside>
             </div>
-            <section className="studio-panel schedule-list">
+            <section id="schedule-events" className="studio-panel schedule-list" aria-labelledby="schedule-events-title">
                 <div className="studio-panel-heading">
                     <div>
                         <p className="studio-eyebrow">TU CARTELERA</p>
-                        <h2>Emisiones programadas</h2>
+                        <h2 id="schedule-events-title">Emisiones programadas</h2>
                         <a className="studio-text-link" href={action}>
                             Actualizar estado ↻
                         </a>

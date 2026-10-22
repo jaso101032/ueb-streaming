@@ -287,6 +287,7 @@ export function Profile(p) {
                             autoComplete="new-password"
                             minLength={8}
                         />
+                        <p className="react-password-requirements">Debe tener al menos 8 caracteres e incluir mayúsculas, minúsculas, números y símbolos (por ejemplo, ! o #).</p>
                         <Password
                             name="password_confirmation"
                             label="Confirmar nueva contraseña"

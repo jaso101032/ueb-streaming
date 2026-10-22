@@ -118,6 +118,19 @@ class ChannelTest extends TestCase
         $this->get(route('channel.state'))->assertJsonPath('mode', 'idle')->assertJsonPath('summary.totalSeconds', 900);
     }
 
+    public function test_channel_keeps_five_upcoming_items_and_exposes_the_full_agenda(): void
+    {
+        $this->freezeTime();
+        foreach (range(1, 8) as $index) {
+            $this->event("agenda-$index", $index * 86400, 60);
+        }
+
+        $response = $this->get(route('channel.state'))->assertOk();
+        $response->assertJsonCount(5, 'next')
+            ->assertJsonCount(8, 'agenda')
+            ->assertJsonPath('agenda.7.title', 'agenda-8');
+    }
+
     public function test_archive_deletion_does_not_rewind_the_current_program(): void
     {
         $this->freezeTime();

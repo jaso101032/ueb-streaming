@@ -16,13 +16,6 @@ pasos de actualización](docs/ENTREGA_2026-10-14.md).
 
 Para desplegar en Dokploy, sigue [la guía de producción](docs/despliegue-dokploy.md).
 
-Hay un [prototipo Android/Android TV](android/README.md) que abre la señal web
-en modo TV (`/senal?modo=tv`). El APK incluido en `public/descargas` está
-firmado para depuración: aún no es una versión de producción y falta probarlo
-en dispositivos reales. La portada `/senal` ofrece un QR y una descarga directa
-del APK; antes de distribuirlo como versión definitiva hay que validar su
-instalación y reproducción en teléfonos y televisores.
-
 Las grabaciones automáticas admiten un límite de FPS para el MP4 archivado,
 muestran su tamaño y ficha técnica al administrador y cuentan con indicador de
 almacenamiento. La cuota institucional es opcional y debe configurarse según
@@ -374,8 +367,7 @@ diagnóstico definitivo de la red; si persisten los cortes hay que revisar OBS,
 Nginx, el servidor y la conexión de los espectadores.
 
 En computadora, el reproductor admite `Espacio` para reproducir/pausar, `F`
-para alternar pantalla completa y `Esc` para salir; durante la publicidad,
-`Espacio` no pausa el anuncio. Las flechas izquierda y
+para alternar pantalla completa y `Esc` para salir. Las flechas izquierda y
 derecha retroceden o adelantan cinco segundos solo en videos bajo demanda y
 directos con DVR; no permiten saltar publicidad ni la programación sincronizada.
 Los atajos no se activan mientras se escribe en formularios.

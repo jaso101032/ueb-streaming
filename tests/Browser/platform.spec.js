@@ -64,6 +64,28 @@ test("Android TV channel mode shows a full-screen viewer without the website she
     expect(frame.width).toBeGreaterThanOrEqual(1440);
     expect(frame.height).toBeGreaterThanOrEqual(900);
 });
+test("channel agenda opens all upcoming programs grouped by date while the side list stays at five", async ({ page }) => {
+    const agenda = Array.from({ length: 8 }, (_, index) => ({
+        id: index + 1,
+        title: `Programa ${index + 1}`,
+        starts_at: new Date(Date.now() + (index + 1) * 86400000).toISOString(),
+        duration: 3600,
+    }));
+    await page.route("**/senal/estado", (route) => route.fulfill({ json: {
+        mode: "idle", event: null, playback: null, advertisement: null,
+        next: agenda.slice(0, 5), agenda,
+        summary: { count: 8, totalSeconds: 28800, remainingSeconds: 28800 },
+    } }));
+    await page.goto("/senal");
+    await expect(page.locator(".channel-agenda-item")).toHaveCount(5);
+    await page.getByRole("button", { name: "Ver programación completa" }).click();
+    const dialog = page.getByRole("dialog", { name: "Programación" });
+    await expect(dialog).toBeVisible();
+    await expect(dialog.locator(".channel-agenda-modal-item")).toHaveCount(8);
+    await expect(dialog.getByRole("heading", { name: "Programa 8" })).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(dialog).toBeHidden();
+});
 test("Android TV mode keeps advertising non-pausable and its controls reachable", async ({ page }) => {
     await page.route("**/senal/estado", (route) => route.fulfill({ json: {
         mode: "advertisement", event: null,
@@ -1024,8 +1046,11 @@ test("a repeated institutional ad returns to its new cycle without reloading", a
 test("admin sees separate programming and institutional advertising forms on mobile", async ({ page }) => {
     await login(page);
     await page.goto("/admin/contenido-programado");
-    await expect(page.getByRole("link", { name: "Programación con horario" })).toBeVisible();
-    await page.getByRole("link", { name: "Publicidad institucional" }).click();
+    const quickNav = page.getByRole("navigation", { name: "Navegación rápida de la parrilla" });
+    await expect(quickNav.getByRole("link", { name: /Nueva programación/ })).toBeVisible();
+    await expect(quickNav.getByRole("link", { name: /Eventos programados/ })).toBeVisible();
+    await quickNav.getByRole("link", { name: /Anuncios institucionales/ }).click();
+    await expect(page).toHaveURL(/#schedule-ads$/);
     await expect(page.getByRole("heading", { name: "Publicidad institucional" })).toBeVisible();
     await expect(page.getByLabel("Nombre del anuncio")).toBeVisible();
     await expect(page.getByLabel("Archivo de video")).toBeVisible();
