@@ -57,6 +57,7 @@ function StorageMeter({ storage }) {
 export default function Shell({ shell, children }) {
     const [menu, setMenu] = useState(false);
     const [creditsOpen, setCreditsOpen] = useState(false);
+    const [creditsMoreOpen, setCreditsMoreOpen] = useState(false);
     const menuRef = useRef(null), menuButtonRef = useRef(null);
     const creditsRef = useRef(null), creditsButtonRef = useRef(null);
     const currentPath = typeof window === "undefined" ? "" : window.location.pathname;
@@ -73,7 +74,7 @@ export default function Shell({ shell, children }) {
     });
     useEffect(() => {
         const fn = (e) => {
-            if (e.key === "Escape") { setMenu(false); setCreditsOpen(false); }
+            if (e.key === "Escape") { setMenu(false); setCreditsOpen(false); setCreditsMoreOpen(false); }
         };
         window.addEventListener("keydown", fn);
         return () => window.removeEventListener("keydown", fn);
@@ -81,7 +82,7 @@ export default function Shell({ shell, children }) {
     useEffect(() => {
         if (!creditsOpen) return undefined;
         const closeOutside = (event) => {
-            if (!creditsRef.current?.contains(event.target) && !creditsButtonRef.current?.contains(event.target)) setCreditsOpen(false);
+            if (!creditsRef.current?.contains(event.target) && !creditsButtonRef.current?.contains(event.target)) { setCreditsOpen(false); setCreditsMoreOpen(false); }
         };
         document.addEventListener("pointerdown", closeOutside);
         return () => document.removeEventListener("pointerdown", closeOutside);
@@ -255,8 +256,15 @@ export default function Shell({ shell, children }) {
                 </div>
             </div>
             <div className="uebtv-credits-widget">
-                {creditsOpen && <div ref={creditsRef} id="uebtv-credits-panel" className="uebtv-credits-panel" role="status"><span className="uebtv-credits-panel__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3 14.6 8.3 20.5 9.1 16.2 13.2 17.2 19 12 16.2 6.8 19 7.8 13.2 3.5 9.1 9.4 8.3 12 3Z" /></svg></span><span className="uebtv-credits-panel__copy"><small>PLATAFORMA UEBTV</small><strong>Desarrolladores</strong><span>Javier Solis <i>·</i> Cristhian Rochina</span><em>Universidad Estatal de Bolívar</em></span></div>}
-                <button ref={creditsButtonRef} type="button" className="uebtv-credits-button" aria-label={creditsOpen ? "Cerrar créditos" : "Mostrar créditos"} aria-expanded={creditsOpen} aria-controls="uebtv-credits-panel" title="Créditos" onClick={() => setCreditsOpen((open) => !open)}>
+                {creditsOpen && <div ref={creditsRef} id="uebtv-credits-panel" className="uebtv-credits-panel" role="region" aria-label="Créditos de UEBTV">
+                    <span className="uebtv-credits-panel__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3 14.6 8.3 20.5 9.1 16.2 13.2 17.2 19 12 16.2 6.8 19 7.8 13.2 3.5 9.1 9.4 8.3 12 3Z" /></svg></span>
+                    <div className="uebtv-credits-panel__content">
+                        <div className="uebtv-credits-panel__copy"><small>PLATAFORMA UEBTV</small><strong>Desarrolladores</strong><span>Javier Solis <i>·</i> Cristhian Rochina</span><em>Universidad Estatal de Bolívar</em></div>
+                        <button type="button" className="uebtv-credits-more" aria-expanded={creditsMoreOpen} aria-controls="uebtv-credits-more" onClick={() => setCreditsMoreOpen((open) => !open)}>{creditsMoreOpen ? "Ver menos" : "Ver más"}<span aria-hidden="true">{creditsMoreOpen ? "−" : "+"}</span></button>
+                        {creditsMoreOpen && <div id="uebtv-credits-more" className="uebtv-credits-details"><p><small>DIRECTOR</small><strong>Ing. Rodrigo Del Pozo Durango, MsC.</strong></p><p><small>PARES ACADÉMICOS</small><strong>Dr. Henry Vallejo <i>·</i> Lic. Danilo Villaruel</strong></p></div>}
+                    </div>
+                </div>}
+                <button ref={creditsButtonRef} type="button" className="uebtv-credits-button" aria-label={creditsOpen ? "Cerrar créditos" : "Mostrar créditos"} aria-expanded={creditsOpen} aria-controls="uebtv-credits-panel" title="Créditos" onClick={() => { setCreditsOpen((open) => !open); if (creditsOpen) setCreditsMoreOpen(false); }}>
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 14.6 8.3 20.5 9.1 16.2 13.2 17.2 19 12 16.2 6.8 19 7.8 13.2 3.5 9.1 9.4 8.3 12 3Z" /></svg><span>Créditos</span>
                 </button>
             </div>

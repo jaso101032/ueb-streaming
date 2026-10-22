@@ -217,6 +217,7 @@ export default function ScheduledStudio({
     const submitting = upload.phase === "uploading" || upload.phase === "verifying";
     const [eventRows, setEventRows] = useState(events);
     const [adRows, setAdRows] = useState(ads);
+    const [activePanel, setActivePanel] = useState("form");
     const hasConversions = eventRows.some((event) => ["pending", "processing"].includes(event.state))
         || adRows.some((ad) => ["pending", "processing"].includes(ad.status));
     useEffect(() => {
@@ -317,10 +318,10 @@ export default function ScheduledStudio({
                 </span>
             </div>
             <nav className="schedule-quick-nav" aria-label="Navegación rápida de la parrilla">
-                <a href="#schedule-program-form"><Icon name="plus" size={17} /> Nueva programación</a>
-                <a href="#schedule-events"><Icon name="clock" size={17} /> Eventos programados <span className="schedule-quick-nav-count">{pagination.total}</span></a>
-                <a href="#schedule-ads"><span className="schedule-quick-nav-ad" aria-hidden="true">P</span> Anuncios institucionales <span className="schedule-quick-nav-count">{adRows.length}</span></a>
-                <a href="#schedule-summary"><Icon name="chart" size={17} /> Resumen de la señal</a>
+                <button type="button" aria-pressed={activePanel === "form"} onClick={() => setActivePanel("form")}><Icon name="plus" size={17} /> Nueva programación</button>
+                <button type="button" aria-pressed={activePanel === "events"} onClick={() => setActivePanel("events")}><Icon name="clock" size={17} /> Eventos programados <span className="schedule-quick-nav-count">{pagination.total}</span></button>
+                <button type="button" aria-pressed={activePanel === "ads"} onClick={() => setActivePanel("ads")}><span className="schedule-quick-nav-ad" aria-hidden="true">P</span> Anuncios institucionales <span className="schedule-quick-nav-count">{adRows.length}</span></button>
+                <button type="button" onClick={() => document.getElementById("schedule-summary")?.scrollIntoView({ behavior: "smooth", block: "start" })}><Icon name="chart" size={17} /> Resumen de la señal</button>
             </nav>
             {success && (
                 <p className="studio-alert" role="status">
@@ -369,42 +370,24 @@ export default function ScheduledStudio({
                 className="schedule-progress"
                 aria-label={`${complete} de 3 secciones completadas`}
             >
-                <span>Prepara tu emisión</span>
+                <span>Preparación de la emisión</span>
                 <div>
-                    {["Contenido", "Horario", "Video"].map((label, i) => (
-                        <span
-                            key={label}
-                            className={
-                                [!!title.trim() && !!category, !!date, !!file][
-                                    i
-                                ]
-                                    ? "is-complete"
-                                    : ""
-                            }
-                        >
-                            <i>
-                                {[!!title.trim() && !!category, !!date, !!file][
-                                    i
-                                ] ? (
-                                    <Icon name="check" size={13} />
-                                ) : (
-                                    i + 1
-                                )}
-                            </i>
-                            {label}
+                    {[[!!title.trim() && !!category, "Contenido"], [!!date, "Horario"], [!!file, "Video"]].map(([done, label], i) => (
+                        <span key={label} className={done ? "is-complete" : ""}>
+                            <i>{done ? <Icon name="check" size={13} /> : i + 1}</i>{label}
                         </span>
                     ))}
                 </div>
                 <small>{complete} / 3</small>
             </div>
-            {uploadLimits.serverLimited && (
+            {activePanel === "form" && uploadLimits.serverLimited && (
                 <p className="studio-alert" role="status">
                     El servidor permite actualmente {uploadLimits.maxMb} MB por
                     video. Para cargar hasta 500 MB, amplía upload_max_filesize
                     y post_max_size y reinicia el servidor PHP.
                 </p>
             )}
-            <div className="schedule-layout">
+            {activePanel === "form" && <div className="schedule-layout">
                 <form
                     id="schedule-program-form"
                     className="schedule-form"
@@ -693,8 +676,8 @@ export default function ScheduledStudio({
                         </ol>
                     </div>
                 </aside>
-            </div>
-            <section id="schedule-events" className="studio-panel schedule-list" aria-labelledby="schedule-events-title">
+            </div>}
+            {activePanel === "events" && <section id="schedule-events" className="studio-panel schedule-list" aria-labelledby="schedule-events-title">
                 <div className="studio-panel-heading">
                     <div>
                         <p className="studio-eyebrow">TU CARTELERA</p>
@@ -781,8 +764,8 @@ export default function ScheduledStudio({
                         )}
                     </nav>
                 )}
-            </section>
-            <InstitutionalAds action={adAction} csrf={csrf} ads={adRows} old={old} uploadLimits={uploadLimits} />
+            </section>}
+            {activePanel === "ads" && <InstitutionalAds action={adAction} csrf={csrf} ads={adRows} old={old} uploadLimits={uploadLimits} />}
         </div>
     );
 }

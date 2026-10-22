@@ -164,12 +164,31 @@ body { background:#f5f7fb; }
 .uebtv-credits-panel::before { position:absolute; top:0; left:0; width:100%; height:4px; background:linear-gradient(90deg,#164d7d,#42a5df,#bbdaf6); content:""; }
 .uebtv-credits-panel__icon { display:grid; flex:0 0 42px; place-items:center; width:42px; height:42px; border:1px solid #c8def5; border-radius:13px; background:linear-gradient(145deg,#e5f2ff,#f7fbff); color:#2465a2; }
 .uebtv-credits-panel__icon svg { width:22px; height:22px; fill:#b9daf8; stroke:currentColor; stroke-width:1.3; stroke-linejoin:round; }
+.uebtv-credits-panel__content { display:grid; flex:1; gap:12px; min-width:0; }
 .uebtv-credits-panel__copy { display:grid; gap:3px; min-width:0; }
 .uebtv-credits-panel__copy small { color:#6282a5; font-size:8px; font-weight:800; letter-spacing:.16em; }
 .uebtv-credits-panel__copy strong { color:#123254; font-size:14px; letter-spacing:-.02em; }
 .uebtv-credits-panel__copy > span { color:#385b7d; font-size:11px; font-weight:650; }
 .uebtv-credits-panel__copy i { padding:0 3px; color:#3781bb; font-style:normal; }
 .uebtv-credits-panel__copy em { color:#7890a8; font-size:10px; font-style:normal; }
+.uebtv-credits-more { display:inline-flex; align-items:center; justify-content:space-between; gap:12px; width:max-content; min-width:98px; padding:7px 10px; border:1px solid #b7d1ee; border-radius:9px; background:#eaf3ff; color:#175494; font-size:11px; font-weight:750; cursor:pointer; transition:background .16s,border-color .16s,transform .16s; }
+.uebtv-credits-more:hover { transform:translateY(-1px); border-color:#75a9df; background:#dcecff; }
+.uebtv-credits-more:focus-visible { outline:2px solid #347fc7; outline-offset:2px; }
+.uebtv-credits-more > span { font-size:15px; line-height:1; }
+.uebtv-credits-details { display:grid; gap:9px; padding-top:11px; border-top:1px solid #d5e3f2; animation:uebtv-credits-appear .18s ease-out; }
+.uebtv-credits-details p { display:grid; gap:3px; margin:0; }
+.uebtv-credits-details small { color:#6282a5; font-size:8px; font-weight:800; letter-spacing:.13em; }
+.uebtv-credits-details strong { color:#183654; font-size:11px; line-height:1.45; }
+.uebtv-credits-details i { color:#3781bb; font-style:normal; }
+html[data-theme="dark"] .uebtv-credits-panel { border-color:#42678e; background:linear-gradient(135deg,#142b46 0%,#0c1c31 100%); color:#dbeaff; box-shadow:0 18px 48px #0009,0 3px 10px #0006; }
+html[data-theme="dark"] .uebtv-credits-panel__icon { border-color:#355b81; background:linear-gradient(145deg,#1b4168,#102641); color:#a9d7ff; }
+html[data-theme="dark"] .uebtv-credits-panel__copy small,html[data-theme="dark"] .uebtv-credits-details small { color:#9ab9d9; }
+html[data-theme="dark"] .uebtv-credits-panel__copy strong,html[data-theme="dark"] .uebtv-credits-details strong { color:#eff7ff; }
+html[data-theme="dark"] .uebtv-credits-panel__copy > span { color:#c3d9ef; }
+html[data-theme="dark"] .uebtv-credits-panel__copy em { color:#9ab4ce; }
+html[data-theme="dark"] .uebtv-credits-more { border-color:#416b96; background:#183b5e; color:#d9edff; }
+html[data-theme="dark"] .uebtv-credits-more:hover { border-color:#6da8e3; background:#205184; }
+html[data-theme="dark"] .uebtv-credits-details { border-color:#315171; }
 @keyframes uebtv-credits-pulse { 0% { opacity:.65; transform:scale(.94); } 75%,100% { opacity:0; transform:scale(1.18); } }
 @keyframes uebtv-credits-appear { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:translateY(0); } }
 @media(max-width:560px) { .uebtv-credits-widget { right:14px; bottom:14px; }.uebtv-credits-panel { padding:16px; } }
