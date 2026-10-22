@@ -491,7 +491,8 @@ html[data-theme="dark"] .watch-experience .uebtv-chat-bubble { border:0; backgro
         box-shadow:0 12px 28px -18px #071b3580;
     }
     .channel-heading::after { border-color:#a9d4ff35; box-shadow:0 0 0 28px #a9d4ff0d,0 0 0 56px #a9d4ff08; }
-    .channel-heading .channel-heading-title__mobile { display:none; }
+    .channel-heading-title__mark,.channel-heading-title__suffix { display:none; }
+    .channel-heading .channel-heading-title__mobile { display:block; width:clamp(116px,36vw,148px); }
     .channel-institution-mark { filter:brightness(0) invert(1); }
     .channel-catalog { border-color:#a9d3ff; background:#a9d3ff; color:#10375f; box-shadow:0 5px 14px #020b1833; }
     .channel-catalog:hover { background:#d3e8ff; color:#0c2c4d; }
