@@ -83,8 +83,9 @@ export default function WatermarkSettings({ watermark, updateUrl, positionUrl, r
                 <ul id="watermark-rules">
                     <li>Usa únicamente el logo institucional oficial o una variante autorizada.</li>
                     <li>Exporta como <strong>PNG estático con fondo transparente</strong>. No basta con cambiar la extensión.</li>
-                    <li>Ancho: <strong>128–2048 px</strong>. Alto: <strong>64–2048 px</strong>. Forma cuadrada u horizontal, entre 1:1 y 6:1.</li>
-                    <li>Recomendado: <strong>768 × 384 px</strong>, sin márgenes grandes y con un pequeño espacio transparente alrededor.</li>
+                    <li>No necesitas ajustar las dimensiones ni la proporción: el sistema adapta automáticamente imágenes pequeñas, grandes, verticales o panorámicas a un lienzo cuadrado u horizontal.</li>
+                    <li>El logo se conserva completo, sin recortarlo ni estirarlo; si hace falta, el sistema añade espacio transparente alrededor.</li>
+                    <li>Para un logo horizontal, se recomienda una imagen de <strong>768 × 384 px</strong> con un pequeño margen transparente.</li>
                     <li>Prefiere una versión blanca o con contorno que se distinga sobre escenas claras y oscuras.</li>
                 </ul>
                 <p>Se rechazan imágenes opacas, vacías, animadas, con bordes sin transparencia y archivos JPG, SVG, GIF o WebP. Una cuadrícula pintada no es transparencia.</p>

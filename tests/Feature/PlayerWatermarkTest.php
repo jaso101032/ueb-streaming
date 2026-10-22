@@ -67,7 +67,7 @@ class PlayerWatermarkTest extends TestCase
         $response = $this->get('/senal')->assertOk();
         preg_match('/data-shell="([^"]*)"/', $response->getContent(), $match);
         $shell = json_decode(html_entity_decode($match[1], ENT_QUOTES), true);
-        $this->assertSame(['url' => asset('storage/'.$path), 'custom' => true], $shell['playerWatermark']);
+        $this->assertSame(['url' => asset('storage/'.$path), 'custom' => true, 'position' => 'top-right'], $shell['playerWatermark']);
         $this->assertSame(asset('images/brand/uebtv-logo-final.png'), $shell['tvLogo']);
         $this->assertSame(asset('images/brand/ueb-wordmark.png'), $shell['logo']);
         $this->assertSame([], $shell['links']);
@@ -86,7 +86,31 @@ class PlayerWatermarkTest extends TestCase
         Storage::disk('public')->assertExists($paths);
         $this->delete(route('admin.watermark.destroy'))->assertRedirect(route('admin.watermark.edit'));
         $this->assertDatabaseCount('player_watermarks', 0);
-        $this->assertSame(['url' => asset('images/brand/uebtv-logo-final.png'), 'custom' => false], PlayerWatermark::current());
+        $this->assertSame(['url' => asset('images/brand/uebtv-logo-final.png'), 'custom' => false, 'position' => 'top-right'], PlayerWatermark::current());
+    }
+
+    public function test_nonconforming_dimensions_are_resized_or_padded_without_distorting_the_logo(): void
+    {
+        $this->actingAs(User::factory()->create(['role' => 'admin']));
+        $cases = [
+            ['small', 64, 32, 128, 64],
+            ['portrait', 128, 256, 256, 256],
+            ['panoramic', 768, 64, 768, 128],
+            ['large', 2049, 1024, 768, 384],
+        ];
+
+        foreach ($cases as [$name, $width, $height, $expectedWidth, $expectedHeight]) {
+            $this->put(route('admin.watermark.update'), [
+                'watermark' => $this->png(width: $width, height: $height, name: $name),
+            ])->assertRedirect(route('admin.watermark.edit'))->assertSessionHasNoErrors();
+
+            $path = PlayerWatermark::findOrFail(1)->path;
+            $size = getimagesizefromstring(Storage::disk('public')->get($path));
+            $this->assertSame([$expectedWidth, $expectedHeight], [$size[0], $size[1]], "Dimensiones normalizadas para {$name}.");
+            $this->assertGreaterThanOrEqual(128, $size[0]);
+            $this->assertGreaterThanOrEqual(64, $size[1]);
+            $this->assertLessThanOrEqual(6, $size[0] / $size[1]);
+        }
     }
 
 
@@ -97,10 +121,6 @@ class PlayerWatermarkTest extends TestCase
         PlayerWatermark::create(['id' => 1, 'path' => 'player-watermarks/existing.png']);
         $file = match ($kind) {
             'opaque', 'single-transparent-pixel', 'opaque-border', 'empty', 'palette' => $this->png(kind: $kind),
-            'small' => $this->png(width: 64, height: 32),
-            'huge' => $this->png(width: 2049, height: 1024),
-            'portrait' => $this->png(width: 128, height: 256),
-            'too-wide' => $this->png(width: 768, height: 64),
             'jpg' => UploadedFile::fake()->image('logo.jpg', 256, 128),
             'renamed-jpg' => UploadedFile::fake()->createWithContent('logo.png', UploadedFile::fake()->image('logo.jpg', 256, 128)->getContent()),
             'svg' => UploadedFile::fake()->createWithContent('logo.svg', '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>'),
@@ -118,7 +138,7 @@ class PlayerWatermarkTest extends TestCase
     public static function invalidImages(): array
     {
         return array_map(fn ($kind) => [$kind], ['opaque', 'single-transparent-pixel', 'opaque-border', 'empty', 'palette',
-            'small', 'huge', 'portrait', 'too-wide', 'jpg', 'renamed-jpg', 'svg', 'corrupt', 'oversized', 'wrong-extension', 'animated']);
+            'jpg', 'renamed-jpg', 'svg', 'corrupt', 'oversized', 'wrong-extension', 'animated']);
     }
 
     public function test_a_file_is_required_and_storage_failure_preserves_existing_setting(): void
@@ -146,7 +166,7 @@ class PlayerWatermarkTest extends TestCase
         $this->assertTrue(PlayerWatermark::current()['custom']);
     }
 
-    private function png(string $kind = 'transparent', int $width = 256, int $height = 128): UploadedFile
+    private function png(string $kind = 'transparent', int $width = 256, int $height = 128, string $name = 'logo'): UploadedFile
     {
         $image = imagecreatetruecolor($width, $height);
         imagealphablending($image, false);
@@ -167,7 +187,7 @@ class PlayerWatermarkTest extends TestCase
         ob_start();
         imagepng($image);
 
-        return UploadedFile::fake()->createWithContent('logo.png', ob_get_clean().'EXTRA_METADATA');
+        return UploadedFile::fake()->createWithContent($name.'.png', ob_get_clean().'EXTRA_METADATA');
     }
 
     private function animatedPng(): UploadedFile
