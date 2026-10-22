@@ -143,6 +143,7 @@ test("mobile channel places the UEBTV and UEB marks side by side", async ({ page
         const universityMark = page.locator(".channel-institution-mark");
         await expect(tvMark).toBeHidden();
         await expect(page.locator(".channel-heading-title__mark")).toBeVisible();
+        await expect(page.getByRole("img", { name: "Logotipo de UEBTV" })).toBeHidden();
         const suffix = page.locator(".channel-heading-title__suffix");
         await expect(suffix).toBeVisible();
         await expect(suffix).toHaveCSS("color", /rgb\(255, 255, 255\)|rgb\(241, 247, 255\)/);
