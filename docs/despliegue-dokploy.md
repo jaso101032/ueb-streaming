@@ -73,10 +73,35 @@ Git ni las pegues en chats:
 | `STREAMING_MEDIA_QUOTA_GB` | Opcional: cupo asignado a los medios UEBTV en GiB, por ejemplo `30`. No lo configures sin confirmar el límite real del host. |
 | `WEB_PUSH_SUBJECT` | Opcional: `mailto:correo-institucional@ejemplo.edu.ec` para avisos del navegador. |
 | `WEB_PUSH_PUBLIC_KEY`, `WEB_PUSH_PRIVATE_KEY` | Opcionales: par VAPID persistente. Generación y comprobación en [notificaciones](notificaciones.md). Sin ellas, solo funciona la campana interna. |
+| `MAIL_MAILER` | `smtp` para enviar correos reales. El valor predeterminado `log` no entrega mensajes. |
+| `MAIL_HOST`, `MAIL_PORT` | Servidor SMTP y puerto proporcionados por el proveedor del correo (habitualmente 587 o 465). |
+| `MAIL_SCHEME` | Usa `smtps` cuando el proveedor exija SSL/TLS implícito en el puerto 465. Para 587 con STARTTLS, déjalo vacío. |
+| `MAIL_USERNAME`, `MAIL_PASSWORD` | Usuario (normalmente la dirección completa) y contraseña SMTP. Guárdalos solo como secretos en Dokploy. |
+| `MAIL_FROM_ADDRESS`, `MAIL_FROM_NAME` | Remitente autorizado por el proveedor y nombre visible, por ejemplo `notificaciones@tu-dominio` y `UEBTV`. |
 
 La configuración del Compose obliga a definir las cinco variables secretas/de
 conexión antes de desplegar. Usa los mismos valores de base de datos en ambos
 servicios automáticamente; el servicio Postgres no debe exponerse públicamente.
+
+### Correo para recuperar contraseñas
+
+El formulario `/forgot-password` ya envía enlaces mediante el sistema de correo
+de Laravel. Para habilitarlo en producción, configura las variables `MAIL_*`
+anteriores en el servicio **Compose** de Dokploy y vuelve a desplegar para que
+el contenedor reciba la configuración nueva. Comprueba con el proveedor SMTP el
+host, puerto, tipo de cifrado, usuario, contraseña y dirección de remitente
+permitida; crear un buzón por sí solo no activa el envío desde la aplicación.
+No uses `localhost` como `MAIL_HOST` salvo que haya un servidor SMTP dentro
+del propio contenedor. Mantén `APP_URL` con el dominio HTTPS público para que
+el enlace de recuperación apunte a la web correcta.
+
+Prueba con una cuenta de la plataforma cuyo correo puedas consultar: abre
+`/forgot-password`, solicita el enlace y verifica que llega, que apunta al
+dominio correcto y que permite cambiar la contraseña. Revisa también la
+carpeta de spam. Si no llega, consulta los registros de `app` en Dokploy sin
+publicar la contraseña SMTP ni enlaces de recuperación. Para mejorar la
+entrega, configura SPF, DKIM y DMARC siguiendo las indicaciones del proveedor
+del dominio.
 
 ## Red y primer arranque
 
