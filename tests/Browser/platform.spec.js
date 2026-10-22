@@ -141,9 +141,14 @@ test("mobile channel places the UEBTV and UEB marks side by side", async ({ page
         await page.setViewportSize({ width, height: 844 });
         const tvMark = page.locator(".channel-heading-title__mobile");
         const universityMark = page.locator(".channel-institution-mark");
-        await expect(tvMark).toBeVisible();
+        await expect(tvMark).toBeHidden();
+        await expect(page.locator(".channel-heading-title__mark")).toBeVisible();
+        const suffix = page.locator(".channel-heading-title__suffix");
+        await expect(suffix).toBeVisible();
+        await expect(suffix).toHaveCSS("color", /rgb\(255, 255, 255\)|rgb\(241, 247, 255\)/);
+        await expect(page.locator(".channel-heading-title__mark img")).toHaveCSS("filter", "brightness(0) invert(1)");
         await expect(universityMark).toBeVisible();
-        const tv = await tvMark.boundingBox();
+        const tv = await page.locator(".channel-heading-title").boundingBox();
         const university = await universityMark.boundingBox();
         expect(tv.x + tv.width).toBeLessThanOrEqual(university.x + 1);
         expect(Math.abs(tv.y + tv.height / 2 - university.y - university.height / 2)).toBeLessThan(18);
@@ -152,11 +157,15 @@ test("mobile channel places the UEBTV and UEB marks side by side", async ({ page
     }
     await page.setViewportSize({ width: 390, height: 844 });
     await page.evaluate(() => { document.documentElement.dataset.theme = "dark"; });
-    await expect(page.locator(".channel-heading-title__mobile")).toBeVisible();
+    await expect(page.locator(".channel-heading-title__mobile")).toBeHidden();
+    await expect(page.locator(".channel-heading-title__mark")).toBeVisible();
     await expect(page.locator(".channel-institution-mark")).toBeVisible();
     await expect(page.locator("body")).toHaveJSProperty("scrollWidth", 390);
+    await page.evaluate(() => { document.documentElement.dataset.theme = "light"; });
     await page.setViewportSize({ width: 1440, height: 900 });
     await expect(page.locator(".channel-heading-title__mobile")).toBeHidden();
+    await expect(page.locator(".channel-heading-title__suffix")).toHaveCSS("color", "rgb(16, 39, 68)");
+    await expect(page.locator(".channel-heading-title__mark img")).toHaveCSS("filter", "none");
 });
 test("mobile recorded player aligns timeline and speed and keeps details compact", async ({ page }) => {
     await page.route("**/test-video.mp4", (route) => route.fulfill({
