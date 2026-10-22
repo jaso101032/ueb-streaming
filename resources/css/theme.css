@@ -481,3 +481,18 @@ html[data-theme="dark"] .watch-experience .uebtv-chat-bubble { border:0; backgro
     .studio-header .studio-account { gap:4px; }
     .studio-header .studio-notifications__toggle,.studio-header .studio-theme-toggle,.studio-header .studio-menu-toggle { width:36px; height:36px; min-width:36px; }
 }
+
+/* En móvil, el encabezado del canal usa la misma composición de marca que la web:
+   logo UEBTV y marca UEB en blanco sobre una tarjeta azul institucional. */
+@media(max-width:640px) {
+    .channel-heading {
+        background:linear-gradient(125deg,#071b35,#123d68);
+        border-color:#315982;
+        box-shadow:0 12px 28px -18px #071b3580;
+    }
+    .channel-heading::after { border-color:#a9d4ff35; box-shadow:0 0 0 28px #a9d4ff0d,0 0 0 56px #a9d4ff08; }
+    .channel-heading .channel-heading-title__mobile { display:block; width:clamp(116px,36vw,148px); }
+    .channel-institution-mark { filter:brightness(0) invert(1); }
+    .channel-catalog { border-color:#a9d3ff; background:#a9d3ff; color:#10375f; box-shadow:0 5px 14px #020b1833; }
+    .channel-catalog:hover { background:#d3e8ff; color:#0c2c4d; }
+}
