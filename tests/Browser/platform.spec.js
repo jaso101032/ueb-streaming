@@ -168,6 +168,23 @@ test("mobile channel places the UEBTV and UEB marks side by side", async ({ page
     await expect(page.locator(".channel-heading-title__suffix")).toHaveCSS("color", "rgb(16, 39, 68)");
     await expect(page.locator(".channel-heading-title__mark img")).toHaveCSS("filter", "none");
 });
+test("catalog UEB-TV mark keeps contrast on light and dark mobile backgrounds", async ({ page }) => {
+    await page.goto("/eventos");
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.evaluate(() => { document.documentElement.dataset.theme = "light"; });
+    const mark = page.locator(".uebtv-catalog-title .channel-heading-title__mark img");
+    const suffix = page.locator(".uebtv-catalog-title .channel-heading-title__suffix");
+    await expect(mark).toBeVisible();
+    await expect(mark).toHaveCSS("filter", "none");
+    await expect(suffix).toHaveCSS("color", "rgb(16, 39, 68)");
+    await page.evaluate(() => { document.documentElement.dataset.theme = "dark"; });
+    await expect(mark).toHaveCSS("filter", "brightness(0) invert(1)");
+    await expect(suffix).toHaveCSS("color", "rgb(241, 247, 255)");
+    await page.evaluate(() => { document.documentElement.dataset.theme = "light"; });
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await expect(mark).toHaveCSS("filter", "none");
+    await expect(suffix).toHaveCSS("color", "rgb(16, 39, 68)");
+});
 test("mobile recorded player aligns timeline and speed and keeps details compact", async ({ page }) => {
     await page.route("**/test-video.mp4", (route) => route.fulfill({
         body: readFileSync("/tmp/uebtv-react-test.mp4"),

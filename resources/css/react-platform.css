@@ -1024,7 +1024,7 @@ button:disabled {
     .channel-heading .channel-heading-title { margin:0; }
     .channel-heading .channel-heading-title__suffix { color:#fff; }
     .channel-heading-title__mark, .channel-heading-title__suffix { display:block; }
-    .channel-heading-title__mark img { filter:brightness(0) invert(1); }
+    .channel-heading .channel-heading-title__mark img { filter:brightness(0) invert(1); }
     .channel-heading .channel-heading-title__mobile { display:none; }
     .channel-heading-actions { display:contents; }
     .channel-institution-mark { flex:0 0 auto; width:clamp(90px,27vw,118px); max-height:none; }
