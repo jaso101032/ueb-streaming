@@ -63,6 +63,7 @@ export default function Shell({ shell, children }) {
     const currentPath = typeof window === "undefined" ? "" : window.location.pathname;
     const channelPath = new URL(shell.channel, "http://localhost").pathname;
     const catalogPath = new URL(shell.catalog, "http://localhost").pathname;
+    const isChannelPage = currentPath === channelPath;
     const [theme, setTheme] = useState(() => {
         if (typeof window === "undefined") return "light";
         const saved = window.localStorage.getItem("uebtv-theme");
@@ -105,7 +106,7 @@ export default function Shell({ shell, children }) {
                 <a className="studio-skip" href="#contenido">
                     Saltar al contenido
                 </a>
-                <header className={`studio-header ${shell.operator ? "studio-header--operator" : ""}`}>
+                <header className={`studio-header ${shell.operator ? "studio-header--operator" : ""} ${isChannelPage ? "studio-header--channel" : ""}`}>
                     <div className="studio-header-inner">
                         <a className="studio-brand studio-brand--facagei" href={shell.home} aria-label="FACAGEI UEBTV">
                             <img
