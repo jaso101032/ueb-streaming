@@ -175,6 +175,22 @@ test("channel keeps the FACAGEI masthead without a second banner on desktop and 
         await expect(page.locator("body")).toHaveJSProperty("scrollWidth", width);
     }
 });
+test("channel adapts to laptop widths and short viewports without clipping its layout", async ({ page }) => {
+    await page.goto("/senal");
+    for (const [width, height] of [[320, 720], [600, 800], [768, 600], [900, 720], [1024, 600], [1100, 720], [1280, 720], [1366, 768], [1600, 900]]) {
+        await page.setViewportSize({ width, height });
+        await expect(page.locator("body")).toHaveJSProperty("scrollWidth", width);
+
+        const layout = await page.locator(".channel-layout").boundingBox();
+        const main = await page.locator(".channel-main").boundingBox();
+        const rail = await page.locator(".channel-rail").boundingBox();
+        expect(main.x).toBeGreaterThanOrEqual(layout.x);
+        expect(main.x + main.width).toBeLessThanOrEqual(layout.x + layout.width + 1);
+        expect(rail.x + rail.width).toBeLessThanOrEqual(layout.x + layout.width + 1);
+        if (width > 1100) expect(rail.x).toBeGreaterThan(main.x + main.width - 1);
+        else expect(rail.y).toBeGreaterThan(main.y + main.height - 1);
+    }
+});
 test("catalog UEB-TV mark keeps contrast on light and dark mobile backgrounds", async ({ page }) => {
     await page.goto("/eventos");
     await page.setViewportSize({ width: 390, height: 844 });
@@ -444,8 +460,10 @@ test("fullscreen controls hide while the pointer is still and return when it mov
     const mobileRecordingOverlay = await shell.evaluate((element) => ({
         titleRight: element.querySelector(".uebtv-player-title").getBoundingClientRect().right,
         watermarkLeft: element.querySelector(".uebtv-player-mark").getBoundingClientRect().left,
+        watermarkWidth: element.querySelector(".uebtv-player-mark").getBoundingClientRect().width,
     }));
     expect(mobileRecordingOverlay.titleRight).toBeLessThan(mobileRecordingOverlay.watermarkLeft);
+    expect(mobileRecordingOverlay.watermarkWidth).toBeLessThanOrEqual(54);
     await page.keyboard.press("Escape");
 });
 test("arrow shortcuts do not seek institutional advertising", async ({ page }) => {
