@@ -38,7 +38,7 @@
 .access-entry-nav { display: flex; justify-content: space-between; align-items: center; gap: 16px; width: 100%; max-width: 490px; }
 .access-entry-nav a { color: #52637b; font-size: 11px; }
 .access-entry-nav a span { margin-right: 8px; }
-.access-entry-nav > span { color: #718097; font-size: 9px; letter-spacing: .15em; }
+.access-entry-nav > span { color: #526780; font-size: 9px; letter-spacing: .15em; }
 .access-entry-nav a:hover { color: #1554a6; }
 .access-card { position: relative; width: 100%; max-width: 490px; margin: auto 0; padding: clamp(28px, 3.3vw, 54px); background: white; border: 1px solid #dce5ef; border-radius: 24px; box-shadow: 0 24px 70px -28px rgba(7,26,53,.22), 0 2px 5px rgba(7,26,53,.025); animation: access-enter .65s .08s ease-out both; }
 .access-card::before { content: ''; position: absolute; top: -1px; left: 36px; right: 36px; height: 2px; background: linear-gradient(90deg, transparent, #91c0f3, transparent); }
@@ -47,7 +47,7 @@
 .access-card-icon svg { width: 22px; height: 22px; }
 .access-heading h2 { margin: 25px 0 14px; font-family: 'Inter Variable', system-ui, sans-serif; font-size: clamp(34px, 2.75vw, 46px); line-height: 1.07; letter-spacing: -.055em; font-weight: 500; }
 .access-heading h2 > span { color: #1554a6; }
-.access-heading p { margin: 0; color: #718097; font-size: 13px; line-height: 1.7; }
+.access-heading p { margin: 0; color: #526780; font-size: 13px; line-height: 1.7; }
 .access-form { margin-top: 30px; }
 .access-field + .access-field { margin-top: 23px; }
 .access-field label { display: block; color: #10233f; font-size: 12px; font-weight: 600; }
@@ -58,10 +58,10 @@
 .access-input > svg { width: 19px; height: 19px; flex-shrink: 0; color: #7891ac; }
 .access-input input { width: 100%; min-width: 0; padding: 15px 0; background: transparent; border: 0; border-radius: 0; font: inherit; font-size: 13px; color: #071a35; outline: 0; box-shadow: none; }
 .access-input input:focus { outline: none; box-shadow: none; }
-.access-input input::placeholder { color: #8795a8; }
+.access-input input::placeholder { color: #586a82; }
 .access-input:focus-within { background: white; border-color: #1554a6; box-shadow: 0 0 0 4px rgba(145,192,243,.18); }
 .access-input:focus-within > svg { color: #1554a6; }
-.access-reveal { display: grid; place-items: center; min-width: 34px; min-height: 40px; padding: 4px; margin-right: -7px; border: 0; border-radius: 6px; background: transparent; color: #718097; cursor: pointer; }
+.access-reveal { display: grid; place-items: center; min-width: 34px; min-height: 40px; padding: 4px; margin-right: -7px; border: 0; border-radius: 6px; background: transparent; color: #526780; cursor: pointer; }
 .access-reveal:hover { background: #eaf2fc; color: #1554a6; }
 .access-reveal svg { width: 19px; height: 19px; }
 .access-remember { display: flex; align-items: center; gap: 9px; width: fit-content; margin: 22px 0 0; cursor: pointer; color: #61718a; font-size: 11px; }
@@ -71,12 +71,12 @@
 .access-submit:hover { background: #1554a6; border-color: #1554a6; transform: translateY(-1px); box-shadow: 0 9px 18px -7px rgba(21,84,166,.4); }
 .access-submit:hover svg { transform: translateX(3px); }
 .access-submit:active { transform: translateY(0); }
-.access-register { display: flex; justify-content: center; flex-wrap: wrap; gap: 7px; margin-top: 28px; padding-top: 24px; border-top: 1px solid #e1e9f2; font-size: 12px; color: #718097; }
+.access-register { display: flex; justify-content: center; flex-wrap: wrap; gap: 7px; margin-top: 28px; padding-top: 24px; border-top: 1px solid #e1e9f2; font-size: 12px; color: #526780; }
 .access-register a { color: #1554a6; font-weight: 700; }
 .access-register a:hover { text-decoration: underline; }
 .access-register a span { margin-left: 4px; }
-.access-entry-footer { display: flex; flex-direction: column; gap: 5px; text-align: center; color: #718097; font-size: 10px; }
-.access-entry-footer > span:last-child { font-size: 9px; color: #8795a8; }
+.access-entry-footer { display: flex; flex-direction: column; gap: 5px; text-align: center; color: #526780; font-size: 10px; }
+.access-entry-footer > span:last-child { font-size: 9px; color: #586a82; }
 .access-error { margin: 8px 0 0; color: #b42336; font-size: 12px; line-height: 1.5; }
 .access-input--error { border-color: #b42336; }
 .access-notice { margin-top: 20px; padding: 12px 14px; background: #eaf2fc; color: #1554a6; border-radius: 8px; font-size: 12px; }

@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import Player, { BrandedVideo, clockedMediaTarget, isTimeBuffered } from "./Player";
 import { useShell } from "./shared";
-import UebtvMark from "./UebtvMark";
 import { createPortal } from "react-dom";
 
 export function durationLabel(seconds = 0) {
@@ -9,7 +8,7 @@ export function durationLabel(seconds = 0) {
     return `${Math.floor(s / 3600)} h ${Math.floor((s % 3600) / 60)} min ${s % 60} s`;
 }
 
-function AgendaDialog({ items, onClose }) {
+function AgendaDialog({ items, onClose, returnFocusRef }) {
     const dialog = useRef(null);
     const groups = (items || []).reduce((result, item) => {
         const date = new Date(item.starts_at);
@@ -19,21 +18,40 @@ function AgendaDialog({ items, onClose }) {
     }, {});
 
     useEffect(() => {
-        const closeOnEscape = (event) => event.key === "Escape" && onClose();
-        dialog.current?.querySelector("button")?.focus();
+        const root = dialog.current;
+        const opener = document.activeElement;
+        const focusable = () => [...(root?.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])') || [])].filter((element) => element.getClientRects().length);
+        const closeOnEscape = (event) => {
+            if (event.key === "Escape") onClose();
+            if (event.key !== "Tab") return;
+            const items = focusable();
+            if (!items.length) { event.preventDefault(); root?.focus(); return; }
+            const first = items[0], last = items[items.length - 1];
+            if (event.shiftKey && (document.activeElement === first || !root?.contains(document.activeElement))) {
+                event.preventDefault(); last.focus();
+            } else if (!event.shiftKey && (document.activeElement === last || !root?.contains(document.activeElement))) {
+                event.preventDefault(); first.focus();
+            }
+        };
+        const content = document.getElementById("contenido");
+        const wasInert = content?.inert ?? false;
+        if (content) content.inert = true;
+        (root?.querySelector("button") || root)?.focus();
         document.addEventListener("keydown", closeOnEscape);
         document.body.classList.add("has-channel-agenda-open");
         return () => {
             document.removeEventListener("keydown", closeOnEscape);
             document.body.classList.remove("has-channel-agenda-open");
+            if (content) content.inert = wasInert;
+            returnFocusRef?.current?.focus?.() || opener?.focus?.();
         };
-    }, [onClose]);
+    }, [onClose, returnFocusRef]);
 
     const days = Object.values(groups);
     return createPortal(<div className="channel-agenda-modal-backdrop" onMouseDown={(event) => {
         if (event.target === event.currentTarget) onClose();
     }}>
-        <section ref={dialog} className="channel-agenda-modal" role="dialog" aria-modal="true" aria-labelledby="channel-agenda-modal-title">
+        <section ref={dialog} className="channel-agenda-modal" role="dialog" aria-modal="true" aria-labelledby="channel-agenda-modal-title" tabIndex={-1}>
             <header className="channel-agenda-modal-header">
                 <div className="channel-agenda-modal-icon" aria-hidden="true">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M7 3v4m10-4v4M3 10h18m-13 4h3m-3 3h7"/></svg>
@@ -162,6 +180,7 @@ function ChannelVideo({ snapshot, received, startMuted, onMuteChange }) {
                 live={false}
                 allowPause={!isAd}
                 allowPictureInPicture={!isAd}
+                showTransportButtons
                 startMuted={startMuted}
                 autoStart={false}
                 onMuteChange={onMuteChange}
@@ -200,6 +219,7 @@ export default function Channel({ stateUrl }) {
     const tvMode = new URLSearchParams(window.location.search).get("modo") === "tv";
     const [data, setData] = useState(null);
     const [agendaOpen, setAgendaOpen] = useState(false);
+    const agendaButton = useRef(null);
     const [received, setReceived] = useState(0);
     const [error, setError] = useState("");
     const [channelMuted, setChannelMuted] = useState(!tvMode);
@@ -253,28 +273,6 @@ export default function Channel({ stateUrl }) {
     const closeAgenda = useCallback(() => setAgendaOpen(false), []);
     return (
         <div className={`studio-page channel-page ${tvMode ? "channel-page--tv" : ""}`}>
-            <header className="channel-heading">
-                <div>
-                    <h1 className="channel-heading-title" aria-label="UEB - TV">
-                        <span className="channel-heading-title__mark" aria-hidden="true">
-                            <img src="/images/brand/ueb-wordmark.png" alt="" />
-                        </span>
-                        <span className="channel-heading-title__suffix">- TV</span>
-                        <UebtvMark className="channel-heading-title__mobile" />
-                    </h1>
-                    <p>En vivo y programación automática de la Universidad Estatal de Bolívar.</p>
-                </div>
-                <div className="channel-heading-actions">
-                    <img
-                        className="channel-institution-mark"
-                        src="/images/brand/ueb-wordmark.png"
-                        alt="Universidad Estatal de Bolívar"
-                    />
-                    <a className="channel-catalog" href={shell.catalog}>
-                        Explorar catálogo <span aria-hidden="true">↗</span>
-                    </a>
-                </div>
-            </header>
             {error && (
                 <p role="status" className="studio-alert">
                     {error}
@@ -292,6 +290,7 @@ export default function Channel({ stateUrl }) {
                                     event={data.event}
                                     startMuted={channelMuted}
                                     onMuteChange={setChannelMuted}
+                                    showTransportButtons
                                 />
                             ) : data?.mode === "scheduled" || advertising ? (
                                 <ChannelVideo
@@ -434,7 +433,7 @@ export default function Channel({ stateUrl }) {
                             <span>{data?.next?.length || "—"}</span>
                         </h2>
                         <p>Las próximas historias de nuestra comunidad.</p>
-                        <button type="button" className="channel-agenda-open" onClick={() => setAgendaOpen(true)} aria-haspopup="dialog">
+                        <button ref={agendaButton} type="button" className="channel-agenda-open" onClick={() => setAgendaOpen(true)} aria-haspopup="dialog" aria-expanded={agendaOpen}>
                             <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M7 3v4m10-4v4M3 10h18m-13 4h3m-3 3h7"/></svg>
                             Ver programación completa
                             <span aria-hidden="true">↗</span>
@@ -526,7 +525,7 @@ export default function Channel({ stateUrl }) {
                         desplazar estos horarios.
                     </p>
                 </aside>
-                {agendaOpen && <AgendaDialog items={data?.agenda || []} onClose={closeAgenda} />}
+                {agendaOpen && <AgendaDialog items={data?.agenda || []} onClose={closeAgenda} returnFocusRef={agendaButton} />}
                 </div>
             </div>
         </div>

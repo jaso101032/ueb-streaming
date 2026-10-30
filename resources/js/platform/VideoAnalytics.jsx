@@ -122,7 +122,7 @@ function printAnalyticsReport(title, days) {
 
 export default function VideoAnalytics({ url, title }) {
     const [days, setDays] = useState(30), [data, setData] = useState(null), [loading, setLoading] = useState(false), [error, setError] = useState(""), [open, setOpen] = useState(false);
-    const trigger = useRef(null), close = useRef(null);
+    const trigger = useRef(null), close = useRef(null), dialog = useRef(null);
     useEffect(() => {
         if (!open) return undefined;
         const controller = new AbortController();
@@ -138,10 +138,24 @@ export default function VideoAnalytics({ url, title }) {
         if (!open) return undefined;
         const previousOverflow = document.body.style.overflow;
         document.body.style.overflow = "hidden";
+        const content = document.getElementById("contenido");
+        const wasInert = content?.inert ?? false;
+        if (content) content.inert = true;
         close.current?.focus();
-        const onKeyDown = (event) => { if (event.key === "Escape") setOpen(false); };
+        const onKeyDown = (event) => {
+            if (event.key === "Escape") { setOpen(false); return; }
+            if (event.key !== "Tab") return;
+            const items = [...(dialog.current?.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])') || [])].filter((element) => element.getClientRects().length);
+            if (!items.length) { event.preventDefault(); dialog.current?.focus(); return; }
+            const first = items[0], last = items[items.length - 1];
+            if (event.shiftKey && (document.activeElement === first || !dialog.current?.contains(document.activeElement))) {
+                event.preventDefault(); last.focus();
+            } else if (!event.shiftKey && (document.activeElement === last || !dialog.current?.contains(document.activeElement))) {
+                event.preventDefault(); first.focus();
+            }
+        };
         document.addEventListener("keydown", onKeyDown);
-        return () => { document.body.style.overflow = previousOverflow; document.removeEventListener("keydown", onKeyDown); trigger.current?.focus(); };
+        return () => { document.body.style.overflow = previousOverflow; document.removeEventListener("keydown", onKeyDown); if (content) content.inert = wasInert; trigger.current?.focus(); };
     }, [open]);
     const chart = useMemo(() => data?.daily ?? [], [data]);
     const growth = data?.current?.growthPercent;
@@ -154,7 +168,7 @@ export default function VideoAnalytics({ url, title }) {
         </button>
         {open && createPortal(<>
         <div className="video-analytics-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setOpen(false); }}>
-        <section className="video-analytics" role="dialog" aria-modal="true" aria-label={`Estadísticas de ${title}`}>
+        <section ref={dialog} className="video-analytics" role="dialog" aria-modal="true" aria-label={`Estadísticas de ${title}`} tabIndex={-1}>
         <header className="video-analytics__header">
             <div className="video-analytics__heading"><span className="video-analytics__mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 19V5m0 14h16M7 15l4-4 3 2 5-7" /></svg></span><div><p className="studio-eyebrow">ANÁLISIS DE AUDIENCIA · ADMINISTRACIÓN</p><h2>Estadísticas de reproducción</h2><p><span>{title}</span><i />Visitas únicas por navegador y día</p></div></div>
             <div className="video-analytics__controls"><label>Período<select value={days} onChange={(event) => setDays(Number(event.target.value))}><option value={7}>7 días</option><option value={30}>30 días</option><option value={90}>90 días</option></select></label><button ref={close} type="button" className="video-analytics__close" onClick={() => setOpen(false)} aria-label="Cerrar estadísticas">×</button></div>

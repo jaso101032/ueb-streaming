@@ -3,7 +3,7 @@
     --ui-ink: #0b203d;
     --ui-blue: #1c59a8;
     --ui-line: #dbe6f4;
-    --ui-muted: #647d9e;
+    --ui-muted: #526780;
 }
 body {
     font-family: "Inter Variable", Inter, system-ui, sans-serif;
@@ -370,14 +370,13 @@ button:disabled {
 .studio-brand--facagei { gap:0; }
 .studio-brand--facagei .studio-brand-mascot { margin-right:-10px; }
 .facagei-brand-logo--header { display:block; box-sizing:border-box; width:auto; height:104px; object-fit:contain; }
-/* On desktop the channel identity starts at the viewport edge, while the
-   account controls retain their previous right-hand alignment. */
+/* Keep the faculty mark and account controls equally inset from the viewport edges. */
 @media (min-width:1101px) {
     .studio-header-inner {
         width:100%;
         max-width:none;
         padding-left:28px;
-        padding-right:max(24px, calc((100vw - 1360px) / 2 + 32px));
+        padding-right:28px;
     }
 }
 .studio-brand-mascot {
@@ -611,6 +610,10 @@ button:disabled {
 }
 .uebtv-player-title { position:absolute; z-index:2; top:20px; left:20px; max-width:min(54%,520px); overflow:hidden; padding:6px 10px; border:1px solid #ffffff2e; border-radius:6px; background:#061326bd; color:#f3f7ff; font-size:12px; font-weight:650; line-height:1.25; letter-spacing:.01em; text-overflow:ellipsis; white-space:nowrap; box-shadow:0 3px 12px #0005; transition:opacity .22s ease,transform .22s ease; }
 .uebtv-player-title.is-live { top:58px; }
+.uebtv-player-transport { position:absolute; z-index:4; left:18px; bottom:72px; display:flex; gap:8px; }
+.uebtv-player-transport button { display:inline-flex; align-items:center; justify-content:center; gap:7px; min-height:38px; padding:0 14px; border:1px solid #9fc9f5; border-radius:9px; background:#0d3159eF; color:#fff; font:750 12px/1 inherit; box-shadow:0 3px 12px #0006; cursor:pointer; }
+.uebtv-player-transport button:hover:not(:disabled), .uebtv-player-transport button:focus-visible { background:#185a9b; outline:2px solid #fff; outline-offset:2px; }
+.uebtv-player-transport button:disabled { opacity:.58; cursor:default; }
 .uebtv-player-controls {
     position: absolute;
     z-index: 3;
@@ -863,7 +866,7 @@ button:disabled {
 }
 
 /* Broadcast identity: contained to the continuous channel. */
-.channel-page { max-width: 1500px; padding-top: 38px; padding-bottom: 56px; }
+.channel-page { max-width: 1500px; padding-top: 22px; padding-bottom: 56px; }
 .uebtv-catalog-filter-toggle { display:none; }
 .uebtv-live-chat__login-action { display:inline-flex; align-items:center; justify-content:center; min-height:42px; padding:10px 14px; border:1px solid #174f90; border-radius:10px; background:#1554a6; color:#fff; font-size:11px; font-weight:750; text-decoration:none; transition:background .18s,border-color .18s,transform .18s; }
 .uebtv-live-chat__login-action:hover { border-color:#0e3d77; background:#0f4385; color:#fff; transform:translateY(-1px); }

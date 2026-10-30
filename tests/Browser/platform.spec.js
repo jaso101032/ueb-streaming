@@ -83,8 +83,13 @@ test("channel agenda opens all upcoming programs grouped by date while the side 
     await expect(dialog).toBeVisible();
     await expect(dialog.locator(".channel-agenda-modal-item")).toHaveCount(8);
     await expect(dialog.getByRole("heading", { name: "Programa 8" })).toBeVisible();
+    await page.keyboard.press("Shift+Tab");
+    await expect(dialog.getByRole("button", { name: "Listo" })).toBeFocused();
+    await page.keyboard.press("Tab");
+    await expect(dialog.getByRole("button", { name: "Cerrar programación" })).toBeFocused();
     await page.keyboard.press("Escape");
     await expect(dialog).toBeHidden();
+    await expect(page.getByRole("button", { name: "Ver programación completa" })).toBeFocused();
 });
 test("Android TV mode keeps advertising non-pausable and its controls reachable", async ({ page }) => {
     await page.route("**/senal/estado", (route) => route.fulfill({ json: {
@@ -107,6 +112,29 @@ test("Android TV mode keeps advertising non-pausable and its controls reachable"
     await firstControl.focus();
     await expect(page.locator(".uebtv-player-controls")).toHaveCSS("opacity", "1");
     await page.keyboard.press("Space");
+    await expect(video).toHaveJSProperty("paused", false);
+});
+test("channel Play and Stop buttons control a scheduled video", async ({ page }) => {
+    await page.route("**/senal/estado", (route) => route.fulfill({ json: {
+        mode: "scheduled",
+        event: { id: 42, title: "Prueba de emisión", scheduled: { mediaUrl: "/channel-controls.mp4" }, url: "/eventos/42" },
+        playback: { state: "playing", position: 1, duration: 60 },
+        next: [], summary: { count: 0, totalSeconds: 0, remainingSeconds: 0 },
+    } }));
+    await page.route("**/channel-controls.mp4*", (route) => route.fulfill({
+        body: readFileSync("/tmp/uebtv-react-test.mp4"), contentType: "video/mp4",
+        headers: { "Accept-Ranges": "bytes" },
+    }));
+    await page.goto("/senal");
+    const video = page.locator(".channel-screen video");
+    const play = page.getByRole("button", { name: "Play, reproducir señal" });
+    const stop = page.getByRole("button", { name: "Stop, detener reproducción" });
+    await expect(play).toBeVisible();
+    await expect(stop).toBeVisible();
+    await expect(video).toHaveJSProperty("paused", false);
+    await stop.click();
+    await expect(video).toHaveJSProperty("paused", true);
+    await play.click();
     await expect(video).toHaveJSProperty("paused", false);
 });
 test("channel download card keeps its QR visible on desktop and mobile without entering TV mode", async ({ page }) => {
@@ -135,38 +163,17 @@ test("channel download card keeps its QR visible on desktop and mobile without e
     await page.goto("/senal?modo=tv");
     await expect(card).toHaveCount(0);
 });
-test("mobile channel places the UEBTV and UEB marks side by side", async ({ page }) => {
+test("channel keeps the FACAGEI masthead without a second banner on desktop and mobile", async ({ page }) => {
     await page.goto("/senal");
-    for (const width of [320, 390, 600, 640]) {
+    await expect(page.locator(".studio-header .studio-brand--facagei")).toBeVisible();
+    await expect(page.locator(".channel-heading")).toHaveCount(0);
+    for (const width of [320, 390, 600, 1440]) {
         await page.setViewportSize({ width, height: 844 });
-        const tvMark = page.locator(".channel-heading-title__mobile");
-        const universityMark = page.locator(".channel-institution-mark");
-        await expect(tvMark).toBeHidden();
-        await expect(page.locator(".channel-heading-title__mark")).toBeVisible();
-        await expect(page.getByRole("img", { name: "Logotipo de UEBTV" })).toBeHidden();
-        const suffix = page.locator(".channel-heading-title__suffix");
-        await expect(suffix).toBeVisible();
-        await expect(suffix).toHaveCSS("color", /rgb\(255, 255, 255\)|rgb\(241, 247, 255\)/);
-        await expect(page.locator(".channel-heading-title__mark img")).toHaveCSS("filter", "brightness(0) invert(1)");
-        await expect(universityMark).toBeVisible();
-        const tv = await page.locator(".channel-heading-title").boundingBox();
-        const university = await universityMark.boundingBox();
-        expect(tv.x + tv.width).toBeLessThanOrEqual(university.x + 1);
-        expect(Math.abs(tv.y + tv.height / 2 - university.y - university.height / 2)).toBeLessThan(18);
+        await expect(page.locator(".studio-header .studio-brand--facagei")).toBeVisible();
+        await expect(page.locator(".channel-heading")).toHaveCount(0);
+        await expect(page.locator(".channel-screen")).toBeVisible();
         await expect(page.locator("body")).toHaveJSProperty("scrollWidth", width);
-        if (width === 390) await page.locator(".channel-heading").screenshot({ path: "/tmp/uebtv-channel-brands-mobile.png" });
     }
-    await page.setViewportSize({ width: 390, height: 844 });
-    await page.evaluate(() => { document.documentElement.dataset.theme = "dark"; });
-    await expect(page.locator(".channel-heading-title__mobile")).toBeHidden();
-    await expect(page.locator(".channel-heading-title__mark")).toBeVisible();
-    await expect(page.locator(".channel-institution-mark")).toBeVisible();
-    await expect(page.locator("body")).toHaveJSProperty("scrollWidth", 390);
-    await page.evaluate(() => { document.documentElement.dataset.theme = "light"; });
-    await page.setViewportSize({ width: 1440, height: 900 });
-    await expect(page.locator(".channel-heading-title__mobile")).toBeHidden();
-    await expect(page.locator(".channel-heading-title__suffix")).toHaveCSS("color", "rgb(16, 39, 68)");
-    await expect(page.locator(".channel-heading-title__mark img")).toHaveCSS("filter", "none");
 });
 test("catalog UEB-TV mark keeps contrast on light and dark mobile backgrounds", async ({ page }) => {
     await page.goto("/eventos");
@@ -251,7 +258,19 @@ test("video analytics exports a complete print-ready PDF report for the selected
     await login(page);
     await page.goto("/eventos");
     await page.getByRole("button", { name: "Ver estadísticas" }).first().click();
+    const dialog = page.getByRole("dialog", { name: /Estadísticas de Conferencia UEB/ });
     await expect(page.getByRole("heading", { name: "Estadísticas de reproducción" })).toBeVisible();
+    await expect(dialog.getByRole("button", { name: "Cerrar estadísticas" })).toBeFocused();
+    await page.keyboard.press("Shift+Tab");
+    await page.keyboard.press("Shift+Tab");
+    await expect(dialog.getByRole("button", { name: "Exportar estadísticas a PDF" })).toBeFocused();
+    await page.keyboard.press("Tab");
+    await expect(dialog.getByLabel("Período")).toBeFocused();
+    await page.keyboard.press("Escape");
+    await expect(dialog).toBeHidden();
+    await expect(page.getByRole("button", { name: "Ver estadísticas" }).first()).toBeFocused();
+    await page.getByRole("button", { name: "Ver estadísticas" }).first().click();
+    await expect(dialog).toBeVisible();
     const report = page.locator(".video-analytics-report");
     await expect(report).toContainText("Conferencia UEB");
     await expect(report).toContainText("Registro diario");
