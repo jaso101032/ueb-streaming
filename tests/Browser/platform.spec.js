@@ -177,7 +177,7 @@ test("channel keeps the FACAGEI masthead without a second banner on desktop and 
 });
 test("channel adapts to laptop widths and short viewports without clipping its layout", async ({ page }) => {
     await page.goto("/senal");
-    for (const [width, height] of [[320, 720], [600, 800], [768, 600], [900, 720], [1024, 600], [1100, 720], [1280, 720], [1366, 768], [1600, 900]]) {
+    for (const [width, height] of [[320, 720], [600, 800], [768, 600], [900, 720], [1024, 600], [1100, 720], [1200, 720], [1280, 720], [1366, 768], [1600, 900]]) {
         await page.setViewportSize({ width, height });
         await expect(page.locator("body")).toHaveJSProperty("scrollWidth", width);
 
@@ -187,7 +187,7 @@ test("channel adapts to laptop widths and short viewports without clipping its l
         expect(main.x).toBeGreaterThanOrEqual(layout.x);
         expect(main.x + main.width).toBeLessThanOrEqual(layout.x + layout.width + 1);
         expect(rail.x + rail.width).toBeLessThanOrEqual(layout.x + layout.width + 1);
-        if (width > 1100) expect(rail.x).toBeGreaterThan(main.x + main.width - 1);
+        if (width > 1200) expect(rail.x).toBeGreaterThan(main.x + main.width - 1);
         else expect(rail.y).toBeGreaterThan(main.y + main.height - 1);
     }
 });

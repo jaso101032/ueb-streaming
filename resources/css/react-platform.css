@@ -386,11 +386,7 @@ button:disabled {
     }
     .channel-page { padding-inline:clamp(20px,2.1vw,32px); }
 }
-/* A compact channel masthead avoids crowding on short or zoomed laptop viewports. */
 .studio-header--channel .studio-header-inner { box-sizing:border-box; min-width:0; }
-.studio-header--channel .studio-brand { min-width:0; flex:0 1 auto; }
-.studio-header--channel .facagei-brand-logo--header { height:clamp(64px,8vh,104px); max-width:min(36vw,260px); }
-.studio-header--channel .studio-account { flex:0 0 auto; min-width:0; }
 .studio-brand-mascot {
     display:block;
     position:relative;
@@ -871,7 +867,7 @@ button:disabled {
 .schedule-totals small { display: block; color: #567296; font-weight: 600; }
 .schedule-totals strong { display: block; color: #102d51; font-size: clamp(20px,2vw,28px); margin: 10px 0; letter-spacing: -.035em; }
 .schedule-totals p { color: #6a809d; font-size: 12px; }
-@media(max-width: 1000px) { .channel-layout { grid-template-columns: minmax(0,1fr); } }
+@media(max-width: 1200px) { .channel-layout { grid-template-columns: minmax(0,1fr); } }
 @media(max-width: 600px) { .schedule-totals { grid-template-columns: minmax(0,1fr); } .channel-screen { border-radius: 14px; } }
 @media(max-width:600px) {
     .channel-ad-indicator { top:9px; left:9px; width:25px; height:25px; font-size:17px; }
@@ -1028,14 +1024,8 @@ button:disabled {
 @keyframes channel-agenda-fade { from { opacity:0; } to { opacity:1; } }
 @keyframes channel-agenda-rise { from { opacity:0; transform:translateY(12px) scale(.985); } to { opacity:1; transform:translateY(0) scale(1); } }
 @media(max-width:600px) { .channel-agenda-modal-backdrop { align-items:end; padding:10px; } .channel-agenda-modal { max-height:88dvh; border-radius:22px 22px 16px 16px; } .channel-agenda-modal-header { gap:12px; padding:18px; } .channel-agenda-modal-icon { flex-basis:44px; width:44px; height:44px; border-radius:14px; } .channel-agenda-modal-icon svg { width:23px; height:23px; } .channel-agenda-modal-header h2 { font-size:23px; } .channel-agenda-modal-header > div:nth-child(2) > p:last-child { max-width:220px; font-size:11px; } .channel-agenda-modal-content { padding:20px 18px; } .channel-agenda-modal-item { grid-template-columns:49px 12px minmax(0,1fr); gap:10px; } .channel-agenda-modal-item h4 { font-size:13px; } .channel-agenda-modal-footer { padding:13px 18px; } }
-@media(min-width:1001px) and (max-width:1200px) { .channel-idle-caption { margin-bottom:18px; } .channel-screen.is-idle { aspect-ratio:16 / 9; min-height:0; } }
-@media(max-width:1100px) { .channel-layout { grid-template-columns:minmax(0,1fr); } .channel-rail { grid-template-columns:repeat(2,minmax(0,1fr)); } .channel-next { max-width:none; } .channel-idle { min-height:100%; } }
+@media(max-width:1200px) { .channel-layout { grid-template-columns:minmax(0,1fr); } .channel-rail { grid-template-columns:repeat(2,minmax(0,1fr)); } .channel-next { max-width:none; } .channel-idle { min-height:100%; } }
 @media(max-width:700px) { .channel-rail { grid-template-columns:minmax(0,1fr); } .channel-app-art { height:clamp(275px,80vw,315px); } }
-@media(max-height:760px) and (min-width:641px) {
-    .studio-header--channel .studio-header-inner { min-height:clamp(76px,10vh,96px); }
-    .studio-header--channel .facagei-brand-logo--header { height:clamp(58px,8vh,78px); }
-    .channel-page { padding-top:clamp(12px,2vh,22px); }
-}
 @media(max-width:600px) { .uebtv-catalog-search { display:block; padding:0; overflow:hidden; } .uebtv-catalog-filter-toggle { display:flex; align-items:center; width:100%; min-height:48px; gap:9px; padding:12px 15px; border:0; border-radius:0; background:transparent; color:#174f90; box-shadow:none; font-size:13px; font-weight:750; text-align:left; } .uebtv-catalog-filter-toggle:hover { background:#eff6ff; transform:none; } .uebtv-catalog-filter-toggle > span { display:grid; place-items:center; width:23px; height:23px; border-radius:7px; background:#e2efff; color:#1a61aa; font-size:18px; line-height:1; } .uebtv-catalog-filter-toggle small { display:grid; place-items:center; min-width:18px; height:18px; padding:0 5px; border-radius:10px; background:#e63756; color:#fff; font-size:10px; } .uebtv-catalog-filter-toggle b { margin-left:auto; font-size:17px; font-weight:500; transition:transform .2s; } .uebtv-catalog-search.is-open .uebtv-catalog-filter-toggle b { transform:rotate(180deg); } .uebtv-catalog-search-fields { display:none; padding:0 16px 16px; } .uebtv-catalog-search.is-open .uebtv-catalog-search-fields { display:flex; flex-wrap:wrap; align-items:stretch; gap:12px; border-top:1px solid #dce8f5; } .uebtv-catalog-search-fields > div { flex:1 1 100%; } .uebtv-catalog-search-fields > :is(button,a) { display:inline-flex; flex:1 1 calc(50% - 6px); align-items:center; justify-content:center; min-height:44px; padding-inline:10px; } .uebtv-catalog-card__visual { height:auto; aspect-ratio:16 / 9; } .uebtv-catalog-card__body { min-height:0; padding:15px; } .uebtv-catalog-card__body h3 { margin-top:7px; font-size:17px; } .uebtv-catalog-card__meta { margin-top:11px; padding-top:10px; border-top:1px solid #e2ebf5; } .uebtv-catalog-card__status { top:10px; right:10px; font-size:9px; } .channel-heading { align-items:flex-start; flex-direction:column; gap:9px; margin-bottom:12px; padding:14px 15px 13px; border-radius:15px; } .channel-heading .studio-eyebrow { font-size:7px; } .channel-heading h1 { margin:5px 0 0; font-size:clamp(23px,7.5vw,27px); } .channel-heading > div > p:last-child { display:none; } .channel-heading-actions { width:100%; justify-content:space-between; gap:10px; } .channel-institution-mark { width:92px; max-height:38px; } .channel-catalog { align-self:flex-start; min-height:34px; padding:7px 10px; font-size:10px; } .channel-page { padding-top:16px; } .channel-main { border-radius:16px; } .channel-screen-bar { height:38px; padding-inline:12px; } .channel-screen-bar small { display:none; } .channel-screen.is-idle { aspect-ratio:auto; min-height:370px; } .channel-idle { min-height:370px; padding:32px 22px 60px; } .channel-idle-footer { left:20px; right:20px; font-size:8px; } .channel-idle-footer span:last-child { display:none; } .channel-now { padding:15px 14px 18px; } .channel-now h2 { margin:0 0 7px; font-size:21px; } .channel-now p { margin:0; font-size:12px; line-height:1.6; } .channel-auto { font-size:10px; } .channel-next { border-radius:16px; } }
 
 @media(max-width:640px) {
