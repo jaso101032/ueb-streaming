@@ -178,9 +178,8 @@ function ChannelVideo({ snapshot, received, startMuted, onMuteChange }) {
                 src={mediaUrl}
                 mediaTitle={isAd ? `Publicidad institucional · ${media.title}` : snapshot.event.title}
                 live={false}
-                allowPause={!isAd}
+                allowPause
                 allowPictureInPicture={!isAd}
-                showTransportButtons
                 startMuted={startMuted}
                 autoStart={false}
                 onMuteChange={onMuteChange}
@@ -290,7 +289,6 @@ export default function Channel({ stateUrl }) {
                                     event={data.event}
                                     startMuted={channelMuted}
                                     onMuteChange={setChannelMuted}
-                                    showTransportButtons
                                 />
                             ) : data?.mode === "scheduled" || advertising ? (
                                 <ChannelVideo
