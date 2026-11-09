@@ -121,6 +121,33 @@ del dominio.
 - Prueba el sitio HTTPS, la subida de un video pequeño y una emisión OBS corta.
   Confirma el estado en el panel, reproducción HLS, finalización y grabación.
 
+## Emitir desde cualquier red (OBS remoto)
+
+El servidor tiene IP privada (por ejemplo `192.168.21.8`); desde otra red OBS
+agota el tiempo de conexión aunque todo funcione por dentro. Para emitir desde
+cualquier equipo:
+
+1. **Dirección pública.** Crea un registro DNS tipo A (por ejemplo
+   `stream.tudominio.edu.ec`) hacia la IP pública de la institución. No uses el
+   proxy de Cloudflare en ese registro: no transporta RTMP.
+2. **Router/firewall.** Redirige `1935/TCP` desde la IP pública hacia el
+   servidor (`192.168.21.8:1935`) y permítelo también en el firewall de
+   Proxmox y de la VM. No abras `8080`, PostgreSQL ni `/control`.
+3. **Dokploy.** Define `STREAMING_RTMP_URL=rtmp://stream.tudominio.edu.ec:1935/live`
+   y vuelve a desplegar. El panel mostrará esa dirección a los operadores.
+4. **Token.** Genera uno nuevo con `openssl rand -hex 32` para
+   `STREAMING_CALLBACK_TOKEN` (cámbialo si apareció en capturas o registros).
+5. **Prueba externa.** Desde otra red (por ejemplo datos del teléfono) ejecuta
+   `Test-NetConnection stream.tudominio.edu.ec -Port 1935` en Windows o
+   `nc -zv stream.tudominio.edu.ec 1935` en Linux; debe conectar. En OBS usa
+   servicio **Personalizado**, servidor `rtmp://stream.tudominio.edu.ec:1935/live`
+   y la clave `ueb_...` del evento.
+
+Con el puerto abierto a internet, la clave de emisión es la única credencial de
+publicación: trátala como secreto y no cambies a una clave reutilizable.
+Si un operador la comparte por error, genera otra antes de que empiece la
+grabación del evento.
+
 Dokploy gestiona dominios de Compose desde su pestaña **Domains** y reinicia el
 Compose al guardar cambios de dominio. Asegúrate de respaldar PostgreSQL y los
 volúmenes de medios; desplegar una imagen nueva no sustituye esos respaldos.

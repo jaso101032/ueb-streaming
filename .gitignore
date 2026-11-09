@@ -36,3 +36,11 @@ Thumbs.db
 
 /test-results/
 /playwright-report/
+
+# Dumps, empaquetados y archivos locales
+/database/*.sql
+/*.tar.gz
+/image.png
+/android/.idea/
+/.phpunit.result.cache
+/test-results/

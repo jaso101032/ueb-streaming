@@ -115,7 +115,7 @@ services:
       - hls:/tmp/hls
 
   rtmp:
-    image: alfg/nginx-rtmp:latest
+    image: alfg/nginx-rtmp:v1.6.0
     restart: unless-stopped
     init: true
     environment:
