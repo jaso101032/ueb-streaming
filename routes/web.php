@@ -17,6 +17,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RecordingController;
 use App\Http\Controllers\ScheduledVideoController;
 use App\Http\Controllers\StreamAuthorizationController;
+use App\Http\Controllers\SubtitleController;
 use App\Http\Controllers\TransmisionController;
 use App\Http\Controllers\VideoViewController;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
@@ -27,6 +28,8 @@ Route::get('/', fn () => redirect()->route('channel.index'));
 Route::get('/senal', [ChannelController::class, 'index'])->name('channel.index');
 Route::get('/senal/estado', [ChannelController::class, 'state'])->name('channel.state');
 Route::get('/senal/publicidad/{ad}/video', [InstitutionalAdController::class, 'media'])->name('channel.ad.media');
+Route::get('/senal/publicidad/{ad}/subtitulos.vtt', [SubtitleController::class, 'showAd'])->name('channel.ad.subtitles');
+Route::get('/eventos/{evento}/subtitulos.vtt', [SubtitleController::class, 'show'])->name('eventos.subtitles');
 // Live HLS by public playback id: the OBS stream key never reaches viewers.
 Route::get('/directo/{playbackId}.m3u8', [LivePlaybackController::class, 'playlist'])
     ->where('playbackId', '[a-z0-9]{32}')->name('live.playlist');
@@ -92,6 +95,10 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::post('/eventos/{evento}/grabacion/aprobar', [RecordingController::class, 'approve'])->middleware('throttle:20,1')->name('recording.approve');
     Route::post('/eventos/{evento}/grabacion/retirar', [RecordingController::class, 'withdraw'])->middleware('throttle:20,1')->name('recording.withdraw');
     Route::get('/auditoria', [\App\Http\Controllers\Admin\AuditLogController::class, 'index'])->name('audit.index');
+    Route::post('/eventos/{evento}/subtitulos', [SubtitleController::class, 'upload'])->middleware('throttle:20,1')->name('subtitles.store');
+    Route::delete('/eventos/{evento}/subtitulos', [SubtitleController::class, 'remove'])->middleware('throttle:20,1')->name('subtitles.destroy');
+    Route::post('/contenido-programado/publicidad/{ad}/subtitulos', [SubtitleController::class, 'uploadAd'])->middleware('throttle:20,1')->name('ads.subtitles.store');
+    Route::delete('/contenido-programado/publicidad/{ad}/subtitulos', [SubtitleController::class, 'removeAd'])->middleware('throttle:20,1')->name('ads.subtitles.destroy');
 });
 
 // Administrators and streaming operators can create and maintain event details.

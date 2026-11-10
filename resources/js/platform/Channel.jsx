@@ -177,6 +177,7 @@ function ChannelVideo({ snapshot, received, startMuted, onMuteChange }) {
                 videoRef={video}
                 src={mediaUrl}
                 mediaTitle={isAd ? `Publicidad institucional · ${media.title}` : snapshot.event.title}
+                subtitles={(isAd ? media.subtitlesUrl : snapshot.event?.subtitlesUrl) || undefined}
                 live={false}
                 allowPause
                 allowPictureInPicture={!isAd}

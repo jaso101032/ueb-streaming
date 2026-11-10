@@ -500,3 +500,8 @@ html[data-theme="dark"] .uebtv-chat-control button { border-color:#6ca8e6; backg
 .react-publication { display:grid; gap:8px; margin:12px 0; padding:12px 14px; border:1px solid rgba(65,90,121,.25); border-radius:10px; }
 .react-publication small { opacity:.75; }
 .react-facts dd { overflow-wrap:anywhere; }
+.react-subtitles { display:grid; gap:8px; margin:14px 0; }
+.subtitle-form { display:grid; gap:8px; }
+.subtitle-form form { display:grid; gap:8px; }
+.subtitle-form label small { opacity:.7; font-weight:400; }
+.ad-studio-item .subtitle-form { grid-column:1 / -1; padding-top:8px; }
