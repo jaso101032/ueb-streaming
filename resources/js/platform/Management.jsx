@@ -103,11 +103,33 @@ function Recording({ event: e }) {
                         ...(metadata.mp4Bytes != null ? { "Archivo publicado": `MP4 · ${formatBytes(metadata.mp4Bytes)}` } : {}),
                         ...(metadata.rawBytes != null ? { [metadata.rawPresent ? "FLV original almacenado" : "Origen temporal procesado"]: `FLV · ${formatBytes(metadata.rawBytes)}` } : {}),
                         ...(metadata.rawCleanupPending ? { "Limpieza pendiente": "El MP4 ya está disponible; se reintentará eliminar el FLV temporal." } : {}),
+                        ...(metadata.rawSha256 ? { "Huella SHA-256 del original": metadata.rawSha256 } : {}),
+                        ...(metadata.mp4Sha256 ? { "Huella SHA-256 del MP4": metadata.mp4Sha256 } : {}),
                         ...(metadata.videoCodec ? { "Video": `${metadata.videoCodec.toUpperCase()} · ${metadata.width || "?"} × ${metadata.height || "?"} · ${metadata.fps ?? "?"} FPS` } : {}),
                         ...(metadata.audioCodec ? { "Audio": metadata.audioCodec.toUpperCase() } : {}),
                         ...(metadata.durationSeconds != null ? { "Duración": `${Math.round(metadata.durationSeconds)} s` } : {}),
                     }).map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}
                 </dl>
+            )}
+            {e.publication && e.recordingStatus === "ready" && (
+                <div className="react-publication" role="status">
+                    <strong>
+                        {{
+                            pendiente: "Pendiente de aprobación: el público todavía no puede verla.",
+                            aprobada: "Publicada para su audiencia.",
+                            retirada: "Retirada: el público ya no puede verla.",
+                        }[e.publication.status] || e.publication.status}
+                    </strong>
+                    {e.publication.reviewedBy && (
+                        <small>Revisada por {e.publication.reviewedBy} · {e.publication.reviewedAt}</small>
+                    )}
+                    {e.publication.approveUrl && (
+                        <Action url={e.publication.approveUrl}>Aprobar y publicar</Action>
+                    )}
+                    {e.publication.withdrawUrl && (
+                        <Action url={e.publication.withdrawUrl} className="studio-button studio-button-soft" confirm="¿Retirar esta grabación? Dejará de estar disponible de inmediato, incluidos los enlaces directos.">Retirar grabación</Action>
+                    )}
+                </div>
             )}
             {e.retryUrl && (
                 <Action url={e.retryUrl}>Reintentar grabación</Action>

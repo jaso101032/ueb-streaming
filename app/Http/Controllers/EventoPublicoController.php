@@ -33,7 +33,7 @@ class EventoPublicoController extends Controller
         ]);
         $filter = $filters['filtro'] ?? 'todos';
         $query = Evento::with(['facultad', 'carrera', 'categoria', 'organizador', 'transmision', 'scheduledVideo'])
-            ->where('estado', '!=', 'cancelado');
+            ->where('estado', '!=', 'cancelado')->visibleTo($request->user());
         $adminCatalog = auth()->user()?->role === 'admin';
         if ($adminCatalog) {
             $viewCounts = DB::table('event_video_views')
@@ -83,12 +83,18 @@ class EventoPublicoController extends Controller
     /**
      * Muestra la sala de reproducción en vivo o diferido de un evento específico.
      */
-    public function show(Evento $evento, ChatFeed $feed)
+    public function show(Request $request, Evento $evento, ChatFeed $feed)
     {
+        if (! $evento->visibleTo($request->user())) {
+            // Internal content asks for a session; restricted content does not reveal it exists.
+            if (! $request->user() && $evento->visibilidad === 'interno') return redirect()->guest(route('login'));
+            abort(404);
+        }
         $evento->load(['facultad', 'carrera', 'categoria', 'transmision', 'organizador', 'scheduledVideo']);
         $eventosRelacionados = Evento::with(['facultad', 'carrera', 'categoria', 'transmision', 'organizador', 'scheduledVideo'])
             ->whereKeyNot($evento->id)
             ->where('estado', '!=', 'cancelado')
+            ->visibleTo($request->user())
             ->latest('fecha_inicio')
             ->take(4)
             ->get();

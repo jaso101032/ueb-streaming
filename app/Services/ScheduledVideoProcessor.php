@@ -83,8 +83,14 @@ class ScheduledVideoProcessor
             $video->update(['path' => $output, 'duration' => $metadata['duration'], 'optimized_bytes' => $disk->size($output),
                 'processing_status' => 'ready', 'processing_progress' => 100, 'processing_heartbeat_at' => now(),
                 'ready_at' => now(), 'processing_error' => null]);
-            $disk->delete($video->source_path);
-            $video->update(['source_path' => null]);
+            $hashes = ['output_sha256' => hash_file('sha256', $disk->path($output)) ?: null];
+            if (config('streaming.keep_sources')) {
+                $hashes['source_sha256'] = hash_file('sha256', $disk->path($video->source_path)) ?: null;
+                $video->update($hashes);
+            } else {
+                $disk->delete($video->source_path);
+                $video->update($hashes + ['source_path' => null]);
+            }
             try { app(AudienceAnnouncements::class)->publish($video->evento, 'video'); }
             catch (\Throwable $exception) { report($exception); }
         } catch (\Throwable $e) {

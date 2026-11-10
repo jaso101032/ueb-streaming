@@ -54,9 +54,9 @@ class User extends Authenticatable
         if ($this->isAdmin()) return true;
         if (! $this->isOperador()) return false;
 
-        // Existing operators keep their historical rights. New accounts receive
-        // an explicit (possibly empty) list chosen by the administrator.
-        return in_array($action, $this->operator_permissions ?? self::operatorActions(), true);
+        // Each operator acts only with the permissions explicitly assigned. The
+        // 2026-11-10 migration made the historical implicit rights explicit.
+        return in_array($action, $this->operator_permissions ?? [], true);
     }
 
     public static function operatorActions(): array

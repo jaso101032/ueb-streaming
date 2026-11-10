@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\Audit;
 use App\Models\Categoria;
 use App\Models\Evento;
 use App\Models\InstitutionalAd;
@@ -64,13 +65,15 @@ class ScheduledVideoController extends Controller
                 $thumbnailPath = $request->file('miniatura')->store('eventos/miniaturas', 'public');
                 abort_unless($thumbnailPath, 500, 'No se pudo guardar la imagen de portada.');
             }
-            DB::transaction(function () use ($data, $duration, $path, $thumbnailPath, $request) {
+            $event = DB::transaction(function () use ($data, $duration, $path, $thumbnailPath, $request) {
                 $event = Evento::create(['titulo' => $data['titulo'], 'descripcion' => $data['descripcion'] ?? null,
                     'categoria_id' => $data['categoria_id'], 'fecha_inicio' => $data['fecha_inicio'],
                     'fecha_fin' => Carbon::parse($data['fecha_inicio'])->addSeconds((int) ceil($duration)),
                     'tipo_evento' => 'Emisión pregrabada', 'estado' => 'programado', 'miniatura' => $thumbnailPath, 'organizador_id' => $request->user()->id,
                     'slug' => Str::uuid()->toString()]);
                 $event->scheduledVideo()->create(['path' => $path, 'duration' => $duration, 'source_path' => $path, 'source_bytes' => $request->file('video')->getSize(), 'processing_status' => 'pending']);
+
+                return $event;
             });
         } catch (\Throwable $e) {
             Storage::disk('local')->delete($path);
@@ -80,6 +83,7 @@ class ScheduledVideoController extends Controller
             throw $e;
         }
 
+        Audit::record('programacion.creada', $event);
         $message = 'Video recibido. Se está preparando para la emisión; aparecerá en la programación cuando esté listo.';
         if ($request->expectsJson()) {
             $request->session()->flash('success', $message);

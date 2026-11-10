@@ -44,6 +44,9 @@ class StreamAuthorizationController extends Controller
             return $announce ? $event : null;
         });
 
+        if ($started && $request->input('call') === 'publish') {
+            \App\Support\Audit::record('transmision.iniciada', $started, [], 'OBS (servidor RTMP)');
+        }
         if ($started) {
             try { app(\App\Services\AudienceAnnouncements::class)->publish($started, 'live'); }
             catch (\Throwable $exception) { report($exception); }

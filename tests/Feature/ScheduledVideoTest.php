@@ -102,7 +102,11 @@ class ScheduledVideoTest extends TestCase {
             $this->assertSame('ready', $created->scheduledVideo->fresh()->processing_status);
             $this->assertSame(100, $created->scheduledVideo->fresh()->processing_progress);
             $this->assertNotNull($created->scheduledVideo->fresh()->processing_heartbeat_at);
-            $this->assertNull($created->scheduledVideo->fresh()->source_path);
+            // The uploaded original is kept with its fingerprint (preservation policy).
+            $fresh = $created->scheduledVideo->fresh();
+            Storage::disk('local')->assertExists($fresh->source_path);
+            $this->assertSame(hash_file('sha256', Storage::disk('local')->path($fresh->source_path)), $fresh->source_sha256);
+            $this->assertSame(hash_file('sha256', Storage::disk('local')->path($fresh->path)), $fresh->output_sha256);
             Storage::disk('local')->assertExists($created->scheduledVideo->fresh()->path);
         } finally { if (is_file($path)) unlink($path); }
     }

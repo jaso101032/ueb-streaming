@@ -29,8 +29,14 @@ class InstitutionalAdProcessor
                 'optimized_bytes' => $disk->size($output), 'processing_status' => 'ready',
                 'processing_progress' => 100, 'processing_heartbeat_at' => now(),
                 'ready_at' => now(), 'processing_error' => null]);
-            $disk->delete($ad->source_path);
-            $ad->update(['source_path' => null]);
+            $hashes = ['output_sha256' => hash_file('sha256', $disk->path($output)) ?: null];
+            if (config('streaming.keep_sources')) {
+                $hashes['source_sha256'] = hash_file('sha256', $disk->path($ad->source_path)) ?: null;
+                $ad->update($hashes);
+            } else {
+                $disk->delete($ad->source_path);
+                $ad->update($hashes + ['source_path' => null]);
+            }
         } catch (\Throwable $e) {
             $disk->delete($output);
             $ad->update(['processing_status' => 'failed',

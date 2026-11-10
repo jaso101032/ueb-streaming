@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\Audit;
 use App\Models\InstitutionalAd;
 use App\Services\ScheduledVideoProcessor;
 use Illuminate\Http\Request;
@@ -24,7 +25,7 @@ class InstitutionalAdController extends Controller
         $path = $request->file('ad_video')->store('institutional-ad-sources', 'local');
         abort_unless($path, 500, 'No se pudo guardar el anuncio.');
         try {
-            InstitutionalAd::create(['title' => $data['ad_title'], 'source_path' => $path,
+            $ad = InstitutionalAd::create(['title' => $data['ad_title'], 'source_path' => $path,
                 'duration' => $duration, 'source_bytes' => $request->file('ad_video')->getSize(),
                 'processing_status' => 'pending', 'is_active' => true]);
         } catch (\Throwable $e) {
@@ -32,6 +33,7 @@ class InstitutionalAdController extends Controller
             throw $e;
         }
 
+        Audit::record('publicidad.creada', $ad);
         $message = 'Publicidad recibida. Se emitirá en los huecos cuando termine su conversión.';
         if ($request->expectsJson()) {
             $request->session()->flash('success', $message);
@@ -44,6 +46,7 @@ class InstitutionalAdController extends Controller
     public function toggle(InstitutionalAd $ad)
     {
         $ad->update(['is_active' => ! $ad->is_active]);
+        Audit::record($ad->is_active ? 'publicidad.activada' : 'publicidad.desactivada', $ad);
 
         return back()->with('success', $ad->is_active ? 'Publicidad activada.' : 'Publicidad desactivada.');
     }

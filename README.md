@@ -173,7 +173,7 @@ http {
 El playlist local se genera con este formato:
 
 ```text
-http://IP_DEL_SERVIDOR:8080/hls/CLAVE.m3u8
+http://IP_DEL_SERVIDOR:8080/directo/IDENTIFICADOR_PUBLICO.m3u8
 ```
 
 Puertos necesarios en el entorno local incluido: `8000` para Laravel, `8080`
@@ -264,7 +264,7 @@ sudo chown -R "$USER":"$USER" public/uebtv-build-v2
 
 ```bash
 ss -ltnp | grep -E ':(80|1935)'
-curl -I http://IP_DEL_SERVIDOR/hls/CLAVE.m3u8
+curl -I http://IP_DEL_SERVIDOR/directo/IDENTIFICADOR_PUBLICO.m3u8
 ```
 
 ## Estado del proyecto

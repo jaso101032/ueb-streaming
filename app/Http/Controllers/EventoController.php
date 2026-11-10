@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use App\Support\Audit;
 use Throwable;
 
 class EventoController extends Controller
@@ -55,13 +56,14 @@ class EventoController extends Controller
                     'miniatura' => $thumbnail,
                 ]));
                 $key = 'ueb_'.Str::random(32);
-                $evento->transmision()->create([
+                $stream = $evento->transmision()->create([
                     'stream_key' => $key,
                     'rtmp_server' => config('streaming.rtmp_url') ?: 'rtmp://'.$request->getHost().':1935/live',
-                    'hls_url' => (config('streaming.hls_base_url') ?: 'http://'.$request->getHost().':8080/hls').'/'.$key.'.m3u8',
+                    'hls_url' => null,
                     'activo' => false,
                     'recording_fps_limit' => $request->input('recording_fps_limit') ?: null,
                 ]);
+                $stream->update(['hls_url' => $stream->playbackUrl()]);
 
                 return $evento;
             });
@@ -71,6 +73,8 @@ class EventoController extends Controller
             }
             throw $exception;
         }
+
+        Audit::record('evento.creado', $evento, ['visibilidad' => $evento->visibilidad]);
 
         return redirect()->route('admin.eventos.show', $evento)->with('success', 'Evento creado y clave de OBS generada correctamente.');
     }
@@ -102,6 +106,7 @@ class EventoController extends Controller
                 throw ValidationException::withMessages(['recording_fps_limit' => 'No se puede cambiar el límite de FPS después de iniciar la transmisión.']);
             }
         }
+        $changes = [];
         $thumbnail = $this->storeThumbnail($request);
         $previousThumbnail = $evento->miniatura;
         if ($thumbnail) {
@@ -109,8 +114,11 @@ class EventoController extends Controller
         }
 
         try {
-            DB::transaction(function () use ($evento, $data, $request, $stream) {
-                $evento->update($data);
+            DB::transaction(function () use ($evento, $data, $request, $stream, &$changes) {
+                $evento->fill($data);
+                $changes = collect($evento->getDirty())->except(['updated_at', 'miniatura'])
+                    ->map(fn ($value, $field) => ['antes' => self::auditValue($evento->getRawOriginal($field)), 'despues' => self::auditValue($evento->getAttributes()[$field] ?? null)])->all();
+                $evento->save();
                 if ($request->exists('recording_fps_limit') && $stream && ! $stream->iniciado_en) {
                     $stream->update(['recording_fps_limit' => $request->input('recording_fps_limit') ?: null]);
                 }
@@ -126,7 +134,16 @@ class EventoController extends Controller
             Storage::disk('public')->delete($previousThumbnail);
         }
 
+        if ($changes || $thumbnail) {
+            Audit::record('evento.actualizado', $evento, array_filter(['cambios' => $changes, 'miniatura' => $thumbnail ? 'reemplazada' : null]));
+        }
+
         return redirect()->route('admin.eventos.show', $evento)->with('success', 'Evento actualizado correctamente.');
+    }
+
+    private static function auditValue($value)
+    {
+        return is_string($value) ? mb_substr($value, 0, 200) : $value;
     }
 
     private function storeThumbnail(EventoRequest $request): ?string
@@ -147,6 +164,7 @@ class EventoController extends Controller
     {
         \Illuminate\Support\Facades\Gate::authorize('delete-event');
         $evento->delete();
+        Audit::record('evento.eliminado', $evento);
 
         return redirect()->route('admin.eventos.index')->with('success', 'Evento eliminado correctamente.');
     }

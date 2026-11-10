@@ -12,6 +12,7 @@ use App\Http\Controllers\DashboardRedirectController;
 use App\Http\Controllers\EventoController;
 use App\Http\Controllers\EventoPublicoController;
 use App\Http\Controllers\InstitutionalAdController;
+use App\Http\Controllers\LivePlaybackController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RecordingController;
 use App\Http\Controllers\ScheduledVideoController;
@@ -26,6 +27,11 @@ Route::get('/', fn () => redirect()->route('channel.index'));
 Route::get('/senal', [ChannelController::class, 'index'])->name('channel.index');
 Route::get('/senal/estado', [ChannelController::class, 'state'])->name('channel.state');
 Route::get('/senal/publicidad/{ad}/video', [InstitutionalAdController::class, 'media'])->name('channel.ad.media');
+// Live HLS by public playback id: the OBS stream key never reaches viewers.
+Route::get('/directo/{playbackId}.m3u8', [LivePlaybackController::class, 'playlist'])
+    ->where('playbackId', '[a-z0-9]{32}')->name('live.playlist');
+Route::get('/directo/{playbackId}/{sequence}.ts', [LivePlaybackController::class, 'segment'])
+    ->where(['playbackId' => '[a-z0-9]{32}', 'sequence' => '[0-9]{1,12}'])->name('live.segment');
 
 Route::get('/eventos', [EventoPublicoController::class, 'index'])->name('eventos.index');
 Route::get('/eventos/{evento}/reproduccion', [RecordingController::class, 'state'])->name('eventos.playback-state');
@@ -83,6 +89,9 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::delete('/eventos/{evento}', [EventoController::class, 'destroy'])
         ->middleware('can:delete-event')->name('eventos.destroy');
     Route::get('/eventos/{evento}/grabacion/descargar', [RecordingController::class, 'download'])->name('recording.download');
+    Route::post('/eventos/{evento}/grabacion/aprobar', [RecordingController::class, 'approve'])->middleware('throttle:20,1')->name('recording.approve');
+    Route::post('/eventos/{evento}/grabacion/retirar', [RecordingController::class, 'withdraw'])->middleware('throttle:20,1')->name('recording.withdraw');
+    Route::get('/auditoria', [\App\Http\Controllers\Admin\AuditLogController::class, 'index'])->name('audit.index');
 });
 
 // Administrators and streaming operators can create and maintain event details.

@@ -11,6 +11,7 @@ export default function EventForm({
     image,
     back,
     recordingSettingsLocked = false,
+    visibilities = [],
     canToggleChat = false,
 }) {
     const [v, setV] = useState(values),
@@ -190,6 +191,14 @@ export default function EventForm({
                                         maxLength="20000"
                                         placeholder="¿Qué compartiremos con nuestra comunidad?"
                                     />
+                                </Field>
+                                <Field wide name="visibilidad" label="¿Quién puede ver este evento?">
+                                    <select {...bind("visibilidad")}>
+                                        {(visibilities || []).map((o) => (
+                                            <option key={o.id} value={o.id}>{o.nombre}</option>
+                                        ))}
+                                    </select>
+                                    <small>Público: cualquier persona y el canal 24/7. Interno: solo cuentas con sesión. Restringido: solo administradores y operadores. Aplica al directo y a la grabación.</small>
                                 </Field>
                                 {canToggleChat && <div className="uebtv-form-field uebtv-form-field--wide">
                                     <label htmlFor="chat_enabled">Comentarios durante el directo</label>

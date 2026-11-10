@@ -80,11 +80,12 @@ class RecordingProcessor
             // pending marker lets the worker retry cleanup after a crash or a
             // temporary filesystem error without re-encoding the video.
             $metadata['rawCleanupPending'] = true;
+            // A ready recording waits for editorial approval; the audience is
+            // notified only when an administrator publishes it.
             $claimed->update(['recording_status' => 'ready', 'recording_file' => $filename,
-                'recording_metadata' => $metadata,
+                'recording_metadata' => $metadata, 'publicacion' => 'pendiente',
+                'publicacion_revisada_por' => null, 'publicacion_revisada_en' => null,
                 'recording_ready_at' => now(), 'recording_error' => null]);
-            try { app(AudienceAnnouncements::class)->publish($claimed->evento, 'video'); }
-            catch (Throwable $exception) { report($exception); }
             try { $this->cleanupSource($claimed); } catch (Throwable $exception) { report($exception); }
         } catch (Throwable $exception) {
             if ($temporary && is_file($temporary)) unlink($temporary);
@@ -101,6 +102,17 @@ class RecordingProcessor
 
         $source = rtrim(config('streaming.recordings_root'), '/').'/raw/'.$stream->stream_key.'.flv';
         if (is_link($source)) return;
+        if (config('streaming.keep_sources')) {
+            // The OBS original stays in place (OBS can no longer publish to this
+            // key once the recording is ready) with fingerprints for integrity checks.
+            $metadata['rawCleanupPending'] = false;
+            $metadata['rawRetained'] = is_file($source);
+            if (is_file($source)) $metadata['rawSha256'] = hash_file('sha256', $source) ?: null;
+            $metadata['mp4Sha256'] = hash_file('sha256', $stream->recordingPath()) ?: null;
+            $stream->update(['recording_metadata' => $metadata]);
+
+            return;
+        }
         if (is_file($source) && ! @unlink($source)) return;
         clearstatcache(true, $source);
         if (file_exists($source) || is_link($source)) return;

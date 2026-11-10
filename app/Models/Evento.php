@@ -28,6 +28,7 @@ class Evento extends Model
         'banner',
         'miniatura',
         'estado',
+        'visibilidad',
         'url_transmision',
         'video_url',
         'duracion_minutos',
@@ -35,11 +36,32 @@ class Evento extends Model
         'chat_enabled',
     ];
 
+    protected $attributes = ['visibilidad' => 'publico'];
+
     protected $casts = [
         'fecha_inicio' => 'datetime',
         'fecha_fin' => 'datetime',
         'chat_enabled' => 'boolean',
     ];
+
+    public const VISIBILITIES = ['publico' => 'Público', 'interno' => 'Interno (con sesión)', 'restringido' => 'Restringido (personal UEBTV)'];
+
+    /** Indica si la persona puede ver este evento según su clasificación. */
+    public function visibleTo(?User $user): bool
+    {
+        return match ($this->visibilidad ?? 'publico') {
+            'publico' => true,
+            'interno' => $user !== null,
+            default => in_array($user?->role, ['admin', 'operador'], true),
+        };
+    }
+
+    public function scopeVisibleTo($query, ?User $user)
+    {
+        if (in_array($user?->role, ['admin', 'operador'], true)) return $query;
+
+        return $query->whereIn($query->qualifyColumn('visibilidad'), $user ? ['publico', 'interno'] : ['publico']);
+    }
 
     public function scheduledVideo()
     {

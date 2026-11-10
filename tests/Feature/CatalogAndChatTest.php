@@ -224,7 +224,7 @@ class CatalogAndChatTest extends TestCase
             app(ChatFeed::class)->forget($evento);
             $before = $this->getJson(route('eventos.chat.index', $evento));
             $this->actingAs($this->user)->deleteJson(route('eventos.chat.destroy', [$evento, $message]))->assertForbidden();
-            $moderator = User::factory()->create(['role' => $role]);
+            $moderator = User::factory()->create(['role' => $role] + ($role === 'operador' ? ['operator_permissions' => User::operatorActions()] : []));
             $this->actingAs($moderator)->get(route('eventos.show', $evento))->assertOk()->assertSee('&quot;canModerate&quot;:true', false);
             $this->deleteJson(route('eventos.chat.destroy', [$evento, $message]))->assertNoContent();
             $this->assertSoftDeleted('chat_messages', ['id' => $message->id, 'moderated_by' => $moderator->id]);

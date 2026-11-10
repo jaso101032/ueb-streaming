@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class Transmision extends Model
 {
@@ -23,6 +24,7 @@ class Transmision extends Model
         'recording_status', 'publisher_id', 'last_signal_at', 'recording_file',
         'recording_ready_at', 'recording_attempt_at', 'recording_attempts', 'recording_error',
         'recording_fps_limit', 'recording_metadata',
+        'playback_id', 'publicacion', 'publicacion_revisada_por', 'publicacion_revisada_en',
     ];
 
     protected $casts = [
@@ -34,7 +36,34 @@ class Transmision extends Model
         'finalizado_en' => 'datetime',
         'recording_fps_limit' => 'integer',
         'recording_metadata' => 'array',
+        'publicacion_revisada_en' => 'datetime',
     ];
+
+    protected $attributes = ['publicacion' => 'pendiente'];
+
+    protected static function booted(): void
+    {
+        // El identificador público nunca deriva de la clave privada de OBS.
+        static::creating(function (self $stream) {
+            $stream->playback_id ??= self::newPlaybackId();
+        });
+    }
+
+    public static function newPlaybackId(): string
+    {
+        return Str::lower(Str::random(32));
+    }
+
+    /** Dirección HLS pública, en el mismo origen del sitio y sin la clave de emisión. */
+    public function playbackUrl(): ?string
+    {
+        return $this->playback_id ? '/directo/'.$this->playback_id.'.m3u8' : null;
+    }
+
+    public function isPublished(): bool
+    {
+        return $this->publicacion === 'aprobada';
+    }
 
     public function recordingPath(): ?string
     {
@@ -70,5 +99,10 @@ class Transmision extends Model
     public function evento()
     {
         return $this->belongsTo(Evento::class);
+    }
+
+    public function revisor()
+    {
+        return $this->belongsTo(User::class, 'publicacion_revisada_por');
     }
 }
