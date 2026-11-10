@@ -2,6 +2,7 @@
     @php
 $values=$evento->only(['titulo','tipo_evento','categoria_id','facultad_id','carrera_id','lugar','estado','descripcion','video_url','visibilidad']);
 $values['visibilidad']=$values['visibilidad'] ?? 'publico';
+$values['requiere_aprobacion']=(bool)($evento->requiere_aprobacion ?? false);
 $values['fecha_inicio']=$evento->fecha_inicio?->format('Y-m-d\TH:i');
 $values['fecha_fin']=$evento->fecha_fin?->format('Y-m-d\TH:i');
 $values['recording_fps_limit']=$evento->transmision?->recording_fps_limit;

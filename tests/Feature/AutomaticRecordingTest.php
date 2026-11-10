@@ -73,6 +73,8 @@ class AutomaticRecordingTest extends TestCase
 
     public function test_real_video_is_converted_published_and_supports_range_requests(): void
     {
+        // This event asks for editorial review before its recording is published.
+        $this->event->update(['requiere_aprobacion' => true]);
         $this->event->transmision()->update(['recording_fps_limit' => 30]);
         $this->publish()->assertNoContent();
         $fixture = new Process(['/usr/bin/ffmpeg', '-nostdin', '-v', 'error', '-f', 'lavfi', '-i', 'color=c=blue:s=160x90:r=60',
@@ -131,6 +133,30 @@ class AutomaticRecordingTest extends TestCase
         $this->publish()->assertForbidden();
         $this->artisan('streaming:prepare-recordings')->assertSuccessful();
         $this->assertSame($stream->recording_file, $stream->fresh()->recording_file);
+    }
+
+    public function test_recordings_are_published_automatically_by_default(): void
+    {
+        $this->assertFalse($this->event->requiere_aprobacion);
+        $this->publish()->assertNoContent();
+        (new Process(['/usr/bin/ffmpeg', '-nostdin', '-v', 'error', '-f', 'lavfi', '-i', 'color=c=blue:s=160x90:r=30',
+            '-f', 'lavfi', '-i', 'sine=frequency=440:sample_rate=44100', '-t', '1',
+            '-c:v', 'libx264', '-threads', '1', '-c:a', 'aac', '-f', 'flv', $this->root.'/raw/ueb_test.flv']))->mustRun();
+        $this->disconnect()->assertNoContent();
+        $this->travel(91)->seconds();
+        $this->artisan('streaming:prepare-recordings')->assertSuccessful();
+
+        $stream = $this->event->transmision()->first();
+        $this->assertSame('ready', $stream->recording_status);
+        $this->assertSame('aprobada', $stream->publicacion);
+        $this->assertDatabaseHas('audience_announcements', ['evento_id' => $this->event->id, 'kind' => 'video']);
+        $this->assertDatabaseHas('audit_logs', ['action' => 'grabacion.publicada_automaticamente', 'subject_id' => $this->event->id, 'user_name' => 'Sistema']);
+        $this->get(route('eventos.show', $this->event))->assertOk()->assertSee(route('eventos.recording', $this->event));
+        $this->get(route('eventos.recording', $this->event))->assertOk();
+        // An administrator can still withdraw it at any time.
+        $this->actingAs(User::where('role', 'admin')->first())->post(route('admin.recording.withdraw', $this->event))->assertSessionHas('success');
+        auth()->logout();
+        $this->get(route('eventos.recording', $this->event))->assertNotFound();
     }
 
     public function test_failure_keeps_manual_fallback_and_can_be_retried_by_operator(): void
