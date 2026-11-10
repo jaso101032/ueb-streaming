@@ -47,7 +47,7 @@ class Evento extends Model
     public const VISIBILITIES = ['publico' => 'Público', 'interno' => 'Interno (con sesión)', 'restringido' => 'Restringido (personal UEBTV)'];
 
     /** Indica si la persona puede ver este evento según su clasificación. */
-    public function visibleTo(?User $user): bool
+    public function isVisibleTo(?User $user): bool
     {
         return match ($this->visibilidad ?? 'publico') {
             'publico' => true,

@@ -16,7 +16,7 @@ class ChatMessageController extends Controller
 {
     public function index(Request $request, Evento $evento, ChatFeed $feed): JsonResponse
     {
-        abort_unless($evento->visibleTo($request->user()), 404);
+        abort_unless($evento->isVisibleTo($request->user()), 404);
         $messages = $feed->messages($evento);
         $response = response()->json($messages);
         $response->setEtag(hash('sha256', $response->getContent()));
@@ -30,7 +30,7 @@ class ChatMessageController extends Controller
 
     public function replay(Request $request, Evento $evento): JsonResponse
     {
-        abort_unless($evento->visibleTo($request->user()), 404);
+        abort_unless($evento->isVisibleTo($request->user()), 404);
         abort_unless($evento->estado === 'finalizado', 404);
         $data = $request->validate(['after_id' => ['sometimes', 'integer', 'min:0']]);
         $afterId = (int) ($data['after_id'] ?? 0);
@@ -60,7 +60,7 @@ class ChatMessageController extends Controller
 
     public function store(Request $request, Evento $evento, ChatFeed $feed): JsonResponse
     {
-        abort_unless($evento->visibleTo($request->user()), 404);
+        abort_unless($evento->isVisibleTo($request->user()), 404);
         $validated = $request->validate([
             'message' => ['required', 'string', 'max:180', 'not_regex:/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/'],
         ], [

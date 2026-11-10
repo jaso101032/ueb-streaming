@@ -26,7 +26,7 @@ class RecordingController extends Controller
 
     public function state(Request $request, Evento $evento)
     {
-        abort_unless($evento->visibleTo($request->user()), 404);
+        abort_unless($evento->isVisibleTo($request->user()), 404);
 
         return response()->json(['state' => $evento->estado,
             'ready' => (bool) $this->playablePath($request, $evento)])
@@ -101,7 +101,7 @@ class RecordingController extends Controller
     {
         $stream = $evento->transmision;
         $path = $stream?->recordingPath();
-        if (! $path || $evento->estado !== 'finalizado' || ! $evento->visibleTo($request->user())) return null;
+        if (! $path || $evento->estado !== 'finalizado' || ! $evento->isVisibleTo($request->user())) return null;
         $staff = in_array($request->user()?->role, ['admin', 'operador'], true);
 
         return $stream->isPublished() || $staff ? $path : null;

@@ -85,7 +85,7 @@ class EventoPublicoController extends Controller
      */
     public function show(Request $request, Evento $evento, ChatFeed $feed)
     {
-        if (! $evento->visibleTo($request->user())) {
+        if (! $evento->isVisibleTo($request->user())) {
             // Internal content asks for a session; restricted content does not reveal it exists.
             if (! $request->user() && $evento->visibilidad === 'interno') return redirect()->guest(route('login'));
             abort(404);

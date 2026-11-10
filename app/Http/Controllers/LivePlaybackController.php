@@ -55,7 +55,7 @@ class LivePlaybackController extends Controller
         $stream = Transmision::with('evento')->where('playback_id', $playbackId)->first();
         abort_unless($stream && $stream->evento && preg_match('/^[A-Za-z0-9_-]{1,100}$/D', (string) $stream->stream_key), 404);
         // Un recurso no autorizado responde como inexistente: no revela que existe.
-        abort_unless($stream->evento->visibleTo($request->user()) && $stream->evento->estado !== 'cancelado', 404);
+        abort_unless($stream->evento->isVisibleTo($request->user()) && $stream->evento->estado !== 'cancelado', 404);
 
         return $stream;
     }

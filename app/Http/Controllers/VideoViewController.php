@@ -10,7 +10,7 @@ class VideoViewController extends Controller
 {
     public function store(Request $request, Evento $evento)
     {
-        abort_unless($evento->visibleTo($request->user()), 404);
+        abort_unless($evento->isVisibleTo($request->user()), 404);
         $data = $request->validate(['viewer' => ['required', 'uuid']]);
         $evento->loadMissing(['scheduledVideo', 'transmision']);
 

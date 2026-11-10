@@ -107,7 +107,7 @@ class TransmisionController extends Controller
      */
     public function viewerHeartbeat(Request $request, Evento $evento)
     {
-        abort_unless($evento->visibleTo($request->user()), 404);
+        abort_unless($evento->isVisibleTo($request->user()), 404);
         $data = $request->validate(['viewer' => ['required', 'uuid']]);
         $stream = $evento->transmision;
 
