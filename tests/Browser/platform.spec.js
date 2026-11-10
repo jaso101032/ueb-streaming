@@ -278,7 +278,11 @@ test("video analytics exports a complete print-ready PDF report for the selected
     } }));
     await login(page);
     await page.goto("/eventos");
-    await page.getByRole("button", { name: "Ver estadísticas" }).first().click();
+    // The catalog lists the newest event first; open the analytics of the seeded conference explicitly.
+    const statsButton = page.locator(".uebtv-catalog-card")
+        .filter({ hasText: "Conferencia inaugural UEB 2026" })
+        .getByRole("button", { name: "Ver estadísticas" });
+    await statsButton.click();
     const dialog = page.getByRole("dialog", { name: /Estadísticas de Conferencia inaugural UEB 2026/ });
     await expect(page.getByRole("heading", { name: "Estadísticas de reproducción" })).toBeVisible();
     await expect(dialog.getByRole("button", { name: "Cerrar estadísticas" })).toBeFocused();
@@ -289,8 +293,8 @@ test("video analytics exports a complete print-ready PDF report for the selected
     await expect(dialog.getByLabel("Período")).toBeFocused();
     await page.keyboard.press("Escape");
     await expect(dialog).toBeHidden();
-    await expect(page.getByRole("button", { name: "Ver estadísticas" }).first()).toBeFocused();
-    await page.getByRole("button", { name: "Ver estadísticas" }).first().click();
+    await expect(statsButton).toBeFocused();
+    await statsButton.click();
     await expect(dialog).toBeVisible();
     const report = page.locator(".video-analytics-report");
     await expect(report).toContainText("Conferencia UEB");
@@ -1013,6 +1017,8 @@ test("continuous channel switches from schedule to live and resumes before the n
         .poll(() => page.locator("video").evaluate((v) => v.currentTime))
         .toBeGreaterThan(11);
     await page.getByRole("button", { name: "Pantalla completa" }).click();
+    // The title overlay renders after the asynchronous fullscreenchange event.
+    await expect(page.locator(".uebtv-player-shell .uebtv-player-title")).toBeVisible();
     const scheduledOverlay = await page.locator(".uebtv-player-shell").evaluate((element) => ({
         titleRight: element.querySelector(".uebtv-player-title").getBoundingClientRect().right,
         watermarkLeft: element.querySelector(".uebtv-player-mark").getBoundingClientRect().left,

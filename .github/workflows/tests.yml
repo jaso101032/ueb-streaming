@@ -32,4 +32,6 @@ jobs:
         if: always()
         with:
           name: evidencia-pruebas-${{ github.sha }}
-          path: resultados-*
+          path: |
+            resultados-*
+            test-results/
