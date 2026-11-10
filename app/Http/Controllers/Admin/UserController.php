@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Support\Audit;
 use App\Support\ReactPage;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -38,7 +39,7 @@ class UserController extends Controller
                 'name' => $user->name,
                 'email' => $user->email,
                 'role' => in_array(strtolower(trim((string) $user->role)), ['user', 'usuario', ''], true) ? 'usuario' : $user->role,
-                'permissions' => $user->isOperador() ? ($user->operator_permissions ?? User::operatorActions()) : [],
+                'permissions' => $user->isOperador() ? ($user->operator_permissions ?? []) : [],
                 'chatRestricted' => (bool) $user->chat_restricted,
                 'verified' => $user->email_verified_at !== null,
                 'isCurrent' => $user->is(auth()->user()),
@@ -79,6 +80,7 @@ class UserController extends Controller
             'password' => $data['password'],
         ]);
         $user->forceFill(['email_verified_at' => now()])->save();
+        Audit::record('usuario.creado', $user, ['rol' => $user->role, 'permisos' => $user->operator_permissions]);
 
         return to_route('admin.usuarios.index')->with('success', 'Usuario creado. Comparte la contraseña inicial de forma segura.');
     }
@@ -105,6 +107,7 @@ class UserController extends Controller
         }
 
         $wasOperator = $usuario->isOperador();
+        $before = ['rol' => $usuario->role, 'permisos' => $usuario->operator_permissions, 'chat_restringido' => (bool) $usuario->chat_restricted, 'correo' => $usuario->email];
         $usuario->name = $data['name'];
         $usuario->email = $data['email'];
         $usuario->role = $data['role'];
@@ -120,6 +123,10 @@ class UserController extends Controller
             $usuario->password = $data['password'];
         }
         $usuario->save();
+        $after = ['rol' => $usuario->role, 'permisos' => $usuario->operator_permissions, 'chat_restringido' => (bool) $usuario->chat_restricted, 'correo' => $usuario->email];
+        $details = $before !== $after ? ['antes' => $before, 'despues' => $after] : [];
+        if (! empty($data['password'])) $details['contrasena'] = 'cambiada';
+        if ($details) Audit::record('usuario.actualizado', $usuario, $details);
 
         return to_route('admin.usuarios.index')->with('success', 'Usuario actualizado.');
     }
@@ -139,6 +146,7 @@ class UserController extends Controller
             return back()->withErrors(['user' => 'Debe quedar al menos un administrador activo.']);
         }
 
+        Audit::record('usuario.eliminado', $usuario, ['rol' => $usuario->role]);
         $usuario->delete();
 
         return to_route('admin.usuarios.index')->with('success', 'Usuario eliminado.');

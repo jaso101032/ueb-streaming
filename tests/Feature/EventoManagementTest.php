@@ -111,7 +111,7 @@ class EventoManagementTest extends TestCase
     public function test_operator_can_create_and_edit_events_but_cannot_delete_them(): void
     {
         $evento = $this->evento();
-        $this->actingAs(User::factory()->create(['role' => 'operador']));
+        $this->actingAs(User::factory()->create(['role' => 'operador', 'operator_permissions' => User::operatorActions()]));
         $this->get(route('admin.eventos.index'))->assertOk();
         $this->get(route('admin.eventos.create'))->assertOk();
         $this->post(route('admin.eventos.store'), $this->data())->assertSessionHasNoErrors();
@@ -257,7 +257,7 @@ class EventoManagementTest extends TestCase
         $evento = $this->evento();
         $evento->update(['estado' => 'finalizado']);
         $evento->transmision()->create(['stream_key' => 'test_recording_stream_key']);
-        $this->actingAs(User::factory()->create(['role' => 'operador']));
+        $this->actingAs(User::factory()->create(['role' => 'operador', 'operator_permissions' => User::operatorActions()]));
         $props = $this->reactProps($this->get(route('admin.eventos.index')));
         $this->assertNull($props['events'][0]['deleteUrl']);
         $this->assertNull($props['events'][0]['downloadUrl']);

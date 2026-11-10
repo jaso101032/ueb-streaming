@@ -11,6 +11,8 @@ class AudienceAnnouncements
     public function publish(Evento $event, string $kind): void
     {
         if (! in_array($kind, ['live', 'video'], true) || $event->estado === 'cancelado') return;
+        // Restricted content is staff-only and is never announced to the audience.
+        if (($event->visibilidad ?? 'publico') === 'restringido') return;
 
         $title = $kind === 'live' ? 'UEBTV está en vivo: '.$event->titulo : 'Nuevo video: '.$event->titulo;
         $inserted = DB::table('audience_announcements')->insertOrIgnore([

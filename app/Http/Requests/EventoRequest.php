@@ -20,7 +20,7 @@ class EventoRequest extends FormRequest
 
         if ($evento instanceof Evento) {
             // Una petición parcial no debe borrar datos que no fueron enviados.
-            foreach (['descripcion', 'fecha_fin', 'lugar', 'facultad_id', 'carrera_id', 'video_url', 'estado'] as $field) {
+            foreach (['descripcion', 'fecha_fin', 'lugar', 'facultad_id', 'carrera_id', 'video_url', 'estado', 'visibilidad'] as $field) {
                 if (! $this->exists($field)) {
                     $this->merge([$field => $evento->getAttribute($field)]);
                 }
@@ -44,6 +44,8 @@ class EventoRequest extends FormRequest
             'video_url' => ['nullable', 'url:http,https', 'max:255'],
             'recording_fps_limit' => ['sometimes', 'nullable', 'integer', Rule::in([30, 60])],
             'chat_enabled' => ['sometimes', 'boolean'],
+            'visibilidad' => ['sometimes', 'required', Rule::in(array_keys(Evento::VISIBILITIES))],
+            'requiere_aprobacion' => ['sometimes', 'boolean'],
             'miniatura' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048', 'dimensions:max_width=4096,max_height=4096'],
         ];
     }

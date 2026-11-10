@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Support\Audit;
 use App\Models\Evento;
 use App\Models\Transmision;
 use Illuminate\Support\Facades\DB;
@@ -80,11 +81,18 @@ class RecordingProcessor
             // pending marker lets the worker retry cleanup after a crash or a
             // temporary filesystem error without re-encoding the video.
             $metadata['rawCleanupPending'] = true;
+            // By default the recording is published automatically. Events marked
+            // for editorial review wait until an administrator approves them.
+            $review = (bool) $claimed->evento?->requiere_aprobacion;
             $claimed->update(['recording_status' => 'ready', 'recording_file' => $filename,
-                'recording_metadata' => $metadata,
+                'recording_metadata' => $metadata, 'publicacion' => $review ? 'pendiente' : 'aprobada',
+                'publicacion_revisada_por' => null, 'publicacion_revisada_en' => null,
                 'recording_ready_at' => now(), 'recording_error' => null]);
-            try { app(AudienceAnnouncements::class)->publish($claimed->evento, 'video'); }
-            catch (Throwable $exception) { report($exception); }
+            Audit::record($review ? 'grabacion.pendiente_revision' : 'grabacion.publicada_automaticamente', $claimed->evento, [], 'Sistema');
+            if (! $review) {
+                try { app(AudienceAnnouncements::class)->publish($claimed->evento, 'video'); }
+                catch (Throwable $exception) { report($exception); }
+            }
             try { $this->cleanupSource($claimed); } catch (Throwable $exception) { report($exception); }
         } catch (Throwable $exception) {
             if ($temporary && is_file($temporary)) unlink($temporary);
@@ -101,6 +109,17 @@ class RecordingProcessor
 
         $source = rtrim(config('streaming.recordings_root'), '/').'/raw/'.$stream->stream_key.'.flv';
         if (is_link($source)) return;
+        if (config('streaming.keep_sources')) {
+            // The OBS original stays in place (OBS can no longer publish to this
+            // key once the recording is ready) with fingerprints for integrity checks.
+            $metadata['rawCleanupPending'] = false;
+            $metadata['rawRetained'] = is_file($source);
+            if (is_file($source)) $metadata['rawSha256'] = hash_file('sha256', $source) ?: null;
+            $metadata['mp4Sha256'] = hash_file('sha256', $stream->recordingPath()) ?: null;
+            $stream->update(['recording_metadata' => $metadata]);
+
+            return;
+        }
         if (is_file($source) && ! @unlink($source)) return;
         clearstatcache(true, $source);
         if (file_exists($source) || is_link($source)) return;

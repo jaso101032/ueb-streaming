@@ -186,7 +186,7 @@ function ChannelVideo({ snapshot, received, startMuted, onMuteChange }) {
                 onLoadedMetadata={() => { lastProgress.current.at = performance.now(); align(true); play(); }}
                 onSeeked={() => { lastProgress.current.at = performance.now(); }}
                 onUserPause={() => { manualPause.current = true; }}
-                onUserResume={() => { manualPause.current = false; autoplayBlocked.current = false; }}
+                onUserResume={() => { manualPause.current = false; autoplayBlocked.current = false; align(true); }}
                 onPlay={() => { autoplayBlocked.current = false; }}
                 onPlaying={() => { lastProgress.current.at = performance.now(); setNotice(""); }}
                 onTimeUpdate={() => {

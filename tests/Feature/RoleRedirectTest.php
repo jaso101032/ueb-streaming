@@ -26,6 +26,7 @@ class RoleRedirectTest extends TestCase
     {
         $user = User::factory()->create([
             'role' => 'operador',
+            'operator_permissions' => User::operatorActions(),
             'email_verified_at' => now(),
         ]);
 

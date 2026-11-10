@@ -73,6 +73,8 @@ class AutomaticRecordingTest extends TestCase
 
     public function test_real_video_is_converted_published_and_supports_range_requests(): void
     {
+        // This event asks for editorial review before its recording is published.
+        $this->event->update(['requiere_aprobacion' => true]);
         $this->event->transmision()->update(['recording_fps_limit' => 30]);
         $this->publish()->assertNoContent();
         $fixture = new Process(['/usr/bin/ffmpeg', '-nostdin', '-v', 'error', '-f', 'lavfi', '-i', 'color=c=blue:s=160x90:r=60',
@@ -93,13 +95,29 @@ class AutomaticRecordingTest extends TestCase
         $this->assertSame($rawBytes, $stream->recording_metadata['rawBytes']);
         $this->assertSame(filesize($stream->recordingPath()), $stream->recording_metadata['mp4Bytes']);
         $this->assertFileExists($stream->recordingPath());
-        $this->assertFileDoesNotExist($this->root.'/raw/ueb_test.flv');
+        // Preservation policy: the OBS original is kept and both files are fingerprinted.
+        $this->assertFileExists($this->root.'/raw/ueb_test.flv');
         $this->assertFalse($stream->recording_metadata['rawCleanupPending']);
-        $this->assertFalse($stream->displayRecordingMetadata()['rawPresent']);
+        $this->assertTrue($stream->recording_metadata['rawRetained']);
+        $this->assertSame(hash_file('sha256', $this->root.'/raw/ueb_test.flv'), $stream->recording_metadata['rawSha256']);
+        $this->assertSame(hash_file('sha256', $stream->recordingPath()), $stream->recording_metadata['mp4Sha256']);
+        $this->assertTrue($stream->displayRecordingMetadata()['rawPresent']);
+        // A ready recording is not public until an administrator approves it.
+        $this->assertSame('pendiente', $stream->publicacion);
         $this->assertSame('https://example.com/manual.mp4', $this->event->fresh()->video_url);
         $this->assertSame('finalizado', $this->event->fresh()->estado);
-        $this->actingAs(User::where('role', 'admin')->first());
-        $this->get(route('admin.eventos.show', $this->event))->assertOk()->assertSee('recordingMetadata');
+        $this->get(route('eventos.show', $this->event))->assertOk()->assertDontSee(route('eventos.recording', $this->event));
+        $this->get(route('eventos.recording', $this->event))->assertNotFound();
+        $this->assertDatabaseMissing('audience_announcements', ['evento_id' => $this->event->id, 'kind' => 'video']);
+        $admin = User::where('role', 'admin')->first();
+        $this->actingAs($admin);
+        $this->get(route('admin.eventos.show', $this->event))->assertOk()->assertSee('recordingMetadata')
+            ->assertSee(route('admin.recording.approve', $this->event), false);
+        $this->post(route('admin.recording.approve', $this->event))->assertSessionHas('success');
+        $this->assertSame('aprobada', $stream->fresh()->publicacion);
+        $this->assertSame($admin->id, $stream->fresh()->publicacion_revisada_por);
+        $this->assertDatabaseHas('audit_logs', ['action' => 'grabacion.aprobada', 'user_id' => $admin->id, 'subject_id' => $this->event->id]);
+        $this->assertDatabaseHas('audience_announcements', ['evento_id' => $this->event->id, 'kind' => 'video']);
         auth()->logout();
         $this->get(route('eventos.show', $this->event))->assertOk()->assertSee(route('eventos.recording', $this->event));
         $this->get(route('eventos.recording', $this->event), ['Range' => 'bytes=0-31'])->assertStatus(206)
@@ -107,9 +125,38 @@ class AutomaticRecordingTest extends TestCase
         config(['streaming.x_accel_media' => true]);
         $this->get(route('eventos.recording', $this->event))->assertOk()
             ->assertHeader('X-Accel-Redirect', '/_protected_media/recordings/'.$stream->recording_file);
+        // Withdrawal revokes the direct MP4 URL immediately.
+        $this->actingAs($admin)->post(route('admin.recording.withdraw', $this->event))->assertSessionHas('success');
+        auth()->logout();
+        $this->get(route('eventos.recording', $this->event))->assertNotFound();
+        $this->assertDatabaseHas('audit_logs', ['action' => 'grabacion.retirada', 'user_id' => $admin->id]);
         $this->publish()->assertForbidden();
         $this->artisan('streaming:prepare-recordings')->assertSuccessful();
         $this->assertSame($stream->recording_file, $stream->fresh()->recording_file);
+    }
+
+    public function test_recordings_are_published_automatically_by_default(): void
+    {
+        $this->assertFalse($this->event->requiere_aprobacion);
+        $this->publish()->assertNoContent();
+        (new Process(['/usr/bin/ffmpeg', '-nostdin', '-v', 'error', '-f', 'lavfi', '-i', 'color=c=blue:s=160x90:r=30',
+            '-f', 'lavfi', '-i', 'sine=frequency=440:sample_rate=44100', '-t', '1',
+            '-c:v', 'libx264', '-threads', '1', '-c:a', 'aac', '-f', 'flv', $this->root.'/raw/ueb_test.flv']))->mustRun();
+        $this->disconnect()->assertNoContent();
+        $this->travel(91)->seconds();
+        $this->artisan('streaming:prepare-recordings')->assertSuccessful();
+
+        $stream = $this->event->transmision()->first();
+        $this->assertSame('ready', $stream->recording_status);
+        $this->assertSame('aprobada', $stream->publicacion);
+        $this->assertDatabaseHas('audience_announcements', ['evento_id' => $this->event->id, 'kind' => 'video']);
+        $this->assertDatabaseHas('audit_logs', ['action' => 'grabacion.publicada_automaticamente', 'subject_id' => $this->event->id, 'user_name' => 'Sistema']);
+        $this->get(route('eventos.show', $this->event))->assertOk()->assertSee(route('eventos.recording', $this->event));
+        $this->get(route('eventos.recording', $this->event))->assertOk();
+        // An administrator can still withdraw it at any time.
+        $this->actingAs(User::where('role', 'admin')->first())->post(route('admin.recording.withdraw', $this->event))->assertSessionHas('success');
+        auth()->logout();
+        $this->get(route('eventos.recording', $this->event))->assertNotFound();
     }
 
     public function test_failure_keeps_manual_fallback_and_can_be_retried_by_operator(): void
@@ -132,6 +179,8 @@ class AutomaticRecordingTest extends TestCase
 
     public function test_raw_cleanup_waits_for_a_playable_mp4_and_is_retried_by_worker(): void
     {
+        // Institutions may opt out of keeping originals; deletion stays safe.
+        config(['streaming.keep_sources' => false]);
         $stream = $this->event->transmision()->first();
         $filename = Str::uuid().'.mp4';
         file_put_contents($this->root.'/raw/ueb_test.flv', 'original');

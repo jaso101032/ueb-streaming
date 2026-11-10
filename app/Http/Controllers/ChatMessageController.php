@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\Audit;
 use App\Models\ChatMessage;
 use App\Models\Evento;
 use App\Models\Transmision;
@@ -15,6 +16,7 @@ class ChatMessageController extends Controller
 {
     public function index(Request $request, Evento $evento, ChatFeed $feed): JsonResponse
     {
+        abort_unless($evento->isVisibleTo($request->user()), 404);
         $messages = $feed->messages($evento);
         $response = response()->json($messages);
         $response->setEtag(hash('sha256', $response->getContent()));
@@ -28,6 +30,7 @@ class ChatMessageController extends Controller
 
     public function replay(Request $request, Evento $evento): JsonResponse
     {
+        abort_unless($evento->isVisibleTo($request->user()), 404);
         abort_unless($evento->estado === 'finalizado', 404);
         $data = $request->validate(['after_id' => ['sometimes', 'integer', 'min:0']]);
         $afterId = (int) ($data['after_id'] ?? 0);
@@ -57,6 +60,7 @@ class ChatMessageController extends Controller
 
     public function store(Request $request, Evento $evento, ChatFeed $feed): JsonResponse
     {
+        abort_unless($evento->isVisibleTo($request->user()), 404);
         $validated = $request->validate([
             'message' => ['required', 'string', 'max:180', 'not_regex:/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/'],
         ], [
@@ -116,6 +120,7 @@ class ChatMessageController extends Controller
             $message->delete();
         });
         $feed->forget($evento);
+        Audit::record('chat.mensaje_moderado', $evento, ['mensaje_id' => $message->id]);
 
         return response()->noContent();
     }
@@ -130,6 +135,7 @@ class ChatMessageController extends Controller
             abort_if(in_array($locked->estado, ['finalizado', 'cancelado']), 422, 'Esta transmisión ya terminó.');
             $locked->update(['chat_enabled' => $data['enabled']]);
         });
+        Audit::record($data['enabled'] ? 'chat.habilitado' : 'chat.deshabilitado', $evento);
 
         return back()->with('success', $data['enabled'] ? 'Comentarios habilitados.' : 'Comentarios deshabilitados. El historial sigue visible.');
     }

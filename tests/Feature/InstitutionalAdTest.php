@@ -135,7 +135,9 @@ class InstitutionalAdTest extends TestCase
             $this->assertSame('ready', $ad->processing_status);
             $this->assertSame(100, $ad->processing_progress);
             $this->assertNotNull($ad->processing_heartbeat_at);
-            $this->assertNull($ad->source_path);
+            Storage::disk('local')->assertExists($ad->source_path);
+            $this->assertSame(64, strlen($ad->source_sha256));
+            $this->assertSame(64, strlen($ad->output_sha256));
             Storage::disk('local')->assertExists($ad->path);
             $this->get(route('channel.state'))->assertJsonPath('mode', 'advertisement')
                 ->assertJsonPath('advertisement.title', 'Campaña UEB');

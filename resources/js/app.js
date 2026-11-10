@@ -16,7 +16,9 @@ import UploadError from "./platform/UploadError";
 import WatermarkSettings from "./platform/WatermarkSettings";
 import UserManagement from "./platform/UserManagement";
 import MediaLibrary from "./platform/MediaLibrary";
+import AuditLog from "./platform/AuditLog";
 const pages = {
+    AuditLog,
     MediaLibrary,
     UserManagement,
     WatermarkSettings,

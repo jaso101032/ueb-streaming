@@ -16,19 +16,21 @@ class ReactPage
     {
         $scheduled = $e->scheduledVideo;
         $recording = $e->transmision;
+        $staff = in_array(auth()->user()?->role, ['admin', 'operador'], true);
         $data = ['id' => $e->id, 'title' => $e->titulo, 'description' => $e->descripcion, 'status' => $e->estado,
             'category' => $e->categoria?->nombre ?? 'Institucional', 'faculty' => $e->facultad?->nombre ?? 'Toda la institución',
             'career' => $e->carrera?->nombre ?? 'Sin carrera específica', 'organizer' => $e->organizador?->name ?? 'UEB',
             'type' => $e->tipo_evento, 'place' => $e->lugar, 'date' => $e->fecha_inicio?->format('d/m/Y · H:i'),
             'image' => $e->miniatura ? asset('storage/'.$e->miniatura) : null, 'url' => route('eventos.show', $e),
             'scheduled' => $scheduled ? ['stateUrl' => route('scheduled.state', $e), 'mediaUrl' => route('scheduled.media', $e), 'state' => $scheduled->playback()['state']] : null,
-            'videoUrl' => $recording?->recordingPath() && $e->estado === 'finalizado' ? route('eventos.recording', $e) : $e->video_url,
+            'videoUrl' => $recording?->recordingPath() && $e->estado === 'finalizado' && ($recording->isPublished() || $staff) ? route('eventos.recording', $e) : $e->video_url,
+            'visibility' => $e->visibilidad ?? 'publico',
             // Estas consultas deben mantener el mismo origen desde el que se
             // abrió la sala. Así funcionan tanto en 127.0.0.1 como desde un
             // teléfono conectado mediante el proxy local del puerto 8080.
             'recordingStatus' => $recording?->recording_status, 'viewers' => $recording?->espectadores_activos ?? 0, 'viewersUrl' => '/eventos/'.$e->id.'/espectadores', 'videoViewsUrl' => route('eventos.video-views', $e), 'playbackUrl' => '/eventos/'.$e->id.'/estado',
-            // HLS can be served on the same HTTPS domain by the production reverse proxy.
-            'hlsUrl' => $recording ? (config('streaming.hls_base_url') ?: request()->getScheme().'://'.request()->getHost().':8080/hls').'/'.$recording->stream_key.'.m3u8' : null,
+            // Same-origin public playback id; the OBS key is only shown to operators below.
+            'hlsUrl' => $recording?->playbackUrl(),
             'chatUrl' => route('eventos.chat.index', $e), 'chatEnabled' => (bool) $e->chat_enabled,
             'chatRestricted' => (bool) auth()->user()?->chat_restricted,
             'chatToggleUrl' => auth()->user()?->allowsOperatorAction('toggle_chat') && ! $scheduled && ! in_array($e->estado, ['finalizado', 'cancelado']) ? route('streaming.chat.toggle', $e) : null];
@@ -49,6 +51,11 @@ class ReactPage
                 'generateUrl' => $canStream && ! $scheduled && ! $recording?->iniciado_en && ! in_array($e->estado, ['finalizado', 'cancelado']) ? route('streaming.generar.clave', $e) : null,
                 'streamKey' => $canStream ? $recording?->stream_key : null, 'server' => $canStream ? (config('streaming.rtmp_url') ?: 'rtmp://'.request()->getHost().':1935/live') : null, 'statusUrl' => $canStream ? route('streaming.estado', $e) : null];
             if (auth()->user()?->role === 'admin') {
+                $ready = (bool) $recording?->recordingPath();
+                $data['publication'] = $recording ? ['status' => $recording->publicacion,
+                    'reviewedBy' => $recording->revisor?->name, 'reviewedAt' => $recording->publicacion_revisada_en?->format('d/m/Y · H:i'),
+                    'approveUrl' => $ready && $recording->publicacion !== 'aprobada' ? route('admin.recording.approve', $e) : null,
+                    'withdrawUrl' => $ready && $recording->publicacion === 'aprobada' ? route('admin.recording.withdraw', $e) : null] : null;
                 $data['recordingMetadata'] = $recording?->displayRecordingMetadata();
                 $data['recordingFpsLimit'] = $recording?->recording_fps_limit;
             }
@@ -84,6 +91,7 @@ class ReactPage
             $links[] = ['label' => 'Parrilla 24/7', 'url' => route('admin.scheduled.index'), 'active' => request()->routeIs('admin.scheduled.*'), 'icon' => 4];
             $links[] = ['label' => 'Marca de agua', 'url' => route('admin.watermark.edit'), 'active' => request()->routeIs('admin.watermark.*'), 'icon' => 5];
             $links[] = ['label' => 'Gestionar usuarios', 'url' => route('admin.usuarios.index'), 'active' => request()->routeIs('admin.usuarios.*'), 'icon' => 6];
+            $links[] = ['label' => 'Auditoría', 'url' => route('admin.audit.index'), 'active' => request()->routeIs('admin.audit.*'), 'icon' => 6];
         }
 
         return ['user' => $user?->only(['name', 'email', 'role']), 'links' => $links, 'operator' => $operator, 'panelLabel' => $admin ? 'CENTRO DE PRODUCCIÓN' : 'CENTRO DE OPERACIÓN', 'createUrl' => $canEvents ? route('admin.eventos.create') : null,

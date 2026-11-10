@@ -13,4 +13,8 @@ return [
     'ffprobe' => env('STREAMING_FFPROBE', '/usr/bin/ffprobe'),
     'control_url' => env('STREAMING_CONTROL_URL', 'http://127.0.0.1:8091/control'),
     'callback_token' => env('STREAMING_CALLBACK_TOKEN'),
+    // Política de conservación: los originales (FLV de OBS y videos subidos) se
+    // conservan tras la conversión y se registra su huella SHA-256. Solo se
+    // eliminan si la institución lo decide expresamente con false.
+    'keep_sources' => filter_var(env('STREAMING_KEEP_SOURCES', true), FILTER_VALIDATE_BOOL),
 ];

@@ -8,7 +8,7 @@ class AdminPanelVisibilityTest extends TestCase {
     public function test_only_admin_receives_management_navigation_and_access(): void {
         foreach ([null, 'usuario', 'estudiante', 'operador', 'admin'] as $role) {
             auth()->logout();
-            if ($role) $this->actingAs(User::factory()->create(['role' => $role]));
+            if ($role) $this->actingAs(User::factory()->create(['role' => $role] + ($role === 'operador' ? ['operator_permissions' => User::operatorActions()] : [])));
             $response = $this->get('/senal')->assertOk();
             preg_match('/data-shell="([^"]*)"/', $response->getContent(), $match);
             $shell = json_decode(html_entity_decode($match[1], ENT_QUOTES), true);

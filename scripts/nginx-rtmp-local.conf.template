@@ -35,14 +35,9 @@ http {
         listen 8080;
         server_name _;
 
+        # Raw HLS files carry the private OBS key; viewers use Laravel's /directo.
         location /hls/ {
-            alias /tmp/hls/;
-            add_header Cache-Control no-cache;
-            add_header Access-Control-Allow-Origin *;
-            types {
-                application/vnd.apple.mpegurl m3u8;
-                video/mp2t ts;
-            }
+            return 404;
         }
 
         location / {

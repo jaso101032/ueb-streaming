@@ -1,0 +1,37 @@
+name: Pruebas
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+defaults:
+  run:
+    shell: bash
+jobs:
+  pruebas:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pdo_sqlite, gd, mbstring, xml, intl, bcmath, gmp, zip
+          coverage: none
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - run: composer install --no-interaction --prefer-dist
+      - run: cp .env.example .env && php artisan key:generate
+      - run: npm ci && npm run build
+      - run: php artisan test --log-junit resultados-php.xml | tee resultados-php.txt
+      - run: npx playwright install --with-deps chromium
+        if: always()
+      - run: npm run test:browser | tee resultados-navegador.txt
+        if: always()
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: evidencia-pruebas-${{ github.sha }}
+          path: |
+            resultados-*
+            test-results/

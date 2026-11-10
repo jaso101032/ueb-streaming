@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Support\Audit;
 use App\Http\Controllers\Controller;
 use App\Models\PlayerWatermark;
 use App\Services\WatermarkImage;
@@ -41,6 +42,8 @@ class PlayerWatermarkController extends Controller
 
         // Previous images stay available to already-open players. They are not
         // selected again unless explicitly uploaded by an administrator.
+        Audit::record('marca_agua.actualizada');
+
         return to_route('admin.watermark.edit')->with('success', 'Marca de agua actualizada. Se aplicará al abrir o recargar los reproductores.');
     }
 
@@ -61,6 +64,7 @@ class PlayerWatermarkController extends Controller
     public function destroy()
     {
         PlayerWatermark::whereKey(1)->delete();
+        Audit::record('marca_agua.eliminada');
 
         return to_route('admin.watermark.edit')->with('success', 'Se restauró la marca de agua oficial de UEBTV.');
     }

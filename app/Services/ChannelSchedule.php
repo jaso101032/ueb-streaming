@@ -70,7 +70,8 @@ class ChannelSchedule
     {
         return Transmision::with('evento')->where('activo', true)->whereNull('finalizado_en')
             ->where('last_signal_at', '>', now()->subSeconds(ChannelClock::SIGNAL_TTL))
-            ->whereHas('evento', fn ($q) => $q->where('estado', 'en_vivo')->whereDoesntHave('scheduledVideo'))
+            // The 24/7 channel is public: internal or restricted events never air on it.
+            ->whereHas('evento', fn ($q) => $q->where('estado', 'en_vivo')->where('visibilidad', 'publico')->whereDoesntHave('scheduledVideo'))
             ->orderBy('iniciado_en')->orderBy('id')->first();
     }
 

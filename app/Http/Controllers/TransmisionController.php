@@ -9,6 +9,7 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use App\Services\StreamControl;
 use Illuminate\Validation\ValidationException;
+use App\Support\Audit;
 
 class TransmisionController extends Controller
 {
@@ -41,19 +42,19 @@ class TransmisionController extends Controller
         $streamKey = 'ueb_' . Str::random(32);
         $host = $request->getHost();
         $rtmpServer = config('streaming.rtmp_url') ?: 'rtmp://' . $host . ':1935/live';
-        $hlsBaseUrl = config('streaming.hls_base_url') ?: 'http://' . $host . ':8080/hls';
-        $hlsUrl = $hlsBaseUrl . '/' . $streamKey . '.m3u8';
 
         // Actualizar o crear la transmisión asociada al evento
-        Transmision::updateOrCreate(
+        $stream = Transmision::updateOrCreate(
             ['evento_id' => $evento->id],
             [
                 'stream_key' => $streamKey,
                 'rtmp_server' => $rtmpServer,
-                'hls_url' => $hlsUrl,
+                'hls_url' => null,
                 'activo' => false,
             ]
         );
+        $stream->update(['hls_url' => $stream->playbackUrl()]);
+        Audit::record('transmision.clave_generada', $evento);
 
         return redirect()->back()->with('success', 'Clave de transmisión generada exitosamente.');
     }
@@ -77,6 +78,8 @@ class TransmisionController extends Controller
         } catch (\Illuminate\Http\Client\ConnectionException | \RuntimeException $exception) {
             return back()->withErrors(['streaming' => 'No se pudo confirmar el cierre en el servidor. Revisa la configuración de streaming e inténtalo de nuevo. El evento no se marcó como finalizado.']);
         }
+
+        Audit::record('transmision.finalizada', $evento);
 
         return back()->with('success', 'Transmisión finalizada. La señal se cerró y OBS no podrá reconectar este evento.');
     }
@@ -104,6 +107,7 @@ class TransmisionController extends Controller
      */
     public function viewerHeartbeat(Request $request, Evento $evento)
     {
+        abort_unless($evento->isVisibleTo($request->user()), 404);
         $data = $request->validate(['viewer' => ['required', 'uuid']]);
         $stream = $evento->transmision;
 

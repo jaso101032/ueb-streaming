@@ -91,7 +91,7 @@ test("channel agenda opens all upcoming programs grouped by date while the side 
     await expect(dialog).toBeHidden();
     await expect(page.getByRole("button", { name: "Ver programación completa" })).toBeFocused();
 });
-test("Android TV mode keeps advertising non-pausable and its controls reachable", async ({ page }) => {
+test("Android TV mode lets advertising pause without picture-in-picture and keeps controls reachable", async ({ page }) => {
     await page.route("**/senal/estado", (route) => route.fulfill({ json: {
         mode: "advertisement", event: null,
         advertisement: { id: 11, title: "Aviso institucional", mediaUrl: "/tv-ad.mp4" },
@@ -106,19 +106,22 @@ test("Android TV mode keeps advertising non-pausable and its controls reachable"
     await expect(page.locator("html")).toHaveClass(/uebtv-tv-mode/);
     const video = page.locator(".channel-screen video");
     await expect(video).toHaveJSProperty("paused", false);
-    await expect(page.getByRole("button", { name: "Pausar", exact: true })).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Imagen en imagen" })).toHaveCount(0);
-    const firstControl = page.locator(".uebtv-player-controls button").first();
-    await firstControl.focus();
+    await expect(page.getByRole("slider", { name: "Posición del video" })).toHaveCount(0);
+    const pause = page.getByRole("button", { name: "Pausar", exact: true });
+    await pause.focus();
     await expect(page.locator(".uebtv-player-controls")).toHaveCSS("opacity", "1");
-    await page.keyboard.press("Space");
+    await page.keyboard.press("Enter");
+    await expect(video).toHaveJSProperty("paused", true);
+    await page.getByRole("button", { name: "Reproducir", exact: true }).press("Enter");
     await expect(video).toHaveJSProperty("paused", false);
 });
-test("channel Play and Stop buttons control a scheduled video", async ({ page }) => {
+test("channel pause button stops a scheduled video and resumes at the current broadcast position", async ({ page }) => {
+    const startedAt = Date.now();
     await page.route("**/senal/estado", (route) => route.fulfill({ json: {
         mode: "scheduled",
         event: { id: 42, title: "Prueba de emisión", scheduled: { mediaUrl: "/channel-controls.mp4" }, url: "/eventos/42" },
-        playback: { state: "playing", position: 1, duration: 60 },
+        playback: { state: "playing", position: 1 + (Date.now() - startedAt) / 1000, duration: 60 },
         next: [], summary: { count: 0, totalSeconds: 0, remainingSeconds: 0 },
     } }));
     await page.route("**/channel-controls.mp4*", (route) => route.fulfill({
@@ -127,15 +130,17 @@ test("channel Play and Stop buttons control a scheduled video", async ({ page })
     }));
     await page.goto("/senal");
     const video = page.locator(".channel-screen video");
-    const play = page.getByRole("button", { name: "Play, reproducir señal" });
-    const stop = page.getByRole("button", { name: "Stop, detener reproducción" });
-    await expect(play).toBeVisible();
-    await expect(stop).toBeVisible();
     await expect(video).toHaveJSProperty("paused", false);
-    await stop.click();
+    await expect(page.getByRole("button", { name: "Play, reproducir señal" })).toHaveCount(0);
+    await page.getByRole("button", { name: "Pausar", exact: true }).click();
     await expect(video).toHaveJSProperty("paused", true);
-    await play.click();
+    const pausedAt = await video.evaluate((v) => v.currentTime);
+    // The server clock keeps running while the viewer is paused.
+    await page.waitForTimeout(5000);
+    await page.getByRole("button", { name: "Reproducir", exact: true }).click();
     await expect(video).toHaveJSProperty("paused", false);
+    // Resuming rejoins the broadcast instead of continuing from the paused frame.
+    await expect.poll(() => video.evaluate((v) => v.currentTime), { timeout: 5000 }).toBeGreaterThan(pausedAt + 3.5);
 });
 test("channel download card keeps its QR visible on desktop and mobile without entering TV mode", async ({ page }) => {
     await page.goto("/senal");
@@ -273,19 +278,29 @@ test("video analytics exports a complete print-ready PDF report for the selected
     } }));
     await login(page);
     await page.goto("/eventos");
-    await page.getByRole("button", { name: "Ver estadísticas" }).first().click();
-    const dialog = page.getByRole("dialog", { name: /Estadísticas de Conferencia UEB/ });
+    // The catalog lists the newest event first; open the analytics of the seeded conference explicitly.
+    const statsButton = page.locator(".uebtv-catalog-card")
+        .filter({ hasText: "Conferencia inaugural UEB 2026" })
+        .getByRole("button", { name: "Ver estadísticas" });
+    await statsButton.click();
+    const dialog = page.getByRole("dialog", { name: /Estadísticas de Conferencia inaugural UEB 2026/ });
     await expect(page.getByRole("heading", { name: "Estadísticas de reproducción" })).toBeVisible();
     await expect(dialog.getByRole("button", { name: "Cerrar estadísticas" })).toBeFocused();
+    // Focus order: Período, Cerrar, then the report (export button and links).
+    // Shift+Tab from the first control wraps to the last one inside the dialog.
     await page.keyboard.press("Shift+Tab");
+    await expect(dialog.getByLabel("Período")).toBeFocused();
     await page.keyboard.press("Shift+Tab");
-    await expect(dialog.getByRole("button", { name: "Exportar estadísticas a PDF" })).toBeFocused();
+    await expect.poll(() => page.evaluate(() => {
+        const box = document.querySelector('[role="dialog"]');
+        return Boolean(box?.contains(document.activeElement)) && document.activeElement !== box.querySelector("select");
+    })).toBe(true);
     await page.keyboard.press("Tab");
     await expect(dialog.getByLabel("Período")).toBeFocused();
     await page.keyboard.press("Escape");
     await expect(dialog).toBeHidden();
-    await expect(page.getByRole("button", { name: "Ver estadísticas" }).first()).toBeFocused();
-    await page.getByRole("button", { name: "Ver estadísticas" }).first().click();
+    await expect(statsButton).toBeFocused();
+    await statsButton.click();
     await expect(dialog).toBeVisible();
     const report = page.locator(".video-analytics-report");
     await expect(report).toContainText("Conferencia UEB");
@@ -1008,6 +1023,8 @@ test("continuous channel switches from schedule to live and resumes before the n
         .poll(() => page.locator("video").evaluate((v) => v.currentTime))
         .toBeGreaterThan(11);
     await page.getByRole("button", { name: "Pantalla completa" }).click();
+    // The title overlay renders after the asynchronous fullscreenchange event.
+    await expect(page.locator(".uebtv-player-shell .uebtv-player-title")).toBeVisible();
     const scheduledOverlay = await page.locator(".uebtv-player-shell").evaluate((element) => ({
         titleRight: element.querySelector(".uebtv-player-title").getBoundingClientRect().right,
         watermarkLeft: element.querySelector(".uebtv-player-mark").getBoundingClientRect().left,
@@ -1024,6 +1041,7 @@ test("continuous channel switches from schedule to live and resumes before the n
     // controls. The player shortcut still lets us inspect the live overlays.
     await page.keyboard.press("f");
     await expect.poll(() => page.locator(".uebtv-player-shell").evaluate((element) => document.fullscreenElement === element)).toBe(true);
+    await expect(page.locator(".uebtv-player-shell .uebtv-player-title")).toBeVisible();
     const liveOverlay = await page.locator(".uebtv-player-shell").evaluate((element) => ({
         liveBottom: element.querySelector(".uebtv-player-live").getBoundingClientRect().bottom,
         titleTop: element.querySelector(".uebtv-player-title").getBoundingClientRect().top,
@@ -1033,6 +1051,7 @@ test("continuous channel switches from schedule to live and resumes before the n
     await page.setViewportSize({ width: 390, height: 844 });
     await page.keyboard.press("f");
     await expect.poll(() => page.locator(".uebtv-player-shell").evaluate((element) => document.fullscreenElement === element)).toBe(true);
+    await expect(page.locator(".uebtv-player-shell .uebtv-player-title")).toBeVisible();
     const mobileLiveOverlay = await page.locator(".uebtv-player-shell").evaluate((element) => ({
         liveBottom: element.querySelector(".uebtv-player-live").getBoundingClientRect().bottom,
         titleTop: element.querySelector(".uebtv-player-title").getBoundingClientRect().top,
@@ -1063,6 +1082,7 @@ test("continuous channel switches from schedule to live and resumes before the n
     await expect(page.locator("body")).toHaveJSProperty("scrollWidth", 390);
     await page.keyboard.press("f");
     await expect.poll(() => page.locator(".uebtv-player-shell").evaluate((element) => document.fullscreenElement === element)).toBe(true);
+    await expect(page.locator(".uebtv-player-shell .uebtv-player-title")).toBeVisible();
     const mobileScheduledOverlay = await page.locator(".uebtv-player-shell").evaluate((element) => ({
         titleRight: element.querySelector(".uebtv-player-title").getBoundingClientRect().right,
         watermarkLeft: element.querySelector(".uebtv-player-mark").getBoundingClientRect().left,
@@ -1072,13 +1092,14 @@ test("continuous channel switches from schedule to live and resumes before the n
     expect(errors).toEqual([]);
 });
 
-test("institutional advertising fills a channel gap with a P and no seek control", async ({ page }) => {
+test("institutional advertising fills a channel gap with a P, no seek control and resumes at the current position", async ({ page }) => {
     const errors = [];
     page.on("pageerror", (error) => errors.push(error.message));
+    const startedAt = Date.now();
     await page.route("**/senal/estado", (route) => route.fulfill({ json: {
         mode: "advertisement", event: null,
         advertisement: { id: 7, title: "Campaña institucional", mediaUrl: "/mock-ad.mp4" },
-        playback: { state: "playing", position: 1, duration: 60 },
+        playback: { state: "playing", position: 1 + (Date.now() - startedAt) / 1000, duration: 60 },
         next: [], summary: { count: 0, totalSeconds: 0, remainingSeconds: 0 },
     } }));
     const bytes = readFileSync("/tmp/uebtv-react-test.mp4");
@@ -1096,11 +1117,15 @@ test("institutional advertising fills a channel gap with a P and no seek control
     await expect(page.getByRole("slider", { name: "Posición del video" })).toHaveCount(0);
     const video = page.locator(".channel-screen video");
     await expect(video).toHaveJSProperty("paused", false);
-    await expect(page.getByRole("button", { name: "Pausar", exact: true })).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Imagen en imagen" })).toHaveCount(0);
     await expect(video).toHaveJSProperty("disablePictureInPicture", true);
-    await page.keyboard.press("Space");
+    await page.getByRole("button", { name: "Pausar", exact: true }).click();
+    await expect(video).toHaveJSProperty("paused", true);
+    const pausedAt = await video.evaluate((v) => v.currentTime);
+    await page.waitForTimeout(5000);
+    await page.getByRole("button", { name: "Reproducir", exact: true }).click();
     await expect(video).toHaveJSProperty("paused", false);
+    await expect.poll(() => video.evaluate((v) => v.currentTime), { timeout: 5000 }).toBeGreaterThan(pausedAt + 3.5);
     const volume = page.locator('input[aria-label="Volumen"]');
     await expect(volume).toBeVisible();
     await expect(volume).toHaveCSS("height", "6px");
@@ -1239,10 +1264,12 @@ test("admin sees separate programming and institutional advertising forms on mob
     await login(page);
     await page.goto("/admin/contenido-programado");
     const quickNav = page.getByRole("navigation", { name: "Navegación rápida de la parrilla" });
-    await expect(quickNav.getByRole("link", { name: /Nueva programación/ })).toBeVisible();
-    await expect(quickNav.getByRole("link", { name: /Eventos programados/ })).toBeVisible();
-    await quickNav.getByRole("link", { name: /Anuncios institucionales/ }).click();
-    await expect(page).toHaveURL(/#schedule-ads$/);
+    await expect(quickNav.getByRole("button", { name: /Nueva programación/ })).toHaveAttribute("aria-pressed", "true");
+    await expect(quickNav.getByRole("button", { name: /Eventos programados/ })).toBeVisible();
+    const adsTab = quickNav.getByRole("button", { name: /Anuncios institucionales/ });
+    await adsTab.click();
+    await expect(adsTab).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByLabel("Título de la emisión")).toHaveCount(0);
     await expect(page.getByRole("heading", { name: "Publicidad institucional" })).toBeVisible();
     await expect(page.getByLabel("Nombre del anuncio")).toBeVisible();
     await expect(page.getByLabel("Archivo de video")).toBeVisible();
@@ -1256,6 +1283,8 @@ test("advertising upload shows progress and a recoverable server error", async (
     await page.setViewportSize({ width: 390, height: 844 });
     await login(page);
     await page.goto("/admin/contenido-programado");
+    await page.getByRole("navigation", { name: "Navegación rápida de la parrilla" })
+        .getByRole("button", { name: /Anuncios institucionales/ }).click();
     await page.getByLabel("Nombre del anuncio").fill("Campaña institucional");
     await page.getByLabel("Archivo de video").setInputFiles({
         name: "campana.mp4", mimeType: "video/mp4", buffer: Buffer.alloc(1024),
@@ -1323,6 +1352,8 @@ test("scheduled upload accepts a real MP4 larger than the old 8 MB POST limit", 
             "Video recibido. Se está preparando para la emisión; aparecerá en la programación cuando esté listo.",
         ),
     ).toBeVisible();
+    await page.getByRole("navigation", { name: "Navegación rápida de la parrilla" })
+        .getByRole("button", { name: /Eventos programados/ }).click();
     await expect(
         page
             .locator(".schedule-event")

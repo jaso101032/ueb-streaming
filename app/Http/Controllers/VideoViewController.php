@@ -10,6 +10,7 @@ class VideoViewController extends Controller
 {
     public function store(Request $request, Evento $evento)
     {
+        abort_unless($evento->isVisibleTo($request->user()), 404);
         $data = $request->validate(['viewer' => ['required', 'uuid']]);
         $evento->loadMissing(['scheduledVideo', 'transmision']);
 
@@ -17,7 +18,7 @@ class VideoViewController extends Controller
         $scheduledPlayable = $scheduled && in_array($scheduled->playback()['state'], ['playing', 'ended'], true);
         $livePlayable = $evento->estado === 'en_vivo' && $evento->transmision && ! $evento->transmision->finalizado_en;
         $recordingPlayable = $evento->estado !== 'en_vivo' &&
-            ($evento->video_url || ($evento->estado === 'finalizado' && $evento->transmision?->recordingPath()));
+            ($evento->video_url || ($evento->estado === 'finalizado' && $evento->transmision?->recordingPath() && $evento->transmision->isPublished()));
         abort_unless($evento->estado !== 'cancelado' && ($livePlayable || $scheduledPlayable || $recordingPlayable), 409);
 
         DB::table('event_video_views')->insertOrIgnore([

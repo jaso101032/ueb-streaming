@@ -60,12 +60,18 @@ class OperatorPermissionsAndChatControlsTest extends TestCase
         $this->deleteJson(route('eventos.chat.destroy', [$event, $message]))->assertNoContent();
     }
 
-    public function test_existing_operators_keep_access_but_promoted_users_do_not_get_implicit_permissions(): void
+    public function test_operators_only_act_with_explicit_permissions_and_promoted_users_get_none(): void
     {
-        $legacy = User::factory()->create(['role' => 'operador']);
-        $this->assertNull($legacy->operator_permissions);
-        $this->actingAs($legacy)->get(route('streaming.control'))->assertOk();
+        // Existing operators received their historical rights explicitly in the
+        // 2026-11-10 migration; an operator without a list gets no implicit rights.
+        $assigned = User::factory()->create(['role' => 'operador', 'operator_permissions' => User::operatorActions()]);
+        $this->actingAs($assigned)->get(route('streaming.control'))->assertOk();
         $this->get(route('admin.eventos.index'))->assertOk();
+        $unassigned = User::factory()->create(['role' => 'operador']);
+        $this->assertNull($unassigned->operator_permissions);
+        $this->actingAs($unassigned)->get(route('streaming.control'))->assertForbidden();
+        $this->get(route('admin.eventos.index'))->assertForbidden();
+        $this->post(route('streaming.generar.clave', $this->event($assigned)))->assertForbidden();
 
         $admin = User::factory()->create(['role' => 'admin']);
         $regular = User::factory()->create(['role' => 'usuario']);
