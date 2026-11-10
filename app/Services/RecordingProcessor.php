@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Support\Audit;
 use App\Models\Evento;
 use App\Models\Transmision;
 use Illuminate\Support\Facades\DB;
@@ -80,12 +81,18 @@ class RecordingProcessor
             // pending marker lets the worker retry cleanup after a crash or a
             // temporary filesystem error without re-encoding the video.
             $metadata['rawCleanupPending'] = true;
-            // A ready recording waits for editorial approval; the audience is
-            // notified only when an administrator publishes it.
+            // By default the recording is published automatically. Events marked
+            // for editorial review wait until an administrator approves them.
+            $review = (bool) $claimed->evento?->requiere_aprobacion;
             $claimed->update(['recording_status' => 'ready', 'recording_file' => $filename,
-                'recording_metadata' => $metadata, 'publicacion' => 'pendiente',
+                'recording_metadata' => $metadata, 'publicacion' => $review ? 'pendiente' : 'aprobada',
                 'publicacion_revisada_por' => null, 'publicacion_revisada_en' => null,
                 'recording_ready_at' => now(), 'recording_error' => null]);
+            Audit::record($review ? 'grabacion.pendiente_revision' : 'grabacion.publicada_automaticamente', $claimed->evento, [], 'Sistema');
+            if (! $review) {
+                try { app(AudienceAnnouncements::class)->publish($claimed->evento, 'video'); }
+                catch (Throwable $exception) { report($exception); }
+            }
             try { $this->cleanupSource($claimed); } catch (Throwable $exception) { report($exception); }
         } catch (Throwable $exception) {
             if ($temporary && is_file($temporary)) unlink($temporary);

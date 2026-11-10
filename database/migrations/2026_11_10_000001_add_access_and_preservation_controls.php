@@ -21,12 +21,14 @@ return new class extends Migration
             // publico: cualquier persona; interno: cuentas con sesión;
             // restringido: solo administradores y operadores.
             $table->string('visibilidad', 20)->default('publico')->after('estado');
+            // Política editorial por evento: por defecto la grabación se publica sola.
+            $table->boolean('requiere_aprobacion')->default(false)->after('visibilidad');
         });
 
         Schema::table('transmisiones', function (Blueprint $table) {
             // Identificador público de reproducción, separado de la clave de OBS.
             $table->string('playback_id', 40)->nullable()->unique()->after('stream_key');
-            // pendiente: espera revisión; aprobada: visible; retirada: sin acceso público.
+            // pendiente: espera revisión (solo si el evento lo requiere); aprobada: visible; retirada: sin acceso público.
             $table->string('publicacion', 20)->default('pendiente')->after('recording_status');
             $table->foreignId('publicacion_revisada_por')->nullable()->after('publicacion')->constrained('users')->nullOnDelete();
             $table->timestamp('publicacion_revisada_en')->nullable()->after('publicacion_revisada_por');
@@ -76,6 +78,6 @@ return new class extends Migration
             $table->dropUnique(['playback_id']);
             $table->dropColumn(['playback_id', 'publicacion', 'publicacion_revisada_en']);
         });
-        Schema::table('eventos', fn (Blueprint $table) => $table->dropColumn('visibilidad'));
+        Schema::table('eventos', fn (Blueprint $table) => $table->dropColumn(['visibilidad', 'requiere_aprobacion']));
     }
 };

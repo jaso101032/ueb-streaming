@@ -200,6 +200,12 @@ export default function EventForm({
                                     </select>
                                     <small>Público: cualquier persona y el canal 24/7. Interno: solo cuentas con sesión. Restringido: solo administradores y operadores. Aplica al directo y a la grabación.</small>
                                 </Field>
+                                <div className="uebtv-form-field uebtv-form-field--wide">
+                                    <label htmlFor="requiere_aprobacion">Publicación de la grabación</label>
+                                    <input type="hidden" name="requiere_aprobacion" value="0" />
+                                    <label className="uebtv-event-chat-check" htmlFor="requiere_aprobacion"><input id="requiere_aprobacion" type="checkbox" name="requiere_aprobacion" value="1" defaultChecked={Boolean(Number(v.requiere_aprobacion)) || v.requiere_aprobacion === true} /> Revisar la grabación antes de publicarla</label>
+                                    <small>Si no la marcas, la grabación se publica automáticamente al terminar. Un administrador siempre puede retirarla.</small>
+                                </div>
                                 {canToggleChat && <div className="uebtv-form-field uebtv-form-field--wide">
                                     <label htmlFor="chat_enabled">Comentarios durante el directo</label>
                                     <input type="hidden" name="chat_enabled" value="0" />

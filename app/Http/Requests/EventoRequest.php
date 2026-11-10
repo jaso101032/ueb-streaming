@@ -45,6 +45,7 @@ class EventoRequest extends FormRequest
             'recording_fps_limit' => ['sometimes', 'nullable', 'integer', Rule::in([30, 60])],
             'chat_enabled' => ['sometimes', 'boolean'],
             'visibilidad' => ['sometimes', 'required', Rule::in(array_keys(Evento::VISIBILITIES))],
+            'requiere_aprobacion' => ['sometimes', 'boolean'],
             'miniatura' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048', 'dimensions:max_width=4096,max_height=4096'],
         ];
     }

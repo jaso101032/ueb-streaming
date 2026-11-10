@@ -29,6 +29,7 @@ class Evento extends Model
         'miniatura',
         'estado',
         'visibilidad',
+        'requiere_aprobacion',
         'url_transmision',
         'video_url',
         'duracion_minutos',
@@ -36,12 +37,13 @@ class Evento extends Model
         'chat_enabled',
     ];
 
-    protected $attributes = ['visibilidad' => 'publico'];
+    protected $attributes = ['visibilidad' => 'publico', 'requiere_aprobacion' => false];
 
     protected $casts = [
         'fecha_inicio' => 'datetime',
         'fecha_fin' => 'datetime',
         'chat_enabled' => 'boolean',
+        'requiere_aprobacion' => 'boolean',
     ];
 
     public const VISIBILITIES = ['publico' => 'Público', 'interno' => 'Interno (con sesión)', 'restringido' => 'Restringido (personal UEBTV)'];
