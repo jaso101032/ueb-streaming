@@ -1041,6 +1041,7 @@ test("continuous channel switches from schedule to live and resumes before the n
     // controls. The player shortcut still lets us inspect the live overlays.
     await page.keyboard.press("f");
     await expect.poll(() => page.locator(".uebtv-player-shell").evaluate((element) => document.fullscreenElement === element)).toBe(true);
+    await expect(page.locator(".uebtv-player-shell .uebtv-player-title")).toBeVisible();
     const liveOverlay = await page.locator(".uebtv-player-shell").evaluate((element) => ({
         liveBottom: element.querySelector(".uebtv-player-live").getBoundingClientRect().bottom,
         titleTop: element.querySelector(".uebtv-player-title").getBoundingClientRect().top,
@@ -1050,6 +1051,7 @@ test("continuous channel switches from schedule to live and resumes before the n
     await page.setViewportSize({ width: 390, height: 844 });
     await page.keyboard.press("f");
     await expect.poll(() => page.locator(".uebtv-player-shell").evaluate((element) => document.fullscreenElement === element)).toBe(true);
+    await expect(page.locator(".uebtv-player-shell .uebtv-player-title")).toBeVisible();
     const mobileLiveOverlay = await page.locator(".uebtv-player-shell").evaluate((element) => ({
         liveBottom: element.querySelector(".uebtv-player-live").getBoundingClientRect().bottom,
         titleTop: element.querySelector(".uebtv-player-title").getBoundingClientRect().top,
@@ -1080,6 +1082,7 @@ test("continuous channel switches from schedule to live and resumes before the n
     await expect(page.locator("body")).toHaveJSProperty("scrollWidth", 390);
     await page.keyboard.press("f");
     await expect.poll(() => page.locator(".uebtv-player-shell").evaluate((element) => document.fullscreenElement === element)).toBe(true);
+    await expect(page.locator(".uebtv-player-shell .uebtv-player-title")).toBeVisible();
     const mobileScheduledOverlay = await page.locator(".uebtv-player-shell").evaluate((element) => ({
         titleRight: element.querySelector(".uebtv-player-title").getBoundingClientRect().right,
         watermarkLeft: element.querySelector(".uebtv-player-mark").getBoundingClientRect().left,
