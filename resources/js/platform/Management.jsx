@@ -4,6 +4,7 @@ import {
     Feedback,
     Heading,
     Pagination,
+    SubtitleForm,
     Token,
     statusLabel,
     useShell,
@@ -203,6 +204,13 @@ export function EventDetail({ event: e }) {
                 </article>
                 <aside className="studio-panel react-panel">
                     <Recording event={e} />
+                    {e.subtitles && (
+                        <div className="react-subtitles">
+                            <span className="studio-eyebrow">SUBTÍTULOS</span>
+                            <p>{e.subtitles.present ? "Este video tiene subtítulos. El público los activa con el botón CC del reproductor." : "Agrega subtítulos para mejorar la accesibilidad del video."}</p>
+                            <SubtitleForm subtitles={e.subtitles} />
+                        </div>
+                    )}
                     <p>
                         Si este evento se transmite en vivo, su señal y
                         credenciales se gestionan desde “Emitir con OBS”.

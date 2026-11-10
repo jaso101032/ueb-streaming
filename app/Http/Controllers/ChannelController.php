@@ -38,6 +38,7 @@ class ChannelController extends Controller
             'advertisement' => $advertisement ? [
                 'id' => $advertisement['ad']->id, 'title' => $advertisement['ad']->title,
                 'mediaUrl' => route('channel.ad.media', $advertisement['ad']),
+                'subtitlesUrl' => $advertisement['ad']->subtitles_path ? route('channel.ad.subtitles', $advertisement['ad'], false) : null,
             ] : null,
             'next' => $next, 'agenda' => $upcoming, 'summary' => $schedule->summary($items), 'server_time' => now()->toIso8601String(),
             'resumeTitle' => $live ? ($active['event']->titulo ?? null) : null,

@@ -142,6 +142,33 @@ test("channel pause button stops a scheduled video and resumes at the current br
     // Resuming rejoins the broadcast instead of continuing from the paused frame.
     await expect.poll(() => video.evaluate((v) => v.currentTime), { timeout: 5000 }).toBeGreaterThan(pausedAt + 3.5);
 });
+test("channel CC button shows and hides the program subtitles", async ({ page }) => {
+    const startedAt = Date.now();
+    await page.route("**/senal/estado", (route) => route.fulfill({ json: {
+        mode: "scheduled",
+        event: { id: 43, title: "Programa subtitulado", scheduled: { mediaUrl: "/cc-video.mp4" }, url: "/eventos/43", subtitlesUrl: "/cc-subtitles.vtt" },
+        playback: { state: "playing", position: 1 + (Date.now() - startedAt) / 1000, duration: 60 },
+        next: [], summary: { count: 0, totalSeconds: 0, remainingSeconds: 0 },
+    } }));
+    await page.route("**/cc-video.mp4*", (route) => route.fulfill({
+        body: readFileSync("/tmp/uebtv-react-test.mp4"), contentType: "video/mp4", headers: { "Accept-Ranges": "bytes" },
+    }));
+    await page.route("**/cc-subtitles.vtt", (route) => route.fulfill({
+        body: "WEBVTT\n\n00:00:00.000 --> 00:01:00.000\nSubtítulo de prueba UEBTV\n", contentType: "text/vtt",
+    }));
+    await page.goto("/senal");
+    const video = page.locator(".channel-screen video");
+    await expect(video).toHaveJSProperty("paused", false);
+    await expect(video.locator("track")).toHaveAttribute("label", "Español");
+    const show = page.getByRole("button", { name: "Mostrar subtítulos" });
+    await expect(show).toHaveAttribute("aria-pressed", "false");
+    await show.click();
+    await expect(page.getByRole("button", { name: "Ocultar subtítulos" })).toHaveAttribute("aria-pressed", "true");
+    await expect.poll(() => video.evaluate((v) => v.textTracks[0]?.mode)).toBe("showing");
+    await expect.poll(() => video.evaluate((v) => v.textTracks[0]?.activeCues?.[0]?.text ?? "")).toBe("Subtítulo de prueba UEBTV");
+    await page.keyboard.press("c");
+    await expect.poll(() => video.evaluate((v) => v.textTracks[0]?.mode)).toBe("hidden");
+});
 test("channel download card keeps its QR visible on desktop and mobile without entering TV mode", async ({ page }) => {
     await page.goto("/senal");
     const card = page.locator(".channel-app-card");

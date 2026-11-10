@@ -123,3 +123,29 @@ export function Field({ name, label, children, wide, ...props }) {
         </div>
     );
 }
+
+/** Subtítulos (.vtt o .srt) de un video almacenado: subir, reemplazar o quitar. */
+export function SubtitleForm({ subtitles, idPrefix = "subtitles" }) {
+    if (!subtitles) return null;
+    const inputId = `${idPrefix}-file`;
+    return (
+        <div className="subtitle-form">
+            <form method="POST" action={subtitles.uploadUrl} encType="multipart/form-data">
+                <Token />
+                <label htmlFor={inputId}>
+                    {subtitles.present ? "Reemplazar subtítulos" : "Agregar subtítulos"}
+                    <small> · archivo .vtt o .srt, máximo 1 MB</small>
+                </label>
+                <input id={inputId} name="subtitles" type="file" accept=".vtt,.srt" required />
+                <button className="studio-button studio-button-soft">
+                    {subtitles.present ? "Reemplazar" : "Subir subtítulos"}
+                </button>
+            </form>
+            {subtitles.present && subtitles.removeUrl && (
+                <Action url={subtitles.removeUrl} method="DELETE" className="studio-button studio-button-soft" confirm="¿Quitar los subtítulos de este video?">
+                    Quitar subtítulos
+                </Action>
+            )}
+        </div>
+    );
+}

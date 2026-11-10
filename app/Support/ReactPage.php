@@ -25,6 +25,7 @@ class ReactPage
             'scheduled' => $scheduled ? ['stateUrl' => route('scheduled.state', $e), 'mediaUrl' => route('scheduled.media', $e), 'state' => $scheduled->playback()['state']] : null,
             'videoUrl' => $recording?->recordingPath() && $e->estado === 'finalizado' && ($recording->isPublished() || $staff) ? route('eventos.recording', $e) : $e->video_url,
             'visibility' => $e->visibilidad ?? 'publico',
+            'subtitlesUrl' => ($scheduled ? $scheduled->subtitles_path : $recording?->subtitles_path) ? route('eventos.subtitles', $e, false) : null,
             // Estas consultas deben mantener el mismo origen desde el que se
             // abrió la sala. Así funcionan tanto en 127.0.0.1 como desde un
             // teléfono conectado mediante el proxy local del puerto 8080.
@@ -56,6 +57,9 @@ class ReactPage
                     'reviewedBy' => $recording->revisor?->name, 'reviewedAt' => $recording->publicacion_revisada_en?->format('d/m/Y · H:i'),
                     'approveUrl' => $ready && $recording->publicacion !== 'aprobada' ? route('admin.recording.approve', $e) : null,
                     'withdrawUrl' => $ready && $recording->publicacion === 'aprobada' ? route('admin.recording.withdraw', $e) : null] : null;
+                $media = $scheduled ? ($scheduled->processing_status === 'ready' ? $scheduled : null) : ($recording?->recordingPath() ? $recording : null);
+                $data['subtitles'] = $media ? ['present' => (bool) $media->subtitles_path, 'uploadUrl' => route('admin.subtitles.store', $e),
+                    'removeUrl' => $media->subtitles_path ? route('admin.subtitles.destroy', $e) : null] : null;
                 $data['recordingMetadata'] = $recording?->displayRecordingMetadata();
                 $data['recordingFpsLimit'] = $recording?->recording_fps_limit;
             }

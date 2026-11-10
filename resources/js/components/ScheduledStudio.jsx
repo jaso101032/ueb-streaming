@@ -1,5 +1,5 @@
 import { durationLabel } from "../platform/Channel";
-import { Action, useShell } from "../platform/shared";
+import { Action, SubtitleForm, useShell } from "../platform/shared";
 import React, { useEffect, useRef, useState } from "react";
 
 function Icon({ name = "play", size = 22 }) {
@@ -178,6 +178,7 @@ function InstitutionalAds({ action, csrf, ads, old, uploadLimits }) {
                         {ad.status === "failed" && <Action url={ad.retryUrl} className="studio-button">Reintentar</Action>}
                         <Action url={ad.toggleUrl} className="studio-button" confirm={ad.active ? "¿Quitar este anuncio de la señal continua?" : undefined}>{ad.active ? "Desactivar" : "Activar"}</Action>
                     </div>
+                    <SubtitleForm subtitles={ad.subtitles} idPrefix={`ad-${ad.id}-subtitles`} />
                 </article>) : <div className="schedule-empty"><h4>Aún no hay anuncios</h4><p>Mientras no haya programación ni directo, la señal mostrará la pantalla de espera.</p></div>}
             </div>
         </div>

@@ -24,7 +24,7 @@ class Transmision extends Model
         'recording_status', 'publisher_id', 'last_signal_at', 'recording_file',
         'recording_ready_at', 'recording_attempt_at', 'recording_attempts', 'recording_error',
         'recording_fps_limit', 'recording_metadata',
-        'playback_id', 'publicacion', 'publicacion_revisada_por', 'publicacion_revisada_en',
+        'playback_id', 'publicacion', 'publicacion_revisada_por', 'publicacion_revisada_en', 'subtitles_path',
     ];
 
     protected $casts = [
