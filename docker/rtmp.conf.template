@@ -16,7 +16,7 @@ rtmp {
             record_lock on;
             hls on;
             hls_path /tmp/hls;
-            hls_fragment 2s;
+            hls_fragment 1s;
             hls_playlist_length 90s;
             on_publish http://app:8080/streaming/hooks/authorize?token=${STREAMING_CALLBACK_TOKEN};
             on_update http://app:8080/streaming/hooks/authorize?token=${STREAMING_CALLBACK_TOKEN};

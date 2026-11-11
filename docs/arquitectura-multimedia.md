@@ -36,13 +36,13 @@ La selección de calidad tampoco existe para grabaciones o videos programados: s
 
 ## Perfil OBS institucional provisional
 
-Mientras no exista transcodificación multicalidad en servidor, OBS debe emitir H.264 + AAC, 48 kHz, estéreo, 30 fps, intervalo de fotogramas clave de 2 s y una resolución/bitrate validada contra el ancho de banda de subida real. La emisión no debe cambiar resolución ni códec durante un directo, porque afectaría HLS y a la grabación.
+Mientras no exista transcodificación multicalidad en servidor, OBS debe emitir H.264 + AAC, 48 kHz, estéreo, 30 fps, intervalo de fotogramas clave de 1 s (necesario para la latencia objetivo de 5 s: segmentos HLS de 1 s y reproductor a 2 segmentos del borde en vivo) y una resolución/bitrate validada contra el ancho de banda de subida real. La emisión no debe cambiar resolución ni códec durante un directo, porque afectaría HLS y a la grabación.
 
 ## Diagnóstico de cortes en producción
 
 Que OBS no registre fotogramas perdidos descarta menos de lo que parece: confirma que no observó pérdidas de red de salida, pero un espectador todavía puede recibir tarde los segmentos HLS o no sostener el bitrate único. Ante un corte, anotar la hora y comprobar en este orden:
 
-1. En **Estadísticas de OBS**, registrar bitrate real, FPS, pérdidas de red, fotogramas omitidos por codificación y retraso de renderizado. Confirmar el intervalo de fotogramas clave de 2 s.
+1. En **Estadísticas de OBS**, registrar bitrate real, FPS, pérdidas de red, fotogramas omitidos por codificación y retraso de renderizado. Confirmar el intervalo de fotogramas clave de 1 s.
 2. En el dominio público, medir desde una PC y un teléfono en redes distintas el tiempo y código HTTP de la lista `.m3u8` y de varios segmentos `.ts` consecutivos. Comprobar si la lista avanza y si aparecen respuestas 404, 5xx o tiempos mayores que la duración del segmento. No compartir la clave RTMP.
 3. En el servidor, revisar carga de CPU, RAM, disco de grabación, tráfico saliente y logs de Nginx/RTMP en la misma ventana horaria. La grabación y cada espectador consumen recursos aunque OBS esté estable.
 4. Repetir con un perfil OBS moderado y estable; comparar cortes, calidad visible y retraso real antes de aumentar el bitrate. Si el problema afecta sobre todo a redes móviles, priorizar implementar varias calidades HLS, no solo aumentar el búfer.
