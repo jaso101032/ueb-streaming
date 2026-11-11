@@ -25,6 +25,7 @@ class ReactPage
             'scheduled' => $scheduled ? ['stateUrl' => route('scheduled.state', $e), 'mediaUrl' => route('scheduled.media', $e), 'state' => $scheduled->playback()['state']] : null,
             'videoUrl' => $recording?->recordingPath() && $e->estado === 'finalizado' && ($recording->isPublished() || $staff) ? route('eventos.recording', $e) : $e->video_url,
             'visibility' => $e->visibilidad ?? 'publico',
+            'license' => Evento::LICENSES[$e->licencia ?? 'institucional']['short'] ?? Evento::LICENSES['institucional']['short'],
             'subtitlesUrl' => ($scheduled ? $scheduled->subtitles_path : $recording?->subtitles_path) ? route('eventos.subtitles', $e, false) : null,
             // Estas consultas deben mantener el mismo origen desde el que se
             // abrió la sala. Así funcionan tanto en 127.0.0.1 como desde un
@@ -53,6 +54,7 @@ class ReactPage
                 'streamKey' => $canStream ? $recording?->stream_key : null, 'server' => $canStream ? (config('streaming.rtmp_url') ?: 'rtmp://'.request()->getHost().':1935/live') : null, 'statusUrl' => $canStream ? route('streaming.estado', $e) : null];
             if (auth()->user()?->role === 'admin') {
                 $ready = (bool) $recording?->recordingPath();
+                $data['usage'] = ['license' => Evento::LICENSES[$e->licencia ?? 'institucional']['name'] ?? $e->licencia, 'authorization' => $e->autorizacion_referencia];
                 $data['publication'] = $recording ? ['status' => $recording->publicacion,
                     'reviewedBy' => $recording->revisor?->name, 'reviewedAt' => $recording->publicacion_revisada_en?->format('d/m/Y · H:i'),
                     'approveUrl' => $ready && $recording->publicacion !== 'aprobada' ? route('admin.recording.approve', $e) : null,

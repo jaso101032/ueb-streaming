@@ -112,6 +112,12 @@ function Recording({ event: e }) {
                     }).map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}
                 </dl>
             )}
+            {e.usage && (
+                <dl className="react-facts" aria-label="Licencia y autorización de uso">
+                    <div><dt>Licencia de uso</dt><dd>{e.usage.license}</dd></div>
+                    <div><dt>Referencia de autorización</dt><dd>{e.usage.authorization || "Sin referencia registrada"}</dd></div>
+                </dl>
+            )}
             {e.publication && e.recordingStatus === "ready" && (
                 <div className="react-publication" role="status">
                     <strong>
