@@ -505,3 +505,11 @@ html[data-theme="dark"] .uebtv-chat-control button { border-color:#6ca8e6; backg
 .subtitle-form form { display:grid; gap:8px; }
 .subtitle-form label small { opacity:.7; font-weight:400; }
 .ad-studio-item .subtitle-form { grid-column:1 / -1; padding-top:8px; }
+.uebtv-license-help { display:block; margin-top:6px; }
+.uebtv-license-guide { margin-top:8px; font-size:12px; }
+.uebtv-license-guide summary { cursor:pointer; color:var(--uebtv-blue, #1860b9); font-weight:700; }
+.uebtv-license-guide dl { display:grid; gap:8px; margin:10px 0 6px; }
+.uebtv-license-guide dt { font-weight:700; }
+.uebtv-license-guide dd { margin:2px 0 0; color:#526780; line-height:1.5; }
+.uebtv-license-guide p { color:#526780; }
+html[data-theme="dark"] .uebtv-license-guide :is(dd,p) { color:#aebfd3; }

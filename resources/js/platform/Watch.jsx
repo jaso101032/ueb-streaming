@@ -291,6 +291,7 @@ export default function Watch({
                                     <span>·</span>
                                     <span>{e.date}</span>
                                 </div>
+                                {e.license && <p className="uebtv-watch-license">Licencia: {e.license}</p>}
                                 <p className="uebtv-watch-description">
                                     {e.description ||
                                         "Una transmisión de la Universidad Estatal de Bolívar para toda nuestra comunidad."}

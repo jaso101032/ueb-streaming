@@ -1395,3 +1395,27 @@ test("scheduled upload accepts a real MP4 larger than the old 8 MB POST limit", 
     await expect(page.locator(".schedule-event").filter({ hasText: "Video de prueba de subida grande" })
         .getByText("En cola para convertir")).toBeVisible();
 });
+test("event form explains each usage license and records the authorization", async ({ page }) => {
+    await login(page);
+    await page.goto("/admin/eventos/create");
+    const license = page.getByLabel("Licencia de uso del video");
+    await expect(license).toHaveValue("institucional");
+    await expect(page.locator(".uebtv-license-help")).toContainText("Elige esta opción si no estás seguro");
+    await license.selectOption("cc-by-nc");
+    await expect(page.locator(".uebtv-license-help")).toContainText("no puede usarlo con fines comerciales");
+    await license.selectOption("otra");
+    await expect(page.getByLabel("Referencia de autorización (obligatoria)")).toHaveAttribute("required", "");
+    await page.getByText("¿Qué significa cada licencia?").click();
+    await expect(page.locator(".uebtv-license-guide dt")).toHaveCount(4);
+    await page.locator(".uebtv-license-guide").screenshot({ path: "test-results/licencias-formulario.png" });
+    await license.selectOption("cc-by");
+    await page.getByLabel("Título *", { exact: true }).fill("Evento con licencia abierta");
+    await page.getByLabel("Tipo de evento *").selectOption({ label: "Conferencias" });
+    await page.getByLabel("Categoría *").selectOption({ label: "Académico" });
+    await page.getByLabel("Fecha y hora de inicio *").fill("2027-10-02T12:00");
+    await page.getByLabel("Referencia de autorización (opcional)").fill("Oficio 45-UEB-2026");
+    await page.getByRole("button", { name: "Guardar y generar clave OBS" }).click();
+    await page.waitForURL(/admin\/eventos\/\d+$/);
+    await expect(page.getByText("Creative Commons BY 4.0 (compartir citando a la UEB)")).toBeVisible();
+    await expect(page.getByText("Oficio 45-UEB-2026")).toBeVisible();
+});

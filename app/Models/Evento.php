@@ -30,6 +30,8 @@ class Evento extends Model
         'estado',
         'visibilidad',
         'requiere_aprobacion',
+        'licencia',
+        'autorizacion_referencia',
         'url_transmision',
         'video_url',
         'duracion_minutos',
@@ -37,13 +39,28 @@ class Evento extends Model
         'chat_enabled',
     ];
 
-    protected $attributes = ['visibilidad' => 'publico', 'requiere_aprobacion' => false];
+    protected $attributes = ['visibilidad' => 'publico', 'requiere_aprobacion' => false, 'licencia' => 'institucional'];
 
     protected $casts = [
         'fecha_inicio' => 'datetime',
         'fecha_fin' => 'datetime',
         'chat_enabled' => 'boolean',
         'requiere_aprobacion' => 'boolean',
+    ];
+
+    /**
+     * Licencias de uso. "help" se muestra a quien crea el evento para que elija
+     * la opción correcta; "short" es lo que ve el público en la ficha.
+     */
+    public const LICENSES = [
+        'institucional' => ['name' => 'Uso institucional (todos los derechos reservados)', 'short' => 'Uso institucional · Todos los derechos reservados',
+            'help' => 'El video solo se ve en UEBTV. Nadie puede descargarlo, copiarlo ni volver a publicarlo sin permiso de la UEB. Elige esta opción si no estás seguro.'],
+        'cc-by' => ['name' => 'Creative Commons BY 4.0 (compartir citando a la UEB)', 'short' => 'Creative Commons BY 4.0',
+            'help' => 'Cualquier persona puede compartir y reutilizar el video, incluso con fines comerciales, siempre que cite a la Universidad Estatal de Bolívar. Úsala solo si la UEB y los participantes lo autorizaron.'],
+        'cc-by-nc' => ['name' => 'Creative Commons BY-NC 4.0 (compartir sin fines comerciales)', 'short' => 'Creative Commons BY-NC 4.0',
+            'help' => 'Cualquier persona puede compartir y reutilizar el video citando a la UEB, pero no puede usarlo con fines comerciales. Adecuada para clases y conferencias abiertas, si los participantes lo autorizaron.'],
+        'otra' => ['name' => 'Otra licencia o condición especial', 'short' => 'Condición especial de uso',
+            'help' => 'Existe un acuerdo particular, por ejemplo con un invitado externo o un medio de comunicación. Describe la condición o el documento en «Referencia de autorización».'],
     ];
 
     public const VISIBILITIES = ['publico' => 'Público', 'interno' => 'Interno (con sesión)', 'restringido' => 'Restringido (personal UEBTV)'];

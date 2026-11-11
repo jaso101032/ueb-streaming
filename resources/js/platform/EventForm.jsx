@@ -12,6 +12,7 @@ export default function EventForm({
     back,
     recordingSettingsLocked = false,
     visibilities = [],
+    licenses = [],
     canToggleChat = false,
 }) {
     const [v, setV] = useState(values),
@@ -199,6 +200,29 @@ export default function EventForm({
                                         ))}
                                     </select>
                                     <small>Público: cualquier persona y el canal 24/7. Interno: solo cuentas con sesión. Restringido: solo administradores y operadores. Aplica al directo y a la grabación.</small>
+                                </Field>
+                                <Field wide name="licencia" label="Licencia de uso del video">
+                                    <select {...bind("licencia")}>
+                                        {(licenses || []).map((o) => (
+                                            <option key={o.id} value={o.id}>{o.nombre}</option>
+                                        ))}
+                                    </select>
+                                    <small className="uebtv-license-help" aria-live="polite">
+                                        {(licenses.find((o) => o.id === (v.licencia || "institucional")) || {}).ayuda}
+                                    </small>
+                                    <details className="uebtv-license-guide">
+                                        <summary>¿Qué significa cada licencia?</summary>
+                                        <dl>
+                                            {(licenses || []).map((o) => (
+                                                <div key={o.id}><dt>{o.nombre}</dt><dd>{o.ayuda}</dd></div>
+                                            ))}
+                                        </dl>
+                                        <p>La licencia la decide la autoridad o unidad que organiza el evento; aquí solo se registra. El público la verá en la ficha del video.</p>
+                                    </details>
+                                </Field>
+                                <Field wide name="autorizacion_referencia" label={v.licencia === "otra" ? "Referencia de autorización (obligatoria)" : "Referencia de autorización (opcional)"}>
+                                    <input {...bind("autorizacion_referencia")} maxLength="255" required={v.licencia === "otra"} placeholder="Ej.: Oficio N.º 123-FACAGEI-2026 o acta de autorización del 10/11/2026" />
+                                    <small>Documento que respalda la difusión. Solo lo ven administradores y operadores.</small>
                                 </Field>
                                 <div className="uebtv-form-field uebtv-form-field--wide">
                                     <label htmlFor="requiere_aprobacion">Publicación de la grabación</label>

@@ -258,3 +258,5 @@ html[data-theme="dark"] .video-analytics-inline .video-analytics-ranking li { bo
     .video-analytics-report__footer p { max-width:72%; margin:0; }
     .video-analytics-report__footer span { color:#416184; font-weight:700; white-space:nowrap; }
 }
+.watch-experience .uebtv-watch-license, .uebtv-watch-license { margin-top:10px; color:#536984; font-size:12px; }
+html[data-theme="dark"] .uebtv-watch-license { color:#aebfd3; }

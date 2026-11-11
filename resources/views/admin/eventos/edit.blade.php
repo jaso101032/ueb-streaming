@@ -1,7 +1,8 @@
 <x-app-layout>
     @php
-$values=$evento->only(['titulo','tipo_evento','categoria_id','facultad_id','carrera_id','lugar','estado','descripcion','video_url','visibilidad']);
+$values=$evento->only(['titulo','tipo_evento','categoria_id','facultad_id','carrera_id','lugar','estado','descripcion','video_url','visibilidad','licencia','autorizacion_referencia']);
 $values['visibilidad']=$values['visibilidad'] ?? 'publico';
+$values['licencia']=$values['licencia'] ?? 'institucional';
 $values['requiere_aprobacion']=(bool)($evento->requiere_aprobacion ?? false);
 $values['fecha_inicio']=$evento->fecha_inicio?->format('Y-m-d\TH:i');
 $values['fecha_fin']=$evento->fecha_fin?->format('Y-m-d\TH:i');
@@ -13,7 +14,8 @@ $props=['editing'=>$evento->exists,'action'=>$evento->exists?route('admin.evento
  'image'=>$evento->miniatura?asset('storage/'.$evento->miniatura):null,'back'=>route('admin.eventos.index'),
  'recordingSettingsLocked'=>(bool)$evento->transmision?->iniciado_en,
  'canToggleChat'=>(bool)auth()->user()?->allowsOperatorAction('toggle_chat'),
- 'visibilities'=>collect(\App\Models\Evento::VISIBILITIES)->map(fn($nombre,$id)=>['id'=>$id,'nombre'=>$nombre])->values()];
+ 'visibilities'=>collect(\App\Models\Evento::VISIBILITIES)->map(fn($nombre,$id)=>['id'=>$id,'nombre'=>$nombre])->values(),
+ 'licenses'=>collect(\App\Models\Evento::LICENSES)->map(fn($l,$id)=>['id'=>$id,'nombre'=>$l['name'],'ayuda'=>$l['help']])->values()];
     @endphp
     <div data-react-page="EventForm" data-props="{{ json_encode($props, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) }}"></div>
 </x-app-layout>

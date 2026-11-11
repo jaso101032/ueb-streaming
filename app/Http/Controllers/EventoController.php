@@ -74,7 +74,7 @@ class EventoController extends Controller
             throw $exception;
         }
 
-        Audit::record('evento.creado', $evento, ['visibilidad' => $evento->visibilidad]);
+        Audit::record('evento.creado', $evento, ['visibilidad' => $evento->visibilidad, 'licencia' => $evento->licencia, 'autorizacion' => $evento->autorizacion_referencia]);
 
         return redirect()->route('admin.eventos.show', $evento)->with('success', 'Evento creado y clave de OBS generada correctamente.');
     }
