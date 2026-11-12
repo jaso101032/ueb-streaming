@@ -247,6 +247,7 @@ export default function Chat({
             <div
                 ref={list}
                 className="uebtv-live-chat__messages"
+                role="log"
                 aria-label="Mensajes de la comunidad"
                 onScroll={() => {
                     const l = list.current;

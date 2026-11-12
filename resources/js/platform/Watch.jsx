@@ -235,7 +235,7 @@ export default function Watch({
                                     onVideoProgress={onVideoProgress}
                                 />
                             </div>
-                            <div className="uebtv-watch-player-info" aria-label="Información de la transmisión">
+                            <div className="uebtv-watch-player-info" role="group" aria-label="Información de la transmisión">
                                 {showLiveViewers && <span className="uebtv-watch-player-info__viewers" title={`${viewerCount} ${viewerCount === 1 ? "espectador conectado" : "espectadores conectados"}`} aria-label={`${viewerCount} ${viewerCount === 1 ? "espectador conectado" : "espectadores conectados"}`}>
                                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 19v-1.3c0-2-1.8-3.7-4-3.7s-4 1.7-4 3.7V19m4-5a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm5-5.2a2.5 2.5 0 0 1 0 4.7m1 5.5v-.7c0-1.5-1-2.8-2.5-3.4M7 8.8a2.5 2.5 0 0 0 0 4.7m-1 1.4a3.8 3.8 0 0 0-2 3.4v.7" /></svg>
                                     <strong>{viewerCount}</strong><span className="uebtv-watch-player-info__viewers-label">{viewerCount === 1 ? "espectador conectado" : "espectadores conectados"}</span>

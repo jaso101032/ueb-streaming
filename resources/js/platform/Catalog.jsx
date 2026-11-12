@@ -90,7 +90,7 @@ export default function Catalog({
                             Ir a la señal continua ↗
                         </a>
                     </div>
-                    <div className="uebtv-catalog-mark" aria-label="Universidad Estatal de Bolívar">
+                    <div className="uebtv-catalog-mark">
                         <img
                             src={shell.logo}
                             alt="Universidad Estatal de Bolívar"
