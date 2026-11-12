@@ -1,11 +1,11 @@
 /* Event editor: scoped to the create and edit screens. */
 .uebtv-event-editor.uebtv-form-page { background: radial-gradient(ellipse at 95% 0%, #e4eefc 0, transparent 42%), #f4f7fb; padding: 40px 28px 64px; }
 .uebtv-event-editor .uebtv-form-container { max-width: 1200px; }
-.uebtv-event-editor .uebtv-form-back { display: inline-flex; gap: 8px; margin-bottom: 28px; color: #526b8d; }
+.uebtv-event-editor .uebtv-form-back { display: inline-flex; gap: 8px; margin-bottom: 28px; color: #4d6585; }
 .uebtv-event-editor .uebtv-form-heading { margin-bottom: 26px; }
 .uebtv-event-editor .uebtv-form-heading h1 { font-size: clamp(32px, 4vw, 46px); letter-spacing: -1.8px; margin: 12px 0; }
 .uebtv-event-editor .uebtv-form-heading p { line-height: 1.7; }
-.event-editor-steps { display: flex; align-items: center; gap: 20px; margin: 0 0 30px; color: #526b8d; font-size: 12px; }
+.event-editor-steps { display: flex; align-items: center; gap: 20px; margin: 0 0 30px; color: #4d6585; font-size: 12px; }
 .event-editor-steps span { display: flex; align-items: center; gap: 9px; }
 .event-editor-steps b { display: grid; place-items: center; width: 29px; height: 29px; border: 1px solid #cbdcef; border-radius: 50%; color: #1554a6; background: white; font-size: 11px; }
 .event-editor-steps i { width: 44px; height: 1px; background: #cbdcef; }
