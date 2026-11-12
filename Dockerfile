@@ -12,6 +12,31 @@ RUN composer install --no-dev --no-interaction --prefer-dist --no-progress --opt
 COPY . .
 RUN composer dump-autoload --no-dev --optimize --no-interaction
 
+# Trabajador de subtítulos automáticos. faster-whisper necesita glibc, así que
+# usa Debian en vez de Alpine. Comparte el almacenamiento con la aplicación.
+# Debe ir antes de "runtime": la etapa final sigue siendo la imagen web.
+FROM php:8.4-cli-trixie AS subtitles
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ffmpeg python3 python3-venv libicu-dev libpq-dev \
+    && docker-php-ext-install -j"$(nproc)" bcmath intl pcntl pdo_pgsql \
+    && rm -rf /var/lib/apt/lists/*
+# Modelo "small" (~480 MB) incluido en la imagen: el servidor no descarga nada
+# al arrancar y el audio nunca sale del servidor.
+RUN python3 -m venv /opt/whisper \
+    && /opt/whisper/bin/pip install --no-cache-dir faster-whisper==1.2.1 \
+    && /opt/whisper/bin/python -c "from faster_whisper import WhisperModel; WhisperModel('small', device='cpu', compute_type='int8', download_root='/opt/whisper-models')" \
+    && chmod -R a+rX /opt/whisper-models
+# Mismo uid/gid que www-data en Alpine (82) para leer y escribir el volumen compartido.
+RUN groupmod -g 82 www-data && usermod -u 82 -g 82 www-data
+WORKDIR /var/www/html
+COPY --from=vendor --chown=www-data:www-data /app /var/www/html
+ENV STREAMING_SUBTITLES_PYTHON=/opt/whisper/bin/python \
+    STREAMING_SUBTITLES_MODEL_DIR=/opt/whisper-models \
+    STREAMING_SUBTITLES_MODEL=small \
+    HF_HUB_OFFLINE=1
+USER www-data
+CMD ["php", "artisan", "subtitles:generate", "--watch"]
+
 FROM php:8.4-fpm-alpine AS runtime
 RUN apk add --no-cache nginx supervisor su-exec ffmpeg python3 icu-libs libpq libzip libpng libjpeg-turbo freetype libcurl \
     && apk add --no-cache --virtual .build-deps $PHPIZE_DEPS icu-dev libzip-dev libpng-dev libjpeg-turbo-dev freetype-dev libxml2-dev oniguruma-dev postgresql-dev curl-dev \

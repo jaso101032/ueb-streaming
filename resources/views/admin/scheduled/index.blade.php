@@ -13,9 +13,11 @@
                 'error' => $ad->processing_error,
                 'toggleUrl' => route('admin.ads.toggle', $ad),
                 'retryUrl' => route('admin.ads.retry', $ad),
-                'subtitles' => $ad->processing_status === 'ready' ? ['present' => (bool) $ad->subtitles_path,
+                'subtitles' => $ad->processing_status === 'ready' ? \App\Support\Subtitles::adminState($ad, [
                     'uploadUrl' => route('admin.ads.subtitles.store', $ad),
-                    'removeUrl' => $ad->subtitles_path ? route('admin.ads.subtitles.destroy', $ad) : null] : null,
+                    'removeUrl' => route('admin.ads.subtitles.destroy', $ad),
+                    'generateUrl' => route('admin.ads.subtitles.generate', $ad),
+                    'previewUrl' => $ad->is_active ? route('channel.ad.subtitles', $ad, false) : null]) : null,
             ])->values(),
             'timezone' => config('app.timezone'), 'categories' => $categories->map->only(['id', 'nombre'])->values(),
             'old' => session()->getOldInput(), 'errors' => $errors->all(), 'success' => session('success'),

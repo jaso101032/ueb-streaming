@@ -99,6 +99,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::delete('/eventos/{evento}/subtitulos', [SubtitleController::class, 'remove'])->middleware('throttle:20,1')->name('subtitles.destroy');
     Route::post('/contenido-programado/publicidad/{ad}/subtitulos', [SubtitleController::class, 'uploadAd'])->middleware('throttle:20,1')->name('ads.subtitles.store');
     Route::delete('/contenido-programado/publicidad/{ad}/subtitulos', [SubtitleController::class, 'removeAd'])->middleware('throttle:20,1')->name('ads.subtitles.destroy');
+    Route::post('/eventos/{evento}/subtitulos/generar', [SubtitleController::class, 'generate'])->middleware('throttle:20,1')->name('subtitles.generate');
+    Route::post('/contenido-programado/publicidad/{ad}/subtitulos/generar', [SubtitleController::class, 'generateAd'])->middleware('throttle:20,1')->name('ads.subtitles.generate');
 });
 
 // Administrators and streaming operators can create and maintain event details.

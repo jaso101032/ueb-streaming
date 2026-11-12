@@ -213,7 +213,7 @@ export function EventDetail({ event: e }) {
                     {e.subtitles && (
                         <div className="react-subtitles">
                             <span className="studio-eyebrow">SUBTÍTULOS</span>
-                            <p>{e.subtitles.present ? "Este video tiene subtítulos. El público los activa con el botón CC del reproductor." : "Agrega subtítulos para mejorar la accesibilidad del video."}</p>
+                            <p>El público activa los subtítulos con el botón CC del reproductor.</p>
                             <SubtitleForm subtitles={e.subtitles} />
                         </div>
                     )}

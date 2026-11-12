@@ -53,6 +53,7 @@ services:
       STREAMING_X_ACCEL_MEDIA: "true"
       STREAMING_FFMPEG: /usr/bin/ffmpeg
       STREAMING_FFPROBE: /usr/bin/ffprobe
+      STREAMING_AUTO_SUBTITLES: ${STREAMING_AUTO_SUBTITLES:-true}
     volumes:
       - app_storage:/var/www/html/storage
       - recordings:/var/lib/uebtv/recordings
@@ -113,6 +114,27 @@ services:
       - app_storage:/var/www/html/storage
       - recordings:/var/lib/uebtv/recordings
       - hls:/tmp/hls
+
+  # Subtítulos automáticos (Whisper) de grabaciones, programación y publicidad.
+  # Transcribe un video a la vez y con prioridad baja; el directo no se toca.
+  subtitles:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: subtitles
+    restart: unless-stopped
+    init: true
+    depends_on:
+      app:
+        condition: service_healthy
+    environment:
+      <<: *app-environment
+      STREAMING_SUBTITLES_THREADS: ${STREAMING_SUBTITLES_THREADS:-2}
+    cpus: ${STREAMING_SUBTITLES_CPUS:-2}
+    mem_limit: ${STREAMING_SUBTITLES_MEMORY:-3g}
+    volumes:
+      - app_storage:/var/www/html/storage
+      - recordings:/var/lib/uebtv/recordings
 
   rtmp:
     image: alfg/nginx-rtmp:v1.6.0

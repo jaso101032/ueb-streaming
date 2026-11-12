@@ -128,6 +128,23 @@ export function BrandedVideo({ videoRef, src, poster, mediaTitle, live = false, 
         v.textTracks.addEventListener?.("addtrack", apply);
         return () => v.textTracks.removeEventListener?.("addtrack", apply);
     }, [captions, subtitles, src]);
+    useEffect(() => {
+        // Keep subtitles above the control bar while it is visible, and near
+        // the bottom edge when it hides, so they are always readable.
+        const v = video(); if (!v || !subtitles) return;
+        const line = controlsVisible ? 68 : 90;
+        const place = () => {
+            for (const track of Array.from(v.textTracks)) for (const cue of Array.from(track.cues || [])) {
+                if (cue.line === line && cue.snapToLines === false) continue;
+                cue.snapToLines = false; cue.lineAlign = "end"; cue.line = line;
+            }
+        };
+        place();
+        const tracks = Array.from(v.textTracks);
+        tracks.forEach((track) => track.addEventListener("cuechange", place));
+        v.textTracks.addEventListener?.("addtrack", place);
+        return () => { tracks.forEach((track) => track.removeEventListener("cuechange", place)); v.textTracks.removeEventListener?.("addtrack", place); };
+    }, [controlsVisible, captions, subtitles, src]);
     useEffect(() => { const v = video(); if (!v) return; const entered = () => setInPictureInPicture(true), left = () => setInPictureInPicture(false); v.addEventListener("enterpictureinpicture", entered); v.addEventListener("leavepictureinpicture", left); return () => { v.removeEventListener("enterpictureinpicture", entered); v.removeEventListener("leavepictureinpicture", left); }; }, [videoRef]);
     useEffect(() => () => { window.clearTimeout(bufferTimer.current); window.clearTimeout(slowBufferTimer.current); }, []);
     useEffect(() => { const changed = () => setIsFullscreen(document.fullscreenElement === shell.current); document.addEventListener("fullscreenchange", changed); return () => document.removeEventListener("fullscreenchange", changed); }, []);

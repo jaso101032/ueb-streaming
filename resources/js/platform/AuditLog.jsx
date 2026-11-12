@@ -14,6 +14,8 @@ const actionNames = {
     "subtitulos.agregados": "Subtítulos agregados",
     "subtitulos.reemplazados": "Subtítulos reemplazados",
     "subtitulos.eliminados": "Subtítulos eliminados",
+    "subtitulos.generados_automaticamente": "Subtítulos generados automáticamente",
+    "subtitulos.generacion_solicitada": "Generación de subtítulos solicitada",
     "grabacion.retirada": "Grabación retirada",
     "grabacion.descargada": "Grabación descargada",
     "grabacion.reintento": "Reintento de grabación",

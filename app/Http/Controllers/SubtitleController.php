@@ -14,6 +14,14 @@ use Illuminate\Http\Request;
  */
 class SubtitleController extends Controller
 {
+    /** Subidos por el personal: el trabajador automático ya no los toca. */
+    private const MANUAL = ['subtitles_source' => 'manual', 'subtitles_status' => 'ready', 'subtitles_progress' => null, 'subtitles_error' => null];
+
+    /** Quitados a propósito: no se vuelven a generar solos. */
+    private const REMOVED = ['subtitles_source' => null, 'subtitles_status' => 'skipped', 'subtitles_progress' => null, 'subtitles_error' => null];
+
+    private const QUEUED = 'Generación de subtítulos en cola. Aparecerán automáticamente cuando termine la transcripción.';
+
     public function upload(Request $request, Evento $evento)
     {
         $media = $this->eventMedia($evento);
@@ -21,7 +29,7 @@ class SubtitleController extends Controller
         $request->validate(Subtitles::rules(), $this->messages());
         $path = Subtitles::store($request->file('subtitles'));
         $previous = $media->subtitles_path;
-        $media->update(['subtitles_path' => $path]);
+        $media->update(['subtitles_path' => $path] + self::MANUAL);
         Subtitles::delete($previous);
         Audit::record($previous ? 'subtitulos.reemplazados' : 'subtitulos.agregados', $evento,
             ['archivo' => mb_substr($request->file('subtitles')->getClientOriginalName(), 0, 120)]);
@@ -34,10 +42,21 @@ class SubtitleController extends Controller
         $media = $this->eventMedia($evento);
         abort_unless($media?->subtitles_path, 404);
         Subtitles::delete($media->subtitles_path);
-        $media->update(['subtitles_path' => null]);
+        $media->update(['subtitles_path' => null] + self::REMOVED);
         Audit::record('subtitulos.eliminados', $evento);
 
         return back()->with('success', 'Subtítulos eliminados.');
+    }
+
+    /** Pide (de nuevo) los subtítulos automáticos de un video sin subtítulos. */
+    public function generate(Evento $evento)
+    {
+        $media = $this->eventMedia($evento);
+        abort_unless($media, 409, 'El evento todavía no tiene un video almacenado.');
+        $this->queueGeneration($media);
+        Audit::record('subtitulos.generacion_solicitada', $evento);
+
+        return back()->with('success', self::QUEUED);
     }
 
     public function show(Request $request, Evento $evento)
@@ -61,7 +80,7 @@ class SubtitleController extends Controller
         $request->validate(Subtitles::rules(), $this->messages());
         $path = Subtitles::store($request->file('subtitles'));
         $previous = $ad->subtitles_path;
-        $ad->update(['subtitles_path' => $path]);
+        $ad->update(['subtitles_path' => $path] + self::MANUAL);
         Subtitles::delete($previous);
         Audit::record($previous ? 'subtitulos.reemplazados' : 'subtitulos.agregados', $ad);
 
@@ -72,10 +91,19 @@ class SubtitleController extends Controller
     {
         abort_unless($ad->subtitles_path, 404);
         Subtitles::delete($ad->subtitles_path);
-        $ad->update(['subtitles_path' => null]);
+        $ad->update(['subtitles_path' => null] + self::REMOVED);
         Audit::record('subtitulos.eliminados', $ad);
 
         return back()->with('success', 'Subtítulos de la publicidad eliminados.');
+    }
+
+    public function generateAd(InstitutionalAd $ad)
+    {
+        abort_unless($ad->processing_status === 'ready', 409, 'La publicidad todavía se está preparando.');
+        $this->queueGeneration($ad);
+        Audit::record('subtitulos.generacion_solicitada', $ad);
+
+        return back()->with('success', self::QUEUED);
     }
 
     public function showAd(InstitutionalAd $ad)
@@ -83,6 +111,15 @@ class SubtitleController extends Controller
         abort_unless($ad->is_active && $ad->processing_status === 'ready', 404);
 
         return Subtitles::response($ad->subtitles_path);
+    }
+
+    private function queueGeneration($media): void
+    {
+        abort_unless(config('streaming.auto_subtitles.enabled'), 409, 'Los subtítulos automáticos están desactivados.');
+        abort_if($media->subtitles_path, 409, 'Este video ya tiene subtítulos. Quítalos antes de generar unos nuevos.');
+        abort_if(in_array($media->subtitles_status, ['pending', 'processing'], true), 409, 'Los subtítulos ya se están generando.');
+        $media->update(['subtitles_status' => 'pending', 'subtitles_source' => null, 'subtitles_progress' => null,
+            'subtitles_error' => null, 'subtitles_attempts' => 0, 'subtitles_attempt_at' => null]);
     }
 
     /** The stored video of the event: its scheduled program or its ready recording. */

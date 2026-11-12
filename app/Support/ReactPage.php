@@ -60,8 +60,9 @@ class ReactPage
                     'approveUrl' => $ready && $recording->publicacion !== 'aprobada' ? route('admin.recording.approve', $e) : null,
                     'withdrawUrl' => $ready && $recording->publicacion === 'aprobada' ? route('admin.recording.withdraw', $e) : null] : null;
                 $media = $scheduled ? ($scheduled->processing_status === 'ready' ? $scheduled : null) : ($recording?->recordingPath() ? $recording : null);
-                $data['subtitles'] = $media ? ['present' => (bool) $media->subtitles_path, 'uploadUrl' => route('admin.subtitles.store', $e),
-                    'removeUrl' => $media->subtitles_path ? route('admin.subtitles.destroy', $e) : null] : null;
+                $data['subtitles'] = $media ? \App\Support\Subtitles::adminState($media, ['uploadUrl' => route('admin.subtitles.store', $e),
+                    'removeUrl' => route('admin.subtitles.destroy', $e), 'generateUrl' => route('admin.subtitles.generate', $e),
+                    'previewUrl' => route('eventos.subtitles', $e, false)]) : null;
                 $data['recordingMetadata'] = $recording?->displayRecordingMetadata();
                 $data['recordingFpsLimit'] = $recording?->recording_fps_limit;
             }

@@ -25,6 +25,7 @@ class Transmision extends Model
         'recording_ready_at', 'recording_attempt_at', 'recording_attempts', 'recording_error',
         'recording_fps_limit', 'recording_metadata',
         'playback_id', 'publicacion', 'publicacion_revisada_por', 'publicacion_revisada_en', 'subtitles_path',
+        'subtitles_source', 'subtitles_status', 'subtitles_progress', 'subtitles_error', 'subtitles_attempts', 'subtitles_attempt_at',
     ];
 
     protected $casts = [
@@ -37,6 +38,9 @@ class Transmision extends Model
         'recording_fps_limit' => 'integer',
         'recording_metadata' => 'array',
         'publicacion_revisada_en' => 'datetime',
+        'subtitles_progress' => 'integer',
+        'subtitles_attempts' => 'integer',
+        'subtitles_attempt_at' => 'datetime',
     ];
 
     protected $attributes = ['publicacion' => 'pendiente'];

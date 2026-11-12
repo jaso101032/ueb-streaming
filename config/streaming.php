@@ -17,4 +17,19 @@ return [
     // conservan tras la conversión y se registra su huella SHA-256. Solo se
     // eliminan si la institución lo decide expresamente con false.
     'keep_sources' => filter_var(env('STREAMING_KEEP_SOURCES', true), FILTER_VALIDATE_BOOL),
+    // Subtítulos automáticos para videos almacenados (no para el directo).
+    // Los genera el trabajador `php artisan subtitles:generate --watch`, de uno
+    // en uno, con faster-whisper en la CPU del servidor. Sin costo por minuto.
+    'auto_subtitles' => [
+        'enabled' => filter_var(env('STREAMING_AUTO_SUBTITLES', true), FILTER_VALIDATE_BOOL),
+        'python' => env('STREAMING_SUBTITLES_PYTHON', '/usr/bin/python3'),
+        'script' => env('STREAMING_SUBTITLES_SCRIPT', base_path('scripts/generate-subtitles.py')),
+        // tiny, base, small (recomendado), medium… Más grande = mejor y más lento.
+        'model' => env('STREAMING_SUBTITLES_MODEL', 'small'),
+        'model_dir' => env('STREAMING_SUBTITLES_MODEL_DIR'),
+        'threads' => (int) env('STREAMING_SUBTITLES_THREADS', 2),
+        'language' => env('STREAMING_SUBTITLES_LANGUAGE', 'es'),
+        'timeout' => (int) env('STREAMING_SUBTITLES_TIMEOUT', 6 * 3600),
+        'max_attempts' => 3,
+    ],
 ];

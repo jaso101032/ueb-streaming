@@ -156,3 +156,38 @@ La [marca de agua configurable](marca-de-agua.md) usa la tabla `player_watermark
 y PNG en `storage/app/public/player-watermarks`. El contenedor ya incluye GD,
 ejecuta la migración y crea `public/storage`. Conserva el volumen `app_storage`
 junto con la base de datos para no perder la selección al volver a desplegar.
+
+## Subtítulos automáticos
+
+El servicio `subtitles` transcribe el audio de los videos almacenados con
+[faster-whisper](https://github.com/SYSTRAN/faster-whisper) (Whisper de código
+abierto) y genera subtítulos en español que el público activa con el botón
+**CC** del reproductor. Se aplica a grabaciones de directos ya terminados,
+videos programados y publicidad institucional. **El directo no se transcribe.**
+
+- No tiene costo por minuto ni envía el audio a servicios externos: el modelo
+  `small` (~480 MB) viene incluido en la imagen.
+- Procesa un video a la vez, con prioridad baja, para no afectar a la web ni a
+  las conversiones. Como referencia, en 2 núcleos una hora de video puede tardar
+  entre 30 y 60 minutos.
+- Nunca reemplaza subtítulos subidos por el personal. Si alguien quita unos
+  subtítulos automáticos, no se vuelven a generar solos; se pueden pedir de
+  nuevo con **Generar subtítulos automáticos** en la gestión del evento o de la
+  publicidad.
+- Al desplegar esta versión, los videos que ya existían y no tienen subtítulos
+  también entran en la cola.
+
+Variables opcionales:
+
+| Variable | Predeterminado | Uso |
+|---|---|---|
+| `STREAMING_AUTO_SUBTITLES` | `true` | `false` desactiva la generación y oculta sus botones. |
+| `STREAMING_SUBTITLES_THREADS` | `2` | Hilos de CPU que usa Whisper. |
+| `STREAMING_SUBTITLES_CPUS` | `2` | Límite de CPU del contenedor. |
+| `STREAMING_SUBTITLES_MEMORY` | `3g` | Límite de memoria del contenedor. |
+
+Para revisar el trabajador: `docker compose logs -f subtitles`.
+
+En desarrollo local, instala faster-whisper en un entorno virtual, apunta
+`STREAMING_SUBTITLES_PYTHON` a su `python` y ejecuta
+`php artisan subtitles:generate --watch` en otra terminal.

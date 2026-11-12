@@ -14,15 +14,45 @@ class Subtitles
 
     public static function store(UploadedFile $file): string
     {
-        $text = (string) file_get_contents($file->getRealPath());
-        $vtt = self::toWebVtt($text);
-        if ($vtt === null) {
+        $path = self::storeText((string) file_get_contents($file->getRealPath()));
+        if ($path === null) {
             throw ValidationException::withMessages(['subtitles' => 'El archivo no contiene subtítulos válidos. Usa un archivo .vtt o .srt con tiempos como 00:00:01,000 --> 00:00:04,000.']);
         }
+
+        return $path;
+    }
+
+    /** Valida, normaliza y guarda subtítulos en texto; null si no son válidos. */
+    public static function storeText(string $text): ?string
+    {
+        $vtt = self::toWebVtt($text);
+        if ($vtt === null) return null;
         $path = 'subtitles/'.Str::uuid().'.vtt';
         Storage::disk('local')->put($path, $vtt);
 
         return $path;
+    }
+
+    /**
+     * Estado de los subtítulos de un video para el panel de administración.
+     * $urls: uploadUrl, removeUrl, generateUrl y previewUrl.
+     */
+    public static function adminState($media, array $urls): array
+    {
+        $present = (bool) $media->subtitles_path;
+        $status = $media->subtitles_status;
+        $auto = config('streaming.auto_subtitles.enabled');
+        // Se puede pedir una nueva generación si no hay subtítulos y el
+        // trabajador no está ya ocupándose de este video.
+        $canGenerate = $auto && ! $present && ! in_array($status, [null, 'pending', 'processing'], true);
+
+        return ['present' => $present, 'source' => $present ? ($media->subtitles_source ?? 'manual') : null,
+            'status' => $present ? 'ready' : ($auto ? ($status ?? 'pending') : null),
+            'progress' => $media->subtitles_progress, 'error' => $media->subtitles_error,
+            'auto' => (bool) $auto,
+            'uploadUrl' => $urls['uploadUrl'], 'removeUrl' => $present ? $urls['removeUrl'] : null,
+            'generateUrl' => $canGenerate ? $urls['generateUrl'] : null,
+            'previewUrl' => $present ? ($urls['previewUrl'] ?? null) : null];
     }
 
     public static function delete(?string $path): void
