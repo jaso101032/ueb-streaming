@@ -1206,3 +1206,26 @@ html[data-theme="dark"] .studio-notifications__heading button { background:#2547
 .uebtv-player-seek-hint.is-forward { right:12%; }
 @keyframes uebtv-seek-hint { 0% { opacity:0; transform:translateY(-50%) scale(.85); } 20% { opacity:1; transform:translateY(-50%) scale(1); } 100% { opacity:0; } }
 @media (prefers-reduced-motion:reduce) { .uebtv-player-seek-hint { animation:none; } }
+
+/* ───────────── Reproductor más fino y moderno (todas las vistas) ─────────────
+ * Misma distribución de siempre; solo se afinan la barra, el volumen y el botón
+ * de reproducir. No aplica al modo TV, que usa controles grandes a distancia. */
+html:not(.uebtv-tv-mode) .uebtv-player-shell:not(.is-compact) .uebtv-player-controls { padding-top:14px; padding-bottom:14px; background:linear-gradient(transparent, #030b18d9 55%); }
+html:not(.uebtv-tv-mode) .uebtv-player-shell:not(.is-compact) .uebtv-player-timeline { min-height:18px; margin-bottom:6px; }
+/* Barra de la emisión sincronizada / directo: línea fina, sin resplandor. */
+html:not(.uebtv-tv-mode) .uebtv-player-live-static { height:3px; box-shadow:none; }
+html:not(.uebtv-tv-mode) .uebtv-player-live-static i { width:11px; height:11px; border-width:2px; box-shadow:0 1px 3px #0008; }
+html:not(.uebtv-tv-mode) .uebtv-player-now { gap:6px; font-size:9px; letter-spacing:.1em; color:#ffd2d8; }
+html:not(.uebtv-tv-mode) .uebtv-player-now::before { width:6px; height:6px; box-shadow:0 0 0 3px #e64f5b2e; }
+/* Retroceso del directo (DVR): igual de fino. */
+html:not(.uebtv-tv-mode) .uebtv-player-shell:not(.is-compact) .uebtv-player-range--live { height:4px; }
+html:not(.uebtv-tv-mode) .uebtv-player-shell:not(.is-compact) .uebtv-player-range--live::-webkit-slider-thumb { width:12px; height:12px; }
+/* Volumen: línea delgada y bolita pequeña. */
+html:not(.uebtv-tv-mode) .uebtv-player-range--volume { width:clamp(64px, 6vw, 84px); height:3px; box-shadow:none; }
+html:not(.uebtv-tv-mode) .uebtv-player-range--volume::-webkit-slider-thumb { width:11px; height:11px; border-width:1.5px; box-shadow:0 1px 3px #0008; }
+html:not(.uebtv-tv-mode) .uebtv-player-range--volume::-moz-range-thumb { width:10px; height:10px; border-width:1.5px; box-shadow:0 1px 3px #0008; }
+html:not(.uebtv-tv-mode) .uebtv-player-range--volume::-moz-range-track, html:not(.uebtv-tv-mode) .uebtv-player-range--volume::-moz-range-progress { height:3px; }
+/* Botones: un poco más pequeños; reproducir rojo sin halo. */
+html:not(.uebtv-tv-mode) .uebtv-player-shell:not(.is-compact) .uebtv-player-actions .uebtv-player-icon-button { width:36px; height:36px; }
+html:not(.uebtv-tv-mode) .uebtv-player-shell:not(.is-compact) .uebtv-player-actions .uebtv-player-icon-button--primary { width:38px; height:38px; margin-right:4px; border:0; box-shadow:0 2px 8px #0006; }
+html:not(.uebtv-tv-mode) .uebtv-player-shell:not(.is-compact) .uebtv-player-icon-svg { width:19px; height:19px; }

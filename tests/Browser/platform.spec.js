@@ -1216,7 +1216,7 @@ test("institutional advertising fills a channel gap with a P, no seek control an
     await expect.poll(() => video.evaluate((v) => v.currentTime), { timeout: 5000 }).toBeGreaterThan(pausedAt + 3.5);
     const volume = page.locator('input[aria-label="Volumen"]');
     await expect(volume).toBeVisible();
-    await expect(volume).toHaveCSS("height", "6px");
+    await expect(volume).toHaveCSS("height", "3px");
     const badge = page.locator(".channel-ad-indicator");
     const title = page.locator(".uebtv-player-title");
     await page.locator(".channel-screen .uebtv-player-shell").hover(); // controls appear on hover
