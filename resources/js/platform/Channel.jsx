@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import Player, { BrandedVideo, clockedMediaTarget, isTimeBuffered } from "./Player";
-import { useShell } from "./shared";
+import { useShell, statusLabel, ShareButton, AppCard, GuideThumb } from "./shared";
+import Chat from "./Chat";
 import { createPortal } from "react-dom";
 
 export function durationLabel(seconds = 0) {
@@ -170,12 +171,16 @@ function ChannelVideo({ snapshot, received, startMuted, onMuteChange }) {
         }, 2000);
         return () => { window.clearInterval(timer); window.clearTimeout(retryTimer.current); };
     }, []);
-    const mediaUrl = retry ? `${media.mediaUrl}${media.mediaUrl.includes("?") ? "&" : "?"}reconnect=${retry}` : media.mediaUrl;
+    const withRetry = (url) => retry ? `${url}${url.includes("?") ? "&" : "?"}reconnect=${retry}` : url;
+    const mediaUrl = withRetry(media.mediaUrl);
+    // La publicidad es corta y se queda en MP4; la programación usa calidades adaptativas.
+    const adaptiveUrl = !isAd && media.adaptiveUrl ? withRetry(media.adaptiveUrl) : undefined;
     return (
         <>
             <BrandedVideo
                 videoRef={video}
                 src={mediaUrl}
+                adaptiveSrc={adaptiveUrl}
                 mediaTitle={isAd ? `Publicidad institucional · ${media.title}` : snapshot.event.title}
                 subtitles={(isAd ? media.subtitlesUrl : snapshot.event?.subtitlesUrl) || undefined}
                 live={false}
@@ -214,7 +219,7 @@ function ChannelVideo({ snapshot, received, startMuted, onMuteChange }) {
     );
 }
 
-export default function Channel({ stateUrl }) {
+export default function Channel({ stateUrl, recent = [] }) {
     const shell = useShell();
     const tvMode = new URLSearchParams(window.location.search).get("modo") === "tv";
     const [data, setData] = useState(null);
@@ -223,6 +228,30 @@ export default function Channel({ stateUrl }) {
     const [received, setReceived] = useState(0);
     const [error, setError] = useState("");
     const [channelMuted, setChannelMuted] = useState(!tvMode);
+    // Pestaña del panel: automática (chat si hay emisión) hasta que la persona elige.
+    const [chosenTab, setChosenTab] = useState(null);
+    // null = automático: al entrar, plegado (botón "Mostrar programación" + la
+    // app) salvo que haya conversación al aire. Si la persona elige, se recuerda.
+    const [chosenCollapsed, setChosenCollapsed] = useState(() => { try { const v = localStorage.getItem("uebtv-channel-panel-collapsed"); return v === null ? null : v === "1"; } catch { return null; } });
+    const collapseButton = useRef(null), expandButton = useRef(null);
+    const setPanelCollapsed = (value) => {
+        setChosenCollapsed(value);
+        try { localStorage.setItem("uebtv-channel-panel-collapsed", value ? "1" : "0"); } catch {}
+        window.setTimeout(() => (value ? expandButton : collapseButton).current?.focus({ preventScroll: true }), 360);
+    };
+    const [clock, setClock] = useState(() => Date.now());
+    useEffect(() => { const timer = setInterval(() => setClock(Date.now()), 30000); return () => clearInterval(timer); }, []);
+    const rail = useRef(null);
+    const screenFrame = useRef(null);
+    useEffect(() => {
+        // La tarjeta de la app (panel plegado) termina a la altura del video.
+        const frame = screenFrame.current, column = rail.current;
+        if (!frame || !column || typeof ResizeObserver === "undefined") return undefined;
+        const sync = () => column.style.setProperty("--cv-video-h", `${frame.offsetHeight}px`);
+        const observer = new ResizeObserver(sync);
+        observer.observe(frame); sync();
+        return () => observer.disconnect();
+    }, [tvMode]);
     useEffect(() => {
         if (!tvMode) return undefined;
         document.documentElement.classList.add("uebtv-tv-mode");
@@ -271,16 +300,26 @@ export default function Channel({ stateUrl }) {
     const playing = live || data?.mode === "scheduled" || advertising;
     const next = data?.next?.[0];
     const closeAgenda = useCallback(() => setAgendaOpen(false), []);
+    const chatEvent = live || data?.mode === "scheduled" ? data?.event : null;
+    // Sin programa ni directo (publicidad o pausa) no hay conversación: solo la
+    // programación. El panel se puede plegar y entonces aparece la app (zorrito).
+    const tab = chatEvent ? chosenTab || "chat" : "guide";
+    const collapsed = chosenCollapsed ?? !chatEvent;
+    // Sin chat ni emisiones anunciadas, la programación es corta: el panel toma su
+    // alto natural y la tarjeta de la app ocupa el resto de la columna.
+    const quietGuide = Boolean(data) && !chatEvent && !data.next?.length;
+    const room = roomStatus(data, clock);
     return (
-        <div className={`studio-page channel-page ${tvMode ? "channel-page--tv" : ""}`}>
+        <div className={`studio-page channel-page cv ${tvMode ? "channel-page--tv" : ""}`}>
             {error && (
                 <p role="status" className="studio-alert">
                     {error}
                 </p>
             )}
             <div className="channel-layout">
+                <div className="cv-left">
                 <section className="channel-main" aria-label="UEB - TV">
-                    <div className="channel-screen-frame">
+                    <div ref={screenFrame} className="channel-screen-frame">
                         <div
                             className={`channel-screen ${playing ? "is-playing" : "is-idle"}`}
                         >
@@ -332,7 +371,7 @@ export default function Channel({ stateUrl }) {
                                                 ? next.title
                                                 : "Este es nuestro punto de encuentro. La próxima emisión aparecerá aquí automáticamente."}
                                         </p>
-                                        {next ? (
+                                        {next ? (<>
                                             <time className="channel-premiere">
                                                 {new Date(
                                                     next.starts_at,
@@ -341,6 +380,7 @@ export default function Channel({ stateUrl }) {
                                                     timeStyle: "short",
                                                 })}
                                             </time>
+                                            <span className="cv-countdown" aria-live="polite">{untilLabel(next.starts_at, clock)}</span></>
                                         ) : (
                                             data && (
                                                 <a
@@ -366,167 +406,171 @@ export default function Channel({ stateUrl }) {
                             )}
                         </div>
                     </div>
-                    <div className="channel-now">
-                        {!live && <div className="channel-now-top">
-                            <span
-                                className={`channel-badge ${live ? "channel-live" : ""}`}
-                            >
-                                {live
-                                    ? "● En directo"
-                                    : advertising
-                                      ? "P · Publicidad institucional"
-                                      : playing
-                                      ? "Pregrabado · Emisión sincronizada"
-                                      : "Nuestra señal"}
-                            </span>
-                            <span className="channel-auto">
-                                ↻ Programación automática
-                            </span>
-                        </div>}
-                        <h2>
-                            {data?.event?.title || data?.advertisement?.title ||
-                                "Un espacio para encontrarnos"}
-                        </h2>
-                        <p>
-                            {live
-                                ? data.resumeTitle ? `Al finalizar esta transmisión, continuamos con «${data.resumeTitle}».` : "Al finalizar esta transmisión, la programación continuará automáticamente."
-                                : advertising
-                                  ? "Mensaje institucional de la Universidad Estatal de Bolívar. Al comenzar una emisión, la señal continuará automáticamente."
-                                  : playing
-                                  ? "Estás viendo el mismo momento que nuestra comunidad. Al terminar, continuamos con la siguiente emisión."
-                                  : "Conferencias, encuentros y momentos de la UEB. En directo cuando sucede; disponibles para volver a disfrutarlos."}
-                        </p>
-                        {data?.event && (
-                            <a
-                                className="studio-text-link"
-                                href={data.event.url}
-                            >
-                                Información y comentarios ↗
-                            </a>
-                        )}
-                    </div>
+                    {!tvMode && <div className="channel-now cv-now">
+                        <div className="wv-subline">
+                            <span className={`wv-state ${live ? "is-live" : ""}`}>{live ? <i className="wv-live-dot" aria-hidden="true" /> : <CvIcon name={advertising ? "megaphone" : playing ? "tv" : "pause"} />}{room.badge}</span>
+                            {data?.event?.category && <span className="wv-subline__item"><CvIcon name="tag" />{data.event.category}</span>}
+                        </div>
+                        <h2 className="wv-title">{data?.event?.title || data?.advertisement?.title || "UEBTV · La señal de nuestra comunidad"}</h2>
+                        {room.detail && <p className="cv-now__text">{room.detail}</p>}
+                        <div className="wv-actions" role="toolbar" aria-label="Acciones de la señal">
+                            {data?.event && <a className="wv-chip" href={data.event.url}><CvIcon name="info" />Información y comentarios</a>}
+                            <ShareButton url={`${window.location.origin}/senal`} title="UEBTV · Señal 24/7" label="Compartir la señal" icon={<CvIcon name="share" />} />
+                        </div>
+                    </div>}
                 </section>
-                <div className="channel-rail">
-                    {!tvMode && <section className="channel-app-card" aria-labelledby="channel-app-title">
-                        <div className="channel-app-art">
-                            <div className="channel-app-art-inner">
-                                <img className="channel-app-mascot" src="/images/download/zorrito-qr-gafas.webp" alt="" width="960" height="800" loading="lazy" />
-                                <div className="channel-app-qr">
-                                    <img src="/images/download/uebtv-apk-qr.png" alt="Código QR para descargar UEBTV" width="400" height="400" />
-                                </div>
-                            </div>
-                        </div>
-                        <div className="channel-app-copy">
-                            <p className="channel-app-eyebrow">UEBTV EN TU PANTALLA</p>
-                            <h2 id="channel-app-title">Lleva la señal <span>contigo.</span></h2>
-                            <p>Escanea el QR desde otro dispositivo o descarga el APK aquí.</p>
-                            <a className="channel-app-download" href="/descargas/uebtv.apk" download>Descargar APK <span aria-hidden="true">↗</span></a>
-                            <small>Para Android y Android TV.</small>
-                        </div>
-                    </section>}
-                <aside className="channel-next" aria-label="Próximas emisiones">
-                    <div className="channel-next-heading">
-                        <p className="studio-eyebrow">LA PROGRAMACIÓN</p>
-                        <h2>
-                            A continuación
-                            <span>{data?.next?.length || "—"}</span>
-                        </h2>
-                        <p>Las próximas historias de nuestra comunidad.</p>
-                        <button ref={agendaButton} type="button" className="channel-agenda-open" onClick={() => setAgendaOpen(true)} aria-haspopup="dialog" aria-expanded={agendaOpen}>
-                            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M7 3v4m10-4v4M3 10h18m-13 4h3m-3 3h7"/></svg>
-                            Ver programación completa
-                            <span aria-hidden="true">↗</span>
-                        </button>
+                {!tvMode && <section className="wv-more cv-more" aria-labelledby="cv-more-title">
+                    <div className="wv-more__heading">
+                        <h2 id="cv-more-title">{playing ? "Grabaciones recientes" : "Mientras tanto, mira…"}</h2>
+                        <a href={shell.catalog}>Ver todo el catálogo ↗</a>
                     </div>
-                    <div className="channel-agenda">
-                        {data?.next?.map((item, index) => (
-                            <article
-                                key={item.id}
-                                className="channel-agenda-item"
-                            >
-                                <span className="channel-agenda-number">
-                                    {String(index + 1).padStart(2, "0")}
+                    {recent.length ? <div className="wv-more__list">
+                        {recent.map((r) => (
+                            <a className="wv-card" href={r.url} key={r.id}>
+                                <span className="wv-card__thumb" style={r.image ? { backgroundImage: `url(${JSON.stringify(r.image)})` } : undefined}>
+                                    {!r.image && <img src={shell.logo} alt="" className="wv-card__logo" />}
+                                    <span className="wv-card__tag"><CvIcon name="play" />{statusLabel(r)}</span>
                                 </span>
-                                <div>
-                                    <time>
-                                        {new Date(
-                                            item.starts_at,
-                                        ).toLocaleString("es-EC", {
-                                            dateStyle: "short",
-                                            timeStyle: "short",
-                                        })}
-                                    </time>
-                                    <h3>{item.title}</h3>
-                                    <p>
-                                        {durationLabel(item.duration)} ·
-                                        Pregrabado
-                                    </p>
-                                </div>
-                            </article>
+                                <span className="wv-card__body"><strong>{r.title}</strong><small>{r.category} · {r.date}</small></span>
+                            </a>
                         ))}
-                        {data && !data.next.length && (
-                            <div className="channel-agenda-empty">
-                                <svg
-                                    aria-hidden="true"
-                                    width="36"
-                                    height="36"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="1.2"
-                                >
-                                    <rect
-                                        x="3"
-                                        y="5"
-                                        width="18"
-                                        height="16"
-                                        rx="3"
-                                    />
-                                    <path d="M7 3v4m10-4v4M3 11h18m-13 5h3m2 0h3" />
-                                </svg>
-                                <h3>Más encuentros por venir</h3>
-                                <p>
-                                    Estamos preparando la siguiente
-                                    programación. Mientras tanto, explora los
-                                    contenidos disponibles.
-                                </p>
-                                <a href={shell.catalog}>
-                                    Ver contenidos{" "}
-                                    <span aria-hidden="true">↗</span>
-                                </a>
-                            </div>
-                        )}
-                        {!data && (
-                            <p className="channel-help">
-                                Consultando la programación…
-                            </p>
-                        )}
-                    </div>
-                    <div className="channel-total">
-                        <small>
-                            {data?.summary?.remainingSeconds
-                                ? "TIEMPO POR COMPARTIR"
-                                : "SIGAMOS CONECTADOS"}
-                        </small>
-                        <strong>
-                            {data?.summary?.remainingSeconds
-                                ? durationLabel(data.summary.remainingSeconds)
-                                : "Tu próxima historia, aquí."}
-                        </strong>
-                        <p>
-                            {data?.summary?.remainingSeconds
-                                ? "De contenido programado para ti."
-                                : "La señal se actualizará automáticamente."}
-                        </p>
-                    </div>
-                    <p className="channel-agenda-note">
-                        Los encuentros en directo tienen prioridad y pueden
-                        desplazar estos horarios.
-                    </p>
-                </aside>
-                {agendaOpen && <AgendaDialog items={data?.agenda || []} onClose={closeAgenda} returnFocusRef={agendaButton} />}
+                    </div> : <p className="wv-more__empty">Pronto encontrarás grabaciones de nuestra comunidad.</p>}
+                </section>}
                 </div>
+                {!tvMode && <aside ref={rail} className="channel-rail cv-rail" aria-label="En esta sala">
+                    <div className={`wv-side ${collapsed ? "is-collapsed" : ""} ${quietGuide ? "is-quiet" : ""}`}>
+                    <div className="wv-panel cv-panel" inert={collapsed}>
+                        <div className="wv-tabbar">
+                            {chatEvent ? <div className="wv-tabs" role="tablist" aria-label="Panel de la señal">
+                                <button type="button" role="tab" id="cv-tab-chat" aria-controls="cv-tabpanel-chat" aria-selected={tab === "chat"} className="wv-tab" onClick={() => setChosenTab("chat")}>
+                                    <CvIcon name="chat" />Chat
+                                </button>
+                                <button type="button" role="tab" id="cv-tab-guide" aria-controls="cv-tabpanel-guide" aria-selected={tab === "guide"} className="wv-tab" onClick={() => setChosenTab("guide")}>
+                                    <CvIcon name="calendar" />Programación
+                                </button>
+                            </div> : <h2 className="cv-panel__title"><CvIcon name="calendar" />Programación</h2>}
+                            <button ref={collapseButton} type="button" className="wv-side__toggle" onClick={() => setPanelCollapsed(true)} aria-label="Ocultar panel" title="Ocultar panel">
+                                <svg className="wv-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 15 6-6 6 6" /></svg>
+                            </button>
+                        </div>
+                        {chatEvent && <div className="wv-tabpanel" role="tabpanel" id="cv-tabpanel-chat" aria-labelledby="cv-tab-chat" hidden={tab !== "chat"}>
+                            <Chat
+                                key={chatEvent.id}
+                                endpoint={chatEvent.chatUrl}
+                                initial={[]}
+                                canModerate={false}
+                                chatEnabled={chatEvent.chatEnabled}
+                                chatRestricted={chatEvent.chatRestricted}
+                                isRecording={false}
+                                canComment
+                            />
+                        </div>}
+                        <div className="wv-tabpanel" {...(chatEvent ? { role: "tabpanel", "aria-labelledby": "cv-tab-guide" } : {})} id="cv-tabpanel-guide" hidden={tab !== "guide"}>
+                            <section className="channel-next cv-guide" aria-label="Próximas emisiones">
+                                {data?.event && <div className="cv-guide__now">
+                                    <h3>{live ? <i className="wv-live-dot" aria-hidden="true" /> : <CvIcon name="tv" />}Ahora</h3>
+                                    <a href={data.event.url}><GuideThumb image={data.event.image} live={live} /><span className="cv-guide__body"><strong>{data.event.title}</strong><small>{room.detail || statusLabel(data.event)}</small></span></a>
+                                </div>}
+                                <h3>A continuación</h3>
+                                <div className="channel-agenda">
+                                    {data?.next?.map((item) => (
+                                        <article key={item.id} className="channel-agenda-item cv-guide__item">
+                                            <GuideThumb image={item.image} />
+                                            <div className="cv-guide__body">
+                                                <time dateTime={item.starts_at}>{guideTime(item.starts_at)}</time>
+                                                <h4>{item.title}</h4><p>{shortDuration(item.duration)} · Canal 24/7</p>
+                                            </div>
+                                        </article>
+                                    ))}
+                                    {data && !data.next.length && <div className="cv-panel__empty cv-panel__empty--small">
+                                        <CvIcon name="calendar" />
+                                        <p><strong>Aún no hay emisiones programadas</strong>Mientras tanto, explora las grabaciones.</p>
+                                    </div>}
+                                    {!data && <p className="channel-help">Consultando la programación…</p>}
+                                </div>
+                                <button ref={agendaButton} type="button" className="channel-agenda-open cv-guide__all" onClick={() => setAgendaOpen(true)} aria-haspopup="dialog" aria-expanded={agendaOpen}>
+                                    <span className="cv-guide__all-icon" aria-hidden="true"><CvIcon name="calendar" /></span>
+                                    <span className="cv-guide__all-text">Ver programación completa</span>
+                                    <span className="cv-guide__all-arrow" aria-hidden="true">→</span>
+                                </button>
+                                <p className="cv-guide__note">Los directos tienen prioridad y pueden desplazar estos horarios.</p>
+                            </section>
+                        </div>
+                    </div>
+                    <div className="wv-side__app" inert={!collapsed && !quietGuide}>
+                        <button ref={expandButton} type="button" className="wv-side__show" onClick={() => setPanelCollapsed(false)}>
+                            <span className="wv-side__show-icon" aria-hidden="true"><CvIcon name={chatEvent ? "chat" : "calendar"} /></span>
+                            <span className="wv-side__show-text">{chatEvent ? "Mostrar chat y programación" : "Mostrar programación"}</span>
+                            <span className="wv-side__show-arrow" aria-hidden="true"><svg className="wv-icon" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg></span>
+                        </button>
+                        <AppCard />
+                    </div>
+                    </div>
+                </aside>}
             </div>
+            {agendaOpen && <AgendaDialog items={data?.agenda || []} onClose={closeAgenda} returnFocusRef={agendaButton} />}
         </div>
     );
+}
+
+const time = (date) => date.toLocaleTimeString("es-EC", { hour: "2-digit", minute: "2-digit" });
+
+function guideTime(iso) {
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) return "";
+    const today = new Date(), tomorrow = new Date(); tomorrow.setDate(today.getDate() + 1);
+    if (date.toDateString() === today.toDateString()) return `Hoy · ${time(date)}`;
+    if (date.toDateString() === tomorrow.toDateString()) return `Mañana · ${time(date)}`;
+    return `${date.toLocaleDateString("es-EC", { weekday: "short", day: "numeric", month: "short" })} · ${time(date)}`;
+}
+
+function shortDuration(seconds = 0) {
+    const minutes = Math.max(1, Math.round(seconds / 60));
+    return minutes >= 60 ? `${Math.floor(minutes / 60)} h${minutes % 60 ? ` ${minutes % 60} min` : ""}` : `${minutes} min`;
+}
+
+function untilLabel(iso, now) {
+    const minutes = Math.round((new Date(iso).getTime() - now) / 60000);
+    if (!Number.isFinite(minutes)) return "";
+    if (minutes <= 1) return "Comienza en un momento";
+    if (minutes < 60) return `Comienza en ${minutes} min`;
+    const hours = Math.floor(minutes / 60), rest = minutes % 60;
+    if (hours < 24) return `Comienza en ${hours} h${rest ? ` ${rest} min` : ""}`;
+    return `Comienza ${guideTime(iso).toLowerCase()}`;
+}
+
+/** "En esta sala": qué está pasando en la señal, en palabras simples. */
+function roomStatus(data, now) {
+    if (!data) return { badge: "Conectando" };
+    const next = data.next?.[0];
+    if (data.mode === "live") {
+        const viewers = data.event?.viewers ?? 0;
+        return { detail: `${viewers} ${viewers === 1 ? "espectador" : "espectadores"} conectados${data.resumeTitle ? ` · luego, «${data.resumeTitle}»` : ""}`, badge: "En vivo" };
+    }
+    if (data.mode === "scheduled") {
+        const remaining = Math.max(0, (data.playback?.duration || 0) - (data.playback?.position || 0));
+        const ends = new Date(Date.now() + remaining * 1000);
+        return { detail: data.playback?.state === "paused" ? "En pausa por un directo" : `Termina a las ${time(ends)}`, badge: "Canal 24/7" };
+    }
+    if (data.mode === "advertisement") {
+        return { detail: next ? `Luego: ${next.title}` : "En breve continúa la programación", badge: "P · Publicidad institucional" };
+    }
+    return { detail: next ? `Próxima: ${next.title} · ${untilLabel(next.starts_at, now).toLowerCase()}` : "Aún no hay programación anunciada", badge: "Sin emisión" };
+}
+
+const CV_ICONS = {
+    tv: <><rect x="3" y="6" width="18" height="12" rx="2" /><path d="M8 3l4 3 4-3" /></>,
+    megaphone: <path d="M4 10v4h3l7 4V6l-7 4H4Zm13-1.5a4 4 0 0 1 0 7" />,
+    pause: <path d="M9 6v12m6-12v12" />,
+    tag: <path d="M4 4h7l9 9-7 7-9-9z M8.5 8.5h.01" />,
+    refresh: <path d="M20 11a8 8 0 0 0-14.6-4.4L4 8m0-4v4h4m-4 5a8 8 0 0 0 14.6 4.4L20 16m0 4v-4h-4" />,
+    info: <><circle cx="12" cy="12" r="8.5" /><path d="M12 11v5m0-8v.1" /></>,
+    share: <><circle cx="18" cy="5" r="2" /><circle cx="6" cy="12" r="2" /><circle cx="18" cy="19" r="2" /><path d="m8 11 8-5m-8 7 8 5" /></>,
+    play: <path d="M8 5.5v13L18.5 12z" />,
+    chat: <path d="M5 6h14v9H9l-4 3z" />,
+    calendar: <><rect x="3.5" y="5" width="17" height="15" rx="2.5" /><path d="M8 3v4m8-4v4M3.5 10h17" /></>,
+};
+
+function CvIcon({ name }) {
+    return <svg className="wv-icon" viewBox="0 0 24 24" aria-hidden="true">{CV_ICONS[name]}</svg>;
 }

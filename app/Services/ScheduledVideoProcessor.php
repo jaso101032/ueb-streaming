@@ -23,13 +23,26 @@ class ScheduledVideoProcessor
         return ['duration' => (int) ceil($duration)];
     }
 
+    /**
+     * Reduce el video a la altura máxima configurada (1080p por defecto) sin
+     * deformarlo: cabe en una caja 16:9 de esa altura. Nunca lo agranda.
+     */
+    public static function scaleFilter(): string
+    {
+        $height = max(240, (int) config('streaming.max_height', 1080));
+        $height -= $height % 2;
+        $width = (int) (ceil($height * 16 / 9 / 2) * 2);
+
+        return "scale=w='min($width,iw)':h='min($height,ih)':force_original_aspect_ratio=decrease:force_divisible_by=2,setsar=1";
+    }
+
     public function transcode(string $source, string $output, int $duration, ?callable $onProgress = null): void
     {
         $process = new Process([config('streaming.ffmpeg'), '-nostdin', '-hide_banner', '-loglevel', 'error', '-nostats',
             '-stats_period', '1', '-progress', 'pipe:1', '-y',
             '-protocol_whitelist', 'file', '-i', $source,
             '-map', '0:v:0', '-map', '0:a:0?', '-sn', '-dn', '-map_metadata', '-1',
-            '-vf', "scale=w='min(1920,iw)':h='min(1080,ih)':force_original_aspect_ratio=decrease:force_divisible_by=2,setsar=1",
+            '-vf', self::scaleFilter(),
             '-c:v', 'libx264', '-preset', 'fast', '-crf', '23', '-pix_fmt', 'yuv420p', '-threads', '2',
             '-c:a', 'aac', '-b:a', '128k', '-ac', '2', '-movflags', '+faststart', $output]);
         // Long videos may take longer than real time on a small server. The

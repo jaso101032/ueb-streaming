@@ -122,8 +122,9 @@ class SubtitlesTest extends TestCase
         Storage::disk('local')->put('institutional-ads/aviso.mp4', 'mp4');
         $ad = InstitutionalAd::create(['title' => 'Aviso', 'path' => 'institutional-ads/aviso.mp4', 'duration' => 30,
             'processing_status' => 'ready', 'is_active' => true, 'ready_at' => now()]);
+        // Advertising has no subtitles controls in the panel; files sent before keep playing.
         $this->actingAs($this->admin)->get(route('admin.scheduled.index'))->assertOk()
-            ->assertSee(str_replace('/', '\\/', route('admin.ads.subtitles.store', $ad)), false);
+            ->assertDontSee(str_replace('/', '\\/', route('admin.ads.subtitles.store', $ad)), false);
         $this->post(route('admin.ads.subtitles.store', $ad), ['subtitles' => UploadedFile::fake()->createWithContent('a.vtt', $vtt)])
             ->assertSessionHasNoErrors();
         auth()->logout();

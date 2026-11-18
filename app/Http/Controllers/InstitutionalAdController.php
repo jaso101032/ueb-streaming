@@ -51,6 +51,25 @@ class InstitutionalAdController extends Controller
         return back()->with('success', $ad->is_active ? 'Publicidad activada.' : 'Publicidad desactivada.');
     }
 
+    /**
+     * Elimina el anuncio y sus archivos (original, optimizado y subtítulos).
+     * No se permite mientras se convierte: el proceso dejaría un archivo huérfano.
+     */
+    public function destroy(InstitutionalAd $ad)
+    {
+        if ($ad->processing_status === 'processing') {
+            return back()->with('error', 'Espera a que termine la conversión del anuncio para eliminarlo.');
+        }
+        Audit::record('publicidad.eliminada', $ad, ['titulo' => $ad->title]);
+        $files = array_filter([$ad->path, $ad->source_path]);
+        $subtitles = $ad->subtitles_path;
+        $ad->delete();
+        Storage::disk('local')->delete($files);
+        if ($subtitles) \App\Support\Subtitles::delete($subtitles);
+
+        return to_route('admin.scheduled.index', [], 303)->with('success', 'Anuncio eliminado.')->withFragment('schedule-ads');
+    }
+
     public function retry(InstitutionalAd $ad)
     {
         abort_unless($ad->processing_status === 'failed' && $ad->source_path, 409);

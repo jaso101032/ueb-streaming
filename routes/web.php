@@ -37,8 +37,12 @@ Route::get('/directo/{playbackId}/{sequence}.ts', [LivePlaybackController::class
     ->where(['playbackId' => '[a-z0-9]{32}', 'sequence' => '[0-9]{1,12}'])->name('live.segment');
 
 Route::get('/eventos', [EventoPublicoController::class, 'index'])->name('eventos.index');
+Route::get('/eventos/sugerencias', [EventoPublicoController::class, 'suggestions'])
+    ->middleware('throttle:90,1')->name('eventos.suggestions');
 Route::get('/eventos/{evento}/reproduccion', [RecordingController::class, 'state'])->name('eventos.playback-state');
 Route::get('/eventos/{evento}/grabacion', [RecordingController::class, 'show'])->name('eventos.recording');
+Route::get('/eventos/{evento}/calidades/{file}', [\App\Http\Controllers\RenditionController::class, 'show'])
+    ->where('file', \App\Services\AdaptiveRenditions::FILE_PATTERN)->name('eventos.renditions');
 // Presence is anonymous telemetry, not an account action. It must work from
 // every public viewer (including phones behind the local HLS proxy), so it
 // cannot rely on a browser session's CSRF token. Rate limiting remains active.
@@ -100,7 +104,6 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::post('/contenido-programado/publicidad/{ad}/subtitulos', [SubtitleController::class, 'uploadAd'])->middleware('throttle:20,1')->name('ads.subtitles.store');
     Route::delete('/contenido-programado/publicidad/{ad}/subtitulos', [SubtitleController::class, 'removeAd'])->middleware('throttle:20,1')->name('ads.subtitles.destroy');
     Route::post('/eventos/{evento}/subtitulos/generar', [SubtitleController::class, 'generate'])->middleware('throttle:20,1')->name('subtitles.generate');
-    Route::post('/contenido-programado/publicidad/{ad}/subtitulos/generar', [SubtitleController::class, 'generateAd'])->middleware('throttle:20,1')->name('ads.subtitles.generate');
 });
 
 // Administrators and streaming operators can create and maintain event details.
@@ -135,6 +138,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin/contenido-programado')-
     Route::get('/progreso', [ScheduledVideoController::class, 'progress'])->name('admin.scheduled.progress');
     Route::post('/publicidad', [InstitutionalAdController::class, 'store'])->middleware('throttle:10,1')->name('admin.ads.store');
     Route::post('/publicidad/{ad}/estado', [InstitutionalAdController::class, 'toggle'])->name('admin.ads.toggle');
+    Route::delete('/publicidad/{ad}', [InstitutionalAdController::class, 'destroy'])->middleware('throttle:20,1')->name('admin.ads.destroy');
     Route::post('/publicidad/{ad}/reintentar', [InstitutionalAdController::class, 'retry'])->middleware('throttle:5,1')->name('admin.ads.retry');
     Route::post('/{evento}/reintentar', [ScheduledVideoController::class, 'retry'])->middleware('throttle:5,1')->name('admin.scheduled.retry');
     Route::get('/', [ScheduledVideoController::class, 'index'])->name('admin.scheduled.index');

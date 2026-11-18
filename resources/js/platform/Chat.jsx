@@ -14,6 +14,8 @@ export default function Chat({
     playbackSeconds = 0,
     onSeek,
     onDraft,
+    viewers = null,
+    videoDuration = 0,
 }) {
     const { user, login, csrf } = useShell(),
         [messages, setMessages] = useState(isRecording && seekable ? [] : initial),
@@ -24,7 +26,7 @@ export default function Chat({
         [removing, setRemoving] = useState(null),
         [enabled, setEnabled] = useState(chatEnabled),
         [restricted, setRestricted] = useState(chatRestricted),
-        [mobileOpen, setMobileOpen] = useState(false),
+        [unseen, setUnseen] = useState(0),
         [visibleLimit, setVisibleLimit] = useState(80),
         [version, setVersion] = useState(0);
     const replay = isRecording && seekable;
@@ -149,12 +151,15 @@ export default function Chat({
             document.removeEventListener("visibilitychange", visible);
         };
     }, [endpoint, version, replay]);
+    const lastCount = useRef(0);
     useLayoutEffect(() => {
         if (bottom.current && list.current)
             list.current.scrollTop = list.current.scrollHeight;
     }, [messages, playbackSeconds]);
     const reachedMessages = replay
-        ? messages.filter((m) => m.playback_seconds == null || m.playback_seconds <= playbackSeconds)
+        // Los comentarios escritos después del final del video aparecen al terminar.
+        ? messages.filter((m) => m.playback_seconds == null || m.playback_seconds <= playbackSeconds
+            || (videoDuration > 0 && m.playback_seconds > videoDuration && playbackSeconds >= Math.floor(videoDuration) - 1))
         : messages;
     const visibleMessages = replay ? reachedMessages.slice(-visibleLimit) : reachedMessages;
     const earlierCount = reachedMessages.length - visibleMessages.length;
@@ -212,158 +217,118 @@ export default function Chat({
             setRemoving(null);
         }
     }
-    const latestMessage = visibleMessages.at(-1);
+    // "Nuevos mensajes ↓" cuando llegan mensajes mientras se lee más arriba.
+    useEffect(() => {
+        const added = visibleMessages.length - lastCount.current;
+        lastCount.current = visibleMessages.length;
+        if (added > 0 && !bottom.current) setUnseen((count) => count + added);
+    }, [visibleMessages.length]);
+    const toBottom = () => {
+        bottom.current = true; setUnseen(0);
+        if (list.current) list.current.scrollTop = list.current.scrollHeight;
+    };
+    const statusText = commentsOpen ? (isRecording ? "Comentarios abiertos" : "En vivo") : "Solo lectura";
+    // El minuto del comentario solo se muestra si lleva a un momento real de la grabación.
+    const momentFor = (m) => replay && onSeek && m.playback_seconds != null && videoDuration > 0 && m.playback_seconds <= videoDuration + 1
+        ? m.playback_seconds : null;
     return (
-        <aside className={`uebtv-live-chat ${mobileOpen ? "is-mobile-open" : "is-mobile-collapsed"}`} ref={panelRef}>
-            <div className="uebtv-live-chat__header">
-                <div>
-                    <p className="uebtv-kicker">
-                        <span />
-                        COMUNIDAD
-                    </p>
-                    <h2>{isRecording ? "Comentarios" : "Chat en vivo"}</h2>
-                    <p className="watch-chat-subtitle">
-                        {commentsOpen ? "Comparte el momento con la comunidad." : !canComment ? "Mensajes conservados junto a cada momento del video." : restricted ? "Tu cuenta no puede comentar; puedes leer la conversación." : "Los comentarios están desactivados; el historial sigue visible."}
-                    </p>
-                </div>
-                <div className="uebtv-live-chat__header-actions">
-                    <span className={`uebtv-chat-status ${commentsOpen ? "is-open" : "is-closed"}`}>
-                        <i aria-hidden="true" />{commentsOpen ? "Activo" : "Solo lectura"}
-                    </span>
-                    <button type="button" className="uebtv-chat-expand" aria-controls="uebtv-chat-content" aria-expanded={mobileOpen} aria-label={mobileOpen ? "Ocultar comentarios" : "Mostrar comentarios"} onClick={() => setMobileOpen((open) => !open)}>
-                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
-                    </button>
-                </div>
+        <div className={`wv-chat ${!messages.length && !commentsOpen ? "is-empty" : ""}`} ref={panelRef}>
+            <div className="wv-chat__bar">
+                <span className={`wv-chat__status ${commentsOpen ? "is-open" : ""}`}><i aria-hidden="true" />{statusText}</span>
+                {viewers != null && <span className="wv-chat__viewers" title="Espectadores conectados"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 19v-1.3c0-2-1.8-3.7-4-3.7s-4 1.7-4 3.7V19m4-5a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" /></svg>{viewers}</span>}
+                {replay && <span className="wv-chat__hint">Aparecen al llegar a su momento del video</span>}
             </div>
-            <p className="uebtv-chat-preview">
-                {latestMessage ? <><strong>{latestMessage.user}</strong><span>{latestMessage.message}</span></> : replay ? "Los comentarios aparecerán mientras avanza el video." : "Abre el chat para participar en la conversación."}
-            </p>
-            <div className="uebtv-live-chat__content" id="uebtv-chat-content">
-            {chatToggleUrl && canComment && <form method="POST" action={chatToggleUrl} className="uebtv-chat-control">
-                <input type="hidden" name="_token" value={csrf} />
-                <input type="hidden" name="enabled" value={enabled ? "0" : "1"} />
-                <button type="submit">{enabled ? "Desactivar comentarios" : "Activar comentarios"}</button>
-            </form>}
-            <div
-                ref={list}
-                className="uebtv-live-chat__messages"
-                aria-label="Mensajes de la comunidad"
-                onScroll={() => {
-                    const l = list.current;
-                    bottom.current =
-                        l.scrollHeight - l.scrollTop - l.clientHeight < 60;
-                }}
-            >
-                {earlierCount > 0 && <button type="button" className="uebtv-chat-history" onClick={() => {
-                    bottom.current = false;
-                    setVisibleLimit((limit) => limit + 80);
-                }}>Ver {Math.min(earlierCount, 80)} comentarios anteriores</button>}
-                {visibleMessages.map((m) => (
-                    <div className="uebtv-chat-message" key={m.id}>
-                        <span className="uebtv-chat-avatar">
-                            {Array.from(m.user)[0]?.toUpperCase()}
-                        </span>
-                        <div className="uebtv-chat-message__body">
-                            <div className="uebtv-chat-message__meta">
-                                <strong>{m.user}</strong>
-                                {canModerate && (
-                                    <button
-                                        type="button"
-                                        className="uebtv-chat-remove"
-                                        aria-label={`Retirar mensaje de ${m.user}`}
-                                        disabled={removing === m.id}
-                                        onClick={() => remove(m)}
-                                    >
-                                        Retirar
-                                    </button>
-                                )}
-                            </div>
-                            <p className="uebtv-chat-bubble">{m.message}</p>
-                            {isRecording && m.playback_seconds != null && (
-                                seekable && onSeek ? (
-                                    <button
-                                        type="button"
-                                        className="uebtv-chat-time"
-                                        onClick={() => onSeek(m.playback_seconds)}
-                                        aria-label={`Ir al minuto ${formatPlaybackTime(m.playback_seconds)} de la grabación`}
-                                        title="Ver este momento de la grabación"
-                                    >
-                                        <span aria-hidden="true">▶</span>Ver momento {formatPlaybackTime(m.playback_seconds)}
-                                    </button>
-                                ) : (
-                                    <span className="uebtv-chat-time" title="Minuto de la emisión">
-                                        Momento {formatPlaybackTime(m.playback_seconds)}
-                                    </span>
-                                )
-                            )}
-                        </div>
-                    </div>
-                ))}
-                {!visibleMessages.length && !connection && (
-                    <div className="uebtv-chat-empty">
-                        {replay ? "Los comentarios aparecerán al llegar a su momento en el video." : "Sé el primero en compartir una idea."}
-                    </div>
-                )}
-            </div>
-            <p className="uebtv-chat-feedback" role="status">
-                {connection}
-            </p>
-            {error && (
-                <p
-                    id="chatError"
-                    className="uebtv-chat-feedback is-error"
-                    role="alert"
+            <div className="wv-chat__body" id="uebtv-chat-content">
+                {chatToggleUrl && canComment && <form method="POST" action={chatToggleUrl} className="wv-chat__control">
+                    <input type="hidden" name="_token" value={csrf} />
+                    <input type="hidden" name="enabled" value={enabled ? "0" : "1"} />
+                    <button type="submit">{enabled ? "Desactivar comentarios" : "Activar comentarios"}</button>
+                    {canModerate && <small>Puedes retirar mensajes inapropiados.</small>}
+                </form>}
+                <div
+                    ref={list}
+                    className="wv-chat__list"
+                    role="log"
+                    aria-label="Mensajes de la comunidad"
+                    onScroll={() => {
+                        const l = list.current;
+                        bottom.current = l.scrollHeight - l.scrollTop - l.clientHeight < 60;
+                        if (bottom.current) setUnseen(0);
+                    }}
                 >
-                    {error}
-                </p>
-            )}
-            {canModerate && (
-                <p className="uebtv-live-chat__note">
-                    Moderación: puedes retirar mensajes inapropiados.
-                </p>
-            )}
-            {!commentsOpen ? (
-                <div className="uebtv-live-chat__closed" role="status">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /></svg>
-                    <p><strong>{!canComment ? "El chat terminó con la transmisión." : restricted ? "Tu cuenta tiene restringidos los comentarios." : "Los comentarios están desactivados."}</strong> Puedes seguir leyendo los mensajes publicados.</p>
+                    {earlierCount > 0 && <button type="button" className="wv-chat__history" onClick={() => {
+                        bottom.current = false;
+                        setVisibleLimit((limit) => limit + 80);
+                    }}>Ver {Math.min(earlierCount, 80)} comentarios anteriores</button>}
+                    {visibleMessages.map((m) => (
+                        <div className="wv-msg" key={m.id} style={{ "--hue": userHue(m.user) }}>
+                            <span className="wv-msg__avatar" aria-hidden="true">{Array.from(m.user)[0]?.toUpperCase()}</span>
+                            <div className="wv-msg__body">
+                                <div className="wv-msg__meta">
+                                    <strong>{m.user}</strong>
+                                    {momentFor(m) != null
+                                        ? <button type="button" className="wv-msg__moment" onClick={() => onSeek(m.playback_seconds)} aria-label={`Ir al minuto ${formatPlaybackTime(m.playback_seconds)} del video`} title="Ver este momento del video"><span aria-hidden="true">▶</span>{formatPlaybackTime(m.playback_seconds)}</button>
+                                        : m.created_at && <time dateTime={m.created_at} title={new Date(m.created_at).toLocaleString("es-EC")}>{clockTime(m.created_at)}</time>}
+                                    {canModerate && <button type="button" className="wv-msg__remove" aria-label={`Retirar mensaje de ${m.user}`} disabled={removing === m.id} onClick={() => remove(m)}>Retirar</button>}
+                                </div>
+                                <p className="wv-msg__text">{m.message}</p>
+                            </div>
+                        </div>
+                    ))}
+                    {!visibleMessages.length && !connection && (
+                        <div className="wv-chat__empty">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6h14v9H9l-4 3z" /></svg>
+                            {replay ? "Los comentarios aparecerán al llegar a su momento en el video." : commentsOpen ? "Sé el primero en compartir una idea." : "Todavía no hay comentarios."}
+                        </div>
+                    )}
                 </div>
-            ) : user ? (
-                <>
-                    <form className="uebtv-live-chat__form" onSubmit={send}>
-                        <input
-                            aria-label="Tu mensaje"
-                            aria-describedby={error ? "chatError" : undefined}
-                            required
-                            maxLength={180}
-                            value={draft}
-                            onChange={(e) => {
-                                setDraft(e.target.value);
-                            }}
-                            placeholder="Comparte una idea…"
-                        />
-                        <button
-                            type="submit"
-                            disabled={busy}
-                            aria-label="Enviar mensaje"
-                        >
-                            <svg viewBox="0 0 24 24" aria-hidden="true">
-                                <path d="M4 12h15M12 5l7 7-7 7" />
-                            </svg>
-                        </button>
-                    </form>
-                    <p className="uebtv-live-chat__note">
-                        Participas como {user.name} · Respeta a la comunidad.
-                    </p>
-                </>
-            ) : (
-                <div className="uebtv-live-chat__login">
-                    <p>Inicia sesión para participar.</p>
-                    <a className="uebtv-live-chat__login-action" href={login}>
-                        Iniciar sesión ↗
-                    </a>
+                {unseen > 0 && <button type="button" className="wv-chat__new" onClick={toBottom}>{unseen === 1 ? "1 mensaje nuevo" : `${unseen} mensajes nuevos`} ↓</button>}
+                {connection && <p className="wv-chat__feedback" role="status">{connection}</p>}
+                {error && <p id="chatError" className="wv-chat__feedback is-error" role="alert">{error}</p>}
+                <div className="wv-chat__footer">
+                    {!commentsOpen ? (
+                        <p className="wv-chat__closed" role="status">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /></svg>
+                            <span><strong>{!canComment ? "El chat terminó con la transmisión." : restricted ? "Tu cuenta tiene restringidos los comentarios." : "Los comentarios están desactivados."}</strong> Puedes seguir leyendo.</span>
+                        </p>
+                    ) : user ? (
+                        <form className="wv-chat__form" onSubmit={send}>
+                            <input
+                                aria-label="Tu mensaje"
+                                aria-describedby={error ? "chatError" : undefined}
+                                required
+                                maxLength={180}
+                                value={draft}
+                                onChange={(e) => setDraft(e.target.value)}
+                                placeholder={`Comenta como ${user.name}…`}
+                            />
+                            {draft.length > 150 && <span className="wv-chat__counter" aria-live="polite">{180 - draft.length}</span>}
+                            <button type="submit" disabled={busy} aria-label="Enviar mensaje">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M12 5l7 7-7 7" /></svg>
+                            </button>
+                        </form>
+                    ) : (
+                        <div className="wv-chat__login">
+                            <span>Inicia sesión para comentar.</span>
+                            <a href={login}>Iniciar sesión</a>
+                        </div>
+                    )}
                 </div>
-            )}
             </div>
-        </aside>
+        </div>
     );
+}
+
+/** Color estable por persona (avatar y nombre), como en las plataformas de streaming. */
+function userHue(name = "") {
+    let hash = 0;
+    for (const char of name) hash = (hash * 31 + char.codePointAt(0)) % 360;
+    return hash;
+}
+
+function clockTime(iso) {
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) return "";
+    const time = date.toLocaleTimeString("es-EC", { hour: "2-digit", minute: "2-digit" });
+    return date.toDateString() === new Date().toDateString() ? time : `${date.toLocaleDateString("es-EC", { day: "numeric", month: "short" })} · ${time}`;
 }

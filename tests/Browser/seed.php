@@ -5,6 +5,7 @@ use App\Models\Categoria;
 use App\Models\ChatMessage;
 use App\Models\Evento;
 use App\Models\Facultad;
+use App\Models\InstitutionalAd;
 use App\Models\User;
 use Illuminate\Contracts\Console\Kernel;
 
@@ -30,3 +31,7 @@ $chatEvent = Evento::create(['titulo' => 'Encuentro de la comunidad', 'slug' => 
     'estado' => 'programado', 'categoria_id' => $category->id, 'facultad_id' => $faculty->id,
     'organizador_id' => $admin->id, 'tipo_evento' => 'Conferencias',
     'fecha_inicio' => now()->addDay()]);
+// Inactive ad (never airs, so it cannot interfere with the channel tests) used
+// to check the advertising list layout with its subtitles block.
+InstitutionalAd::create(['title' => 'UEB music', 'path' => 'institutional-ads/ueb-music.mp4', 'duration' => 175,
+    'processing_status' => 'ready', 'ready_at' => now(), 'is_active' => false]);

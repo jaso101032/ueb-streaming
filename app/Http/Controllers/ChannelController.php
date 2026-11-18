@@ -9,7 +9,13 @@ class ChannelController extends Controller
 {
     public function index()
     {
-        return view('channel');
+        // "Mientras tanto, mira…": grabaciones recientes que esta persona puede ver.
+        $recent = \App\Models\Evento::with(['facultad', 'carrera', 'categoria', 'transmision', 'organizador', 'scheduledVideo'])
+            ->where('estado', 'finalizado')->visibleTo(auth()->user())
+            ->latest('fecha_inicio')->take(8)->get()
+            ->map(fn ($evento) => ReactPage::event($evento))->values();
+
+        return view('channel', ['recent' => $recent]);
     }
 
     public function state(ChannelSchedule $schedule)
@@ -20,6 +26,7 @@ class ChannelController extends Controller
         $advertisement = $live || $active ? null : $schedule->advertisement();
         $upcoming = collect($items)->filter(fn ($i) => $i['state'] === 'upcoming')->map(fn ($i) => [
             'id' => $i['event']->id, 'title' => $i['event']->titulo, 'starts_at' => $i['starts_at'], 'duration' => $i['duration'],
+            'image' => $i['event']->miniatura ? asset('storage/'.$i['event']->miniatura) : null,
         ])->values();
         $next = $upcoming->take(5)->values();
         $event = $live?->evento ?? ($active['event'] ?? null);

@@ -503,11 +503,19 @@ html[data-theme="dark"] .uebtv-chat-control button { border-color:#6ca8e6; backg
 .react-subtitles { display:grid; gap:8px; margin:14px 0; }
 .subtitle-form { display:grid; grid-template-columns:minmax(0,1fr); gap:8px; min-width:0; }
 .subtitle-form > * { min-width:0; }
-.subtitle-form form { display:grid; grid-template-columns:minmax(0,1fr); gap:8px; }
-.subtitle-form input[type=file] { max-width:100%; }
 .react-subtitles { min-width:0; overflow-wrap:anywhere; }
-.subtitle-form label small { opacity:.7; font-weight:400; }
-.ad-studio-item .subtitle-form { grid-column:1 / -1; padding-top:8px; }
+/* Botones con ícono (anuncios y subtítulos). */
+:is(.ad-studio-item__actions, .subtitle-form__actions) .studio-button { display:inline-flex; align-items:center; justify-content:center; gap:6px; }
+/* Eliminar se distingue: acción destructiva en rojo. */
+.ad-studio-item__actions .studio-button.studio-delete { border:1px solid #f0c2cb; background:#fff1f3; color:#a32640; box-shadow:none; }
+.ad-studio-item__actions .studio-button.studio-delete:hover { background:#ffe1e6; border-color:#d9475f; }
+html[data-theme="dark"] .ad-studio-item__actions .studio-button.studio-delete { border-color:#7a2a3a; background:#3a1520; color:#ffb3c0; }
+html[data-theme="dark"] .ad-studio-item__actions .studio-button.studio-delete:hover { background:#4d1a28; border-color:#ff6b84; }
+.subtitle-form__icon { width:16px; height:16px; flex:0 0 auto; fill:none; stroke:currentColor; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; }
+/* La fila del anuncio es flexible: los subtítulos bajan a su propia línea a
+   todo el ancho, para no aplastar el nombre del anuncio. */
+.ad-studio-item { flex-wrap:wrap; }
+.ad-studio-item .ad-studio-item__body { flex:1 1 180px; }
 .subtitle-form__status { display:flex; flex-wrap:wrap; align-items:center; gap:6px 8px; margin:0; font-size:.88rem; line-height:1.45; }
 .subtitle-form__status.is-error { color:#a4262c; }
 .subtitle-form__badge { display:inline-block; padding:2px 8px; border-radius:999px; background:#e3f3e8; color:#17643a; font-size:.72rem; font-weight:700; letter-spacing:.02em; text-transform:uppercase; }
@@ -524,3 +532,6 @@ html[data-theme="dark"] .uebtv-chat-control button { border-color:#6ca8e6; backg
 .uebtv-license-guide dd { margin:2px 0 0; color:#526780; line-height:1.5; }
 .uebtv-license-guide p { color:#526780; }
 html[data-theme="dark"] .uebtv-license-guide :is(dd,p) { color:#aebfd3; }
+
+.react-renditions__levels { display:flex; flex-wrap:wrap; gap:6px; }
+.react-renditions__levels span { padding:3px 9px; border-radius:999px; background:#eaf2fc; color:#124e97; font-size:.75rem; font-weight:700; }

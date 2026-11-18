@@ -25,7 +25,7 @@ class Transmision extends Model
         'recording_ready_at', 'recording_attempt_at', 'recording_attempts', 'recording_error',
         'recording_fps_limit', 'recording_metadata',
         'playback_id', 'publicacion', 'publicacion_revisada_por', 'publicacion_revisada_en', 'subtitles_path',
-        'subtitles_source', 'subtitles_status', 'subtitles_progress', 'subtitles_error', 'subtitles_attempts', 'subtitles_attempt_at',
+        'subtitles_source', 'subtitles_status', 'subtitles_progress', 'subtitles_error', 'subtitles_attempts', 'subtitles_attempt_at', 'renditions_path', 'renditions_status', 'renditions_progress', 'renditions_error', 'renditions_attempts', 'renditions_attempt_at', 'renditions_levels',
     ];
 
     protected $casts = [
@@ -41,6 +41,10 @@ class Transmision extends Model
         'subtitles_progress' => 'integer',
         'subtitles_attempts' => 'integer',
         'subtitles_attempt_at' => 'datetime',
+        'renditions_progress' => 'integer',
+        'renditions_attempts' => 'integer',
+        'renditions_attempt_at' => 'datetime',
+        'renditions_levels' => 'array',
     ];
 
     protected $attributes = ['publicacion' => 'pendiente'];

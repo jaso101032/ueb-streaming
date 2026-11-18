@@ -91,7 +91,7 @@ class AutomaticSubtitlesTest extends TestCase
         $this->assertSame($path, $event->transmision->fresh()->subtitles_path);
     }
 
-    public function test_scheduled_programs_and_advertising_are_transcribed_too(): void
+    public function test_scheduled_programs_are_transcribed_but_advertising_is_not(): void
     {
         $category = Categoria::firstOrCreate(['slug' => 'general'], ['nombre' => 'General']);
         $event = Evento::create(['titulo' => 'Programa', 'slug' => 'programa', 'tipo_evento' => 'Emisión pregrabada',
@@ -108,11 +108,11 @@ class AutomaticSubtitlesTest extends TestCase
         $this->work();
 
         $this->assertSame('auto', $scheduled->fresh()->subtitles_source);
-        $this->assertSame('auto', $ad->fresh()->subtitles_source);
+        $this->assertNull($ad->fresh()->subtitles_path, 'Institutional advertising is never transcribed.');
+        $this->assertNull($ad->fresh()->subtitles_status);
         $this->assertNull($converting->fresh()->subtitles_path, 'Videos still converting wait until they are ready.');
         $this->get(route('eventos.subtitles', $event))->assertOk();
-        $this->get(route('channel.ad.subtitles', $ad))->assertOk();
-        $this->actingAs($this->admin)->get(route('admin.scheduled.index'))->assertOk()->assertSee('"source":"auto"');
+        $this->actingAs($this->admin)->get(route('admin.eventos.show', $event))->assertOk()->assertSee('"source":"auto"');
     }
 
     public function test_live_streams_and_unfinished_recordings_are_never_transcribed(): void
@@ -186,7 +186,9 @@ class AutomaticSubtitlesTest extends TestCase
         $this->travel(1)->day();
         $this->work();
         $this->assertSame(1, $event->transmision->fresh()->subtitles_attempts);
-        $this->actingAs($this->admin)->get(route('admin.eventos.show', $event))->assertOk()->assertSee('"status":"no_speech"');
+        $page = $this->actingAs($this->admin)->get(route('admin.eventos.show', $event))->assertOk()->assertSee('"status":"no_speech"');
+        // Nothing to click: a silent video simply has no subtitles.
+        $page->assertDontSee(route('admin.subtitles.generate', $event, false), false);
     }
 
     public function test_failures_are_retried_later_up_to_three_times(): void
@@ -225,14 +227,16 @@ class AutomaticSubtitlesTest extends TestCase
         $this->work();
         $this->assertStringContainsString('faster-whisper', $event->transmision->fresh()->subtitles_error);
 
-        Storage::disk('local')->put('institutional-ads/ok.mp4', 'speech');
-        $ad = InstitutionalAd::create(['title' => 'Sin archivo', 'path' => 'institutional-ads/borrado.mp4', 'duration' => 30,
-            'processing_status' => 'ready', 'is_active' => true, 'ready_at' => now()]);
+        $category = Categoria::firstOrCreate(['slug' => 'general'], ['nombre' => 'General']);
+        $program = Evento::create(['titulo' => 'Sin archivo', 'slug' => 'sin-archivo', 'tipo_evento' => 'Emisión pregrabada',
+            'categoria_id' => $category->id, 'organizador_id' => $this->admin->id, 'fecha_inicio' => now()->addDay(), 'estado' => 'programado']);
+        $missing = $program->scheduledVideo()->create(['path' => 'scheduled-videos/borrado.mp4', 'duration' => 30,
+            'processing_status' => 'ready', 'ready_at' => now()]);
         $this->work();
-        $ad->refresh();
-        $this->assertSame('failed', $ad->subtitles_status);
-        $this->assertSame('No se encontró el archivo de video.', $ad->subtitles_error);
-        $this->assertSame(3, $ad->subtitles_attempts);
+        $missing->refresh();
+        $this->assertSame('failed', $missing->subtitles_status);
+        $this->assertSame('No se encontró el archivo de video.', $missing->subtitles_error);
+        $this->assertSame(3, $missing->subtitles_attempts);
     }
 
     public function test_only_administrators_can_request_generation_and_the_feature_can_be_disabled(): void

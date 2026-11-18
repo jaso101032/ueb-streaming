@@ -4,7 +4,7 @@ test("a live-room chat changes to read-only when admin disables comments", async
     const visitorContext = await browser.newContext();
     const visitor = await visitorContext.newPage();
     await visitor.goto("/eventos/2");
-    await expect(visitor.locator(".uebtv-chat-status")).toContainText("Activo");
+    await expect(visitor.locator(".wv-chat__status")).toContainText(/En vivo|Abierto/i);
 
     await page.goto("/login");
     await page.getByLabel("Correo electrónico", { exact: true }).fill("admin@ui.test");
@@ -14,10 +14,10 @@ test("a live-room chat changes to read-only when admin disables comments", async
     await page.goto("/admin/eventos/2");
     await page.getByRole("button", { name: "Desactivar comentarios" }).click();
     await expect(page.getByText("Comentarios deshabilitados.", { exact: false })).toBeVisible();
-    await expect(visitor.locator(".uebtv-chat-status")).toContainText("Solo lectura", { timeout: 12000 });
-    await expect(visitor.locator(".uebtv-live-chat__closed")).toContainText("Los comentarios están desactivados");
+    await expect(visitor.locator(".wv-chat__status")).toContainText("Solo lectura", { timeout: 12000 });
+    await expect(visitor.locator(".wv-chat__closed")).toContainText("Los comentarios están desactivados");
 
     await page.getByRole("button", { name: "Activar comentarios" }).click();
-    await expect(visitor.locator(".uebtv-chat-status")).toContainText("Activo", { timeout: 12000 });
+    await expect(visitor.locator(".wv-chat__status")).toContainText(/En vivo|Abierto/i, { timeout: 12000 });
     await visitorContext.close();
 });

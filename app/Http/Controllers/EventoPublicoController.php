@@ -8,6 +8,7 @@ use App\Models\Facultad;
 use App\Services\ChatFeed;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class EventoPublicoController extends Controller
@@ -81,6 +82,42 @@ class EventoPublicoController extends Controller
     }
 
     /**
+     * Sugerencias del buscador del catálogo (como en YouTube): títulos que la
+     * persona puede ver, sin distinguir mayúsculas ni tildes. Primero los que
+     * empiezan como lo escrito, después los que tienen una palabra que empieza
+     * así y al final los que lo contienen; entre iguales, los más recientes.
+     */
+    public function suggestions(Request $request)
+    {
+        $normalize = fn (string $text) => Str::lower(Str::ascii($text));
+        $term = $normalize(trim((string) $request->query('q', '')));
+        if (mb_strlen($term) < 2 || mb_strlen($term) > 120) {
+            return response()->json([]);
+        }
+        $candidates = Evento::query()->with('categoria:id,nombre')->visibleTo($request->user())
+            ->where('estado', '!=', 'cancelado')->latest('fecha_inicio')->limit(500)
+            ->get(['id', 'titulo', 'estado', 'categoria_id', 'fecha_inicio', 'visibilidad', 'miniatura']);
+        $ranked = [];
+        foreach ($candidates as $index => $event) {
+            $title = $normalize($event->titulo);
+            $rank = str_starts_with($title, $term) ? 0
+                : (preg_match('/(^|[^a-z0-9])'.preg_quote($term, '/').'/', $title) ? 1 : (str_contains($title, $term) ? 2 : null));
+            if ($rank !== null) $ranked[] = [$rank, $index, $event];
+        }
+        usort($ranked, fn ($a, $b) => [$a[0], $a[1]] <=> [$b[0], $b[1]]);
+
+        return response()->json(array_map(fn ($row) => [
+            'id' => $row[2]->id,
+            'title' => $row[2]->titulo,
+            'url' => route('eventos.show', $row[2], false),
+            'category' => $row[2]->categoria?->nombre,
+            'live' => $row[2]->estado === 'en_vivo',
+            'image' => $row[2]->miniatura ? asset('storage/'.$row[2]->miniatura) : null,
+            'date' => $row[2]->fecha_inicio?->format('d/m/Y'),
+        ], array_slice($ranked, 0, 6)));
+    }
+
+    /**
      * Muestra la sala de reproducción en vivo o diferido de un evento específico.
      */
     public function show(Request $request, Evento $evento, ChatFeed $feed)
@@ -91,13 +128,17 @@ class EventoPublicoController extends Controller
             abort(404);
         }
         $evento->load(['facultad', 'carrera', 'categoria', 'transmision', 'organizador', 'scheduledVideo']);
-        $eventosRelacionados = Evento::with(['facultad', 'carrera', 'categoria', 'transmision', 'organizador', 'scheduledVideo'])
+        // "Más para ver": primero lo que está en vivo, luego lo próximo, luego la
+        // misma categoría y por último lo más reciente. Respeta la visibilidad.
+        $candidatos = fn () => Evento::with(['facultad', 'carrera', 'categoria', 'transmision', 'organizador', 'scheduledVideo'])
             ->whereKeyNot($evento->id)
             ->where('estado', '!=', 'cancelado')
-            ->visibleTo($request->user())
-            ->latest('fecha_inicio')
-            ->take(4)
-            ->get();
+            ->visibleTo($request->user());
+        $eventosRelacionados = $candidatos()->where('estado', 'en_vivo')->latest('fecha_inicio')->take(4)->get()
+            ->concat($candidatos()->where('estado', 'programado')->where('fecha_inicio', '>', now())->orderBy('fecha_inicio')->take(4)->get())
+            ->concat($evento->categoria_id ? $candidatos()->where('categoria_id', $evento->categoria_id)->latest('fecha_inicio')->take(8)->get() : collect())
+            ->concat($candidatos()->latest('fecha_inicio')->take(8)->get())
+            ->unique('id')->take(8)->values();
 
         $chatMessages = $feed->messages($evento);
         $canModerate = (bool) auth()->user()?->allowsOperatorAction('moderate_chat');

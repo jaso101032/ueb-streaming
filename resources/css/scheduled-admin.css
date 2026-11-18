@@ -133,8 +133,8 @@ html[data-theme="dark"] .schedule-quick-nav button[aria-pressed="true"] { border
 html[data-theme="dark"] .schedule-quick-nav button[aria-pressed="true"] svg { color:#fff; }
 html[data-theme="dark"] .schedule-quick-nav-count { border:1px solid #315b82; background:#1b3e64; color:#c2e0ff; }
 html[data-theme="dark"] .ad-studio { border-color:#3a628a; }
-html[data-theme="dark"] .ad-studio-heading h2,.ad-studio-item__body h4 { color:#edf6ff; }
-html[data-theme="dark"] .ad-studio-heading p:last-child,.ad-studio-item__body p,.ad-studio-item__body small { color:#a9c2dc; }
+html[data-theme="dark"] :is(.ad-studio-heading h2, .ad-studio-item__body h4) { color:#edf6ff; }
+html[data-theme="dark"] :is(.ad-studio-heading p:last-child, .ad-studio-item__body p, .ad-studio-item__body small) { color:#a9c2dc; }
 html[data-theme="dark"] .ad-studio-item { border-color:#294b6b; }
 html[data-theme="dark"] .ad-studio-item__mark { border-color:#4c78a4; background:#183d63; color:#d4e9ff; }
 @media(max-width:950px) { .ad-studio-grid { grid-template-columns:minmax(0,1fr); } }

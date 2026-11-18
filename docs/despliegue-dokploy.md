@@ -191,3 +191,66 @@ Para revisar el trabajador: `docker compose logs -f subtitles`.
 En desarrollo local, instala faster-whisper en un entorno virtual, apunta
 `STREAMING_SUBTITLES_PYTHON` a su `python` y ejecuta
 `php artisan subtitles:generate --watch` en otra terminal.
+
+## Calidad de video y espacio en disco
+
+### Cómo se procesa cada video
+
+| Origen | MP4 optimizado | Calidades adaptativas |
+|---|---|---|
+| Video subido (programación) | Se reduce a `STREAMING_MAX_HEIGHT` (1080p por defecto) sin deformarse | 1080p, 720p, 480p y 360p |
+| Grabación de un directo (OBS) | Igual: un directo en 2K queda en 1080p | 1080p, 720p, 480p y 360p |
+| Publicidad institucional | Igual | No: son clips cortos y se quedan en MP4 |
+| Directo | No se transcodifica: llega tal como lo envía OBS | No |
+
+- Solo se generan las calidades que no superan la altura del video: un video
+  720p tiene 720p, 480p y 360p. Nunca se agranda un video.
+- Video H.264 con calidad constante (CRF 23) y un tope de velocidad por
+  calidad: 1080p 5 Mbps, 720p 2,8 Mbps, 480p 1,4 Mbps y 360p 0,8 Mbps. Una clase
+  con diapositivas pesa mucho menos que el tope; un video con mucho movimiento
+  no lo supera.
+- El reproductor elige la calidad según la conexión y el tamaño de la
+  pantalla, y el público puede cambiarla con el selector **Auto** del
+  reproductor. Si las calidades fallan, sigue el MP4 desde el mismo punto.
+- El servicio `renditions` las prepara de una en una, con prioridad baja, justo
+  después de que el video queda listo. Mientras tanto se reproduce el MP4. Al
+  desplegar esta versión, los videos existentes también entran en la cola.
+
+| Variable | Predeterminado | Uso |
+|---|---|---|
+| `STREAMING_MAX_HEIGHT` | `1080` | Altura máxima del MP4 (720 ahorra espacio). |
+| `STREAMING_ADAPTIVE_QUALITY` | `true` | `false` desactiva las calidades; se usa solo el MP4. |
+| `STREAMING_RENDITIONS_PRESET` | `fast` | Velocidad de FFmpeg: `veryfast` tarda menos y pesa algo más; `medium` al revés. |
+| `STREAMING_RENDITIONS_THREADS` | `0` | Hilos de FFmpeg (0 = todos los disponibles). |
+| `STREAMING_RENDITIONS_CPUS` | `4` | Límite de CPU del contenedor. |
+
+### Espacio en disco
+
+Por cada video se guardan, por defecto:
+
+1. El **original** (política de conservación, `STREAMING_KEEP_SOURCES=true`).
+2. El **MP4 optimizado** (respaldo y descargas).
+3. Las **calidades adaptativas**: en total, alrededor de 1,5 a 2 veces el MP4.
+
+Como referencia, una hora de clase en 1080p puede ocupar entre 1 y 3 GB de MP4,
+más 2 a 5 GB de calidades, más el original. Para ahorrar espacio:
+`STREAMING_KEEP_SOURCES=false` (no se podrá volver a convertir desde el
+original) o `STREAMING_MAX_HEIGHT=720`. Con `STREAMING_MEDIA_QUOTA_GB` el panel
+muestra el uso respecto al espacio asignado (incluye las calidades). Si el
+disco no tiene espacio suficiente, las calidades no se generan y se sigue
+usando el MP4.
+
+### Configuración recomendada de OBS
+
+El directo no se transcodifica, así que su calidad y su peso dependen de OBS
+(**Ajustes → Salida** y **Ajustes → Vídeo**):
+
+- Resolución de salida: **1280×720** (o 1920×1080 si la conexión de subida lo permite).
+- 30 cuadros por segundo.
+- Codificador x264 o el de la tarjeta gráfica, control de frecuencia **CBR**.
+- Tasa de bits de video: **2500–3500 kbps** en 720p; **4500–6000 kbps** en 1080p.
+- Intervalo de fotogramas clave: **2 s**.
+- Audio AAC a 128–160 kbps.
+
+La subida de internet del lugar del evento debe ser al menos 1,5 veces la tasa
+de bits elegida.

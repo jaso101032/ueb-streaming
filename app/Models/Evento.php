@@ -10,6 +10,17 @@ class Evento extends Model
 {
     use HasFactory, SoftDeletes;
 
+    protected static function booted(): void
+    {
+        // Las calidades adaptativas son copias que se pueden regenerar: se
+        // borran solo al eliminar el evento de forma definitiva (no al enviarlo
+        // a la papelera, porque se puede restaurar).
+        static::forceDeleting(function (self $evento) {
+            \App\Services\AdaptiveRenditions::deleteFiles($evento->transmision);
+            \App\Services\AdaptiveRenditions::deleteFiles($evento->scheduledVideo);
+        });
+    }
+
     protected $table = 'eventos';
 
     protected $fillable = [

@@ -22,8 +22,10 @@ class ReactPage
             'career' => $e->carrera?->nombre ?? 'Sin carrera específica', 'organizer' => $e->organizador?->name ?? 'UEB',
             'type' => $e->tipo_evento, 'place' => $e->lugar, 'date' => $e->fecha_inicio?->format('d/m/Y · H:i'),
             'image' => $e->miniatura ? asset('storage/'.$e->miniatura) : null, 'url' => route('eventos.show', $e),
-            'scheduled' => $scheduled ? ['stateUrl' => route('scheduled.state', $e), 'mediaUrl' => route('scheduled.media', $e), 'state' => $scheduled->playback()['state']] : null,
-            'videoUrl' => $recording?->recordingPath() && $e->estado === 'finalizado' && ($recording->isPublished() || $staff) ? route('eventos.recording', $e) : $e->video_url,
+            'scheduled' => $scheduled ? ['stateUrl' => route('scheduled.state', $e), 'mediaUrl' => route('scheduled.media', $e), 'state' => $scheduled->playback()['state'],
+                'adaptiveUrl' => self::adaptiveUrl($e, $scheduled)] : null,
+            'videoUrl' => ($recordingPlayable = $recording?->recordingPath() && $e->estado === 'finalizado' && ($recording->isPublished() || $staff)) ? route('eventos.recording', $e) : $e->video_url,
+            'adaptiveUrl' => ! $scheduled && $recordingPlayable ? self::adaptiveUrl($e, $recording) : null,
             'visibility' => $e->visibilidad ?? 'publico',
             'license' => Evento::LICENSES[$e->licencia ?? 'institucional']['short'] ?? Evento::LICENSES['institucional']['short'],
             'subtitlesUrl' => ($scheduled ? $scheduled->subtitles_path : $recording?->subtitles_path) ? route('eventos.subtitles', $e, false) : null,
@@ -63,12 +65,24 @@ class ReactPage
                 $data['subtitles'] = $media ? \App\Support\Subtitles::adminState($media, ['uploadUrl' => route('admin.subtitles.store', $e),
                     'removeUrl' => route('admin.subtitles.destroy', $e), 'generateUrl' => route('admin.subtitles.generate', $e),
                     'previewUrl' => route('eventos.subtitles', $e, false)]) : null;
+                $stored = $scheduled ? ($scheduled->processing_status === 'ready' ? $scheduled : null) : ($recording?->recordingPath() ? $recording : null);
+                $data['renditions'] = $stored && config('streaming.renditions.enabled') ? ['status' => $stored->renditions_status ?? 'pending',
+                    'progress' => $stored->renditions_progress, 'error' => $stored->renditions_error,
+                    'levels' => collect($stored->renditions_levels ?? [])->pluck('name')->values()] : null;
                 $data['recordingMetadata'] = $recording?->displayRecordingMetadata();
                 $data['recordingFpsLimit'] = $recording?->recording_fps_limit;
             }
         }
 
         return $data;
+    }
+
+    /** Lista maestra HLS (mismo origen) si las calidades adaptativas están listas. */
+    private static function adaptiveUrl(Evento $e, $media): ?string
+    {
+        return config('streaming.renditions.enabled') && $media?->renditions_status === 'ready'
+            && \App\Services\AdaptiveRenditions::validDirectory($media->renditions_path)
+            ? route('eventos.renditions', [$e, 'master.m3u8'], false) : null;
     }
 
     public static function shell(): array

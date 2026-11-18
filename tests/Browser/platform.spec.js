@@ -65,6 +65,7 @@ test("Android TV channel mode shows a full-screen viewer without the website she
     expect(frame.height).toBeGreaterThanOrEqual(900);
 });
 test("channel agenda opens all upcoming programs grouped by date while the side list stays at five", async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem("uebtv-channel-panel-collapsed", "0"));
     const agenda = Array.from({ length: 8 }, (_, index) => ({
         id: index + 1,
         title: `Programa ${index + 1}`,
@@ -171,7 +172,10 @@ test("channel CC button shows and hides the program subtitles", async ({ page })
 });
 test("channel download card keeps its QR visible on desktop and mobile without entering TV mode", async ({ page }) => {
     await page.goto("/senal");
+    // With nothing to chat about the panel opens folded, showing the fox card.
     const card = page.locator(".channel-app-card");
+    // Measure once the fold animation has finished.
+    await expect(page.locator(".wv-side__app")).toHaveCSS("transform", "none");
     const qr = card.getByRole("img", { name: "Código QR para descargar UEBTV" });
     await expect(card).toBeVisible();
     await expect(qr).toHaveJSProperty("naturalWidth", 400);
@@ -240,7 +244,7 @@ test("catalog UEB-TV mark keeps contrast on light and dark mobile backgrounds", 
     await expect(mark).toHaveCSS("filter", "none");
     await expect(suffix).toHaveCSS("color", "rgb(16, 39, 68)");
 });
-test("mobile recorded player aligns timeline and speed and keeps details compact", async ({ page }) => {
+test("mobile recorded player aligns timeline, moves speed to the settings menu and keeps details compact", async ({ page }) => {
     await page.route("**/test-video.mp4", (route) => route.fulfill({
         body: readFileSync("/tmp/uebtv-react-test.mp4"),
         contentType: "video/mp4",
@@ -249,13 +253,23 @@ test("mobile recorded player aligns timeline and speed and keeps details compact
     await page.goto("/eventos/1");
     for (const width of [320, 390, 600]) {
         await page.setViewportSize({ width, height: 844 });
+        // The player switches layout once it has measured its new width.
+        await page.waitForFunction(() => {
+            const shell = document.querySelector(".uebtv-player-shell");
+            return shell && document.querySelector(".uebtv-player-timeline.is-vod-timeline")
+                && shell.classList.contains("is-compact") === (shell.getBoundingClientRect().width < 520);
+        });
         const measurements = await page.evaluate(() => {
             const timeline = document.querySelector(".uebtv-player-timeline.is-vod-timeline");
             const range = timeline.querySelector(".uebtv-player-range--progress");
-            const speed = document.querySelector(".uebtv-player-speed");
+            // Narrow players keep only the essentials and show speed in the ⚙ menu.
+            const compact = document.querySelector(".uebtv-player-shell").classList.contains("is-compact");
+            // Speed, quality and picture-in-picture live in the ⚙ menu on every size.
+            const speed = document.querySelector('[aria-label="Ajustes del video"]');
             const controls = document.querySelector(".uebtv-player-controls");
-            const details = document.querySelector(".uebtv-watch-details-toggle");
+            const details = document.querySelector(".wv-about__toggle");
             return {
+                compact,
                 timeline: timeline.getBoundingClientRect().toJSON(),
                 range: range.getBoundingClientRect().toJSON(),
                 speed: speed.getBoundingClientRect().toJSON(),
@@ -268,14 +282,28 @@ test("mobile recorded player aligns timeline and speed and keeps details compact
         expect(measurements.range.x).toBeGreaterThanOrEqual(measurements.timeline.x);
         expect(measurements.range.x + measurements.range.width).toBeLessThanOrEqual(measurements.timeline.x + measurements.timeline.width + 1);
         expect(measurements.speed.x + measurements.speed.width).toBeLessThanOrEqual(measurements.controls.x + measurements.controls.width);
-        expect(measurements.speed.width).toBeGreaterThanOrEqual(50);
+        // Touch targets stay comfortable (WCAG 2.5.8 asks for at least 24 px).
+        expect(measurements.speed.width).toBeGreaterThanOrEqual(32);
+        await expect(page.locator(".uebtv-player-speed")).toHaveCount(0);
         expect(measurements.detailsFont).toBeLessThanOrEqual(13);
         expect(measurements.detailsHeight).toBeLessThanOrEqual(42);
-        expect(measurements.rangeHeight).toBe("16px");
+        expect(measurements.rangeHeight).toBe(measurements.compact ? "14px" : "16px");
         await expect(page.locator("body")).toHaveJSProperty("scrollWidth", width);
-        await page.locator(".uebtv-player-speed").selectOption("1.5");
+        await page.getByRole("button", { name: "Ajustes del video" }).click();
+        await page.getByRole("menuitem", { name: /Velocidad/ }).click();
+        await page.getByRole("menuitemradio", { name: "1.5×" }).click();
+        await expect(page.getByRole("menu")).toHaveCount(0);
         await expect(page.locator("video")).toHaveJSProperty("playbackRate", 1.5);
+        await page.locator("video").evaluate((v) => { v.playbackRate = 1; });
     }
+    // Wide players keep a clean bar too: the settings live in ⚙, fully inside the player.
+    await page.setViewportSize({ width: 1280, height: 844 });
+    await expect(page.locator(".uebtv-player-speed")).toHaveCount(0);
+    await page.getByRole("button", { name: "Ajustes del video" }).click();
+    const menuBox = await page.getByRole("menu").boundingBox(), playerBox = await page.locator(".uebtv-player-shell").boundingBox();
+    expect(menuBox.y).toBeGreaterThanOrEqual(playerBox.y);
+    expect(menuBox.x + menuBox.width).toBeLessThanOrEqual(playerBox.x + playerBox.width);
+    await page.keyboard.press("Escape");
 });
 test("FACAGEI wordmark keeps the original proportions on desktop and mobile", async ({ page }) => {
     await page.goto("/senal");
@@ -306,7 +334,7 @@ test("video analytics exports a complete print-ready PDF report for the selected
     await login(page);
     await page.goto("/eventos");
     // The catalog lists the newest event first; open the analytics of the seeded conference explicitly.
-    const statsButton = page.locator(".uebtv-catalog-card")
+    const statsButton = page.locator(".ct-card")
         .filter({ hasText: "Conferencia inaugural UEB 2026" })
         .getByRole("button", { name: "Ver estadísticas" });
     await statsButton.click();
@@ -615,16 +643,16 @@ test("chat sends and moderates safely; regular user has no destructive controls"
     await page.getByRole("textbox", { name: "Tu mensaje" }).fill(text);
     await page.getByRole("button", { name: "Enviar mensaje" }).click();
     await expect(
-        page.locator(".uebtv-chat-message").filter({ hasText: text }),
+        page.locator(".wv-msg").filter({ hasText: text }),
     ).toBeVisible();
     page.on("dialog", (d) => d.accept());
     await page
-        .locator(".uebtv-chat-message")
+        .locator(".wv-msg")
         .filter({ hasText: text })
         .getByRole("button")
         .click();
     await expect(
-        page.locator(".uebtv-chat-message").filter({ hasText: text }),
+        page.locator(".wv-msg").filter({ hasText: text }),
     ).toHaveCount(0);
     await page
         .getByRole("button", { name: "Cerrar sesión", exact: true })
@@ -641,37 +669,64 @@ test("chat sends and moderates safely; regular user has no destructive controls"
     ).toHaveCount(0);
 });
 
-test("mobile conversation folds below the video without losing its contents", async ({ page }) => {
+test("conversation and program guide share a tabbed panel beside the video", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.route("**/eventos/2/chat", (route) => route.request().method() === "GET"
-        ? route.fulfill({ json: [{ id: 901, user: "María", message: "Qué buena transmisión de nuestra universidad." }] })
+        ? route.fulfill({ json: [{ id: 901, user: "María", message: "Qué buena transmisión de nuestra universidad.", created_at: new Date().toISOString() }] })
         : route.continue());
     await page.goto("/eventos/2");
-    const chat = page.locator(".uebtv-live-chat");
-    const toggle = chat.getByRole("button", { name: "Mostrar comentarios" });
-    await expect(chat).toBeVisible();
-    await expect(chat.locator(".uebtv-live-chat__content")).toBeHidden();
-    await expect(chat.locator(".uebtv-chat-preview")).toBeVisible();
-    await expect(chat.locator(".uebtv-chat-preview")).toContainText("María");
-    const player = await page.locator(".uebtv-watch-main").boundingBox();
-    const panel = await chat.boundingBox();
-    expect(panel.y).toBeGreaterThanOrEqual(player.y + player.height);
+    const panel = page.locator(".wv-panel");
+    await expect(panel).toBeVisible();
+    // Phone: below the video information, with the conversation open.
+    await expect(page.getByRole("tab", { name: /Chat en vivo|Comentarios/ })).toHaveAttribute("aria-selected", "true");
+    await expect(panel.locator(".wv-msg")).toContainText("Qué buena transmisión");
+    const info = await page.locator(".uebtv-watch-main").boundingBox();
+    const box = await panel.boundingBox();
+    expect(box.y).toBeGreaterThanOrEqual(info.y + info.height);
+    expect(box.height).toBeGreaterThan(300);
     await expect(page.locator("body")).toHaveJSProperty("scrollWidth", 390);
-    await chat.screenshot({ path: "/tmp/uebtv-chat-mobile-collapsed.png" });
-    await toggle.click();
-    await expect(chat.getByRole("button", { name: "Ocultar comentarios" })).toHaveAttribute("aria-expanded", "true");
-    await expect(chat.locator(".uebtv-live-chat__messages")).toBeVisible();
-    await expect(chat.locator(".uebtv-chat-message")).toContainText("Qué buena transmisión");
-    await chat.screenshot({ path: "/tmp/uebtv-chat-mobile-open.png" });
+    // The program guide replaces the conversation in the same space.
+    await page.getByRole("tab", { name: "Programación" }).click();
+    await expect(page.getByRole("tab", { name: "Programación" })).toHaveAttribute("aria-selected", "true");
+    await expect(panel.locator(".wv-chat__list")).toBeHidden();
+    await expect(panel.getByRole("link", { name: /Ver señal 24\/7/ })).toBeVisible();
+    await page.getByRole("tab", { name: /Chat en vivo|Comentarios/ }).click();
+    await expect(panel.locator(".wv-chat__list")).toBeVisible();
     await page.locator("html").evaluate((root) => root.setAttribute("data-theme", "dark"));
-    await expect(chat.locator(".uebtv-live-chat__messages")).toBeVisible();
-    await chat.screenshot({ path: "/tmp/uebtv-chat-mobile-dark.png" });
+    await panel.screenshot({ path: "/tmp/uebtv-chat-mobile-dark.png" });
     await page.setViewportSize({ width: 320, height: 720 });
     await expect(page.locator("body")).toHaveJSProperty("scrollWidth", 320);
+    // Credits stay reachable through the floating label.
+    await expect(page.locator(".uebtv-credits-button")).toBeVisible();
+    // Desktop: the panel sits beside the video with the same height.
     await page.setViewportSize({ width: 1440, height: 900 });
-    await expect(chat.locator(".uebtv-live-chat__messages")).toBeVisible();
-    await expect(chat.locator(".uebtv-chat-expand")).toBeHidden();
-    await chat.screenshot({ path: "/tmp/uebtv-chat-desktop-dark.png" });
+    const player = await page.locator(".wv-player").boundingBox();
+    const desktop = await panel.boundingBox();
+    expect(desktop.x).toBeGreaterThan(player.x + player.width);
+    expect(Math.abs(desktop.height - player.height)).toBeLessThan(3);
+    await panel.screenshot({ path: "/tmp/uebtv-chat-desktop-dark.png" });
+});
+test("theater mode widens the video and moves the panel below; credits open from the floating label", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.route("**/test-video.mp4", (route) => route.fulfill({
+        body: readFileSync("/tmp/uebtv-react-test.mp4"), contentType: "video/mp4", headers: { "Accept-Ranges": "bytes" },
+    }));
+    await page.goto("/eventos/1");
+    const player = page.locator(".wv-player"), panel = page.locator(".wv-panel");
+    const before = await player.boundingBox();
+    await page.getByRole("button", { name: "Modo cine" }).click();
+    await expect(page.getByRole("button", { name: "Salir del modo cine" })).toHaveAttribute("aria-pressed", "true");
+    const wide = await player.boundingBox();
+    expect(wide.width).toBeGreaterThan(before.width + 200);
+    expect((await panel.boundingBox()).y).toBeGreaterThan(wide.y + wide.height);
+    // Remembered on reload, and the T key toggles it back.
+    await page.reload();
+    await expect(page.locator(".wv")).toHaveClass(/is-theater/);
+    await page.locator("body").click({ position: { x: 5, y: 400 } });
+    await page.keyboard.press("t");
+    await expect(page.locator(".wv")).not.toHaveClass(/is-theater/);
+    await page.getByRole("button", { name: "Mostrar créditos" }).click();
+    await expect(page.getByRole("region", { name: "Créditos de UEBTV" })).toBeVisible();
 });
 
 test("chat preserves drafts on rejected sends, escapes content and reconnects", async ({
@@ -704,7 +759,7 @@ test("chat preserves drafts on rejected sends, escapes content and reconnects", 
     });
     await page.goto("/eventos/2");
     await expect(
-        page.locator(".uebtv-chat-message").filter({ hasText: "<script>" }),
+        page.locator(".wv-msg").filter({ hasText: "<script>" }),
     ).toBeVisible();
     expect(await page.evaluate(() => window.chatUnsafe)).toBeUndefined();
     const input = page.getByRole("textbox", { name: "Tu mensaje" });
@@ -849,21 +904,21 @@ test("scheduled playback joins the server position and becomes seekable after en
     const mobileControls = await page.evaluate(() => {
         const bar = document.querySelector('.uebtv-player-range--progress');
         const shell = document.querySelector('.uebtv-player-shell');
-        const speed = document.querySelector('.uebtv-player-speed');
+        const settings = document.querySelector('[aria-label="Ajustes del video"]');
         return {
             barWidth: bar.getBoundingClientRect().width,
             playerWidth: shell.getBoundingClientRect().width,
             barHeight: bar.getBoundingClientRect().height,
-            speedHeight: speed.getBoundingClientRect().height,
+            settingsHeight: settings.getBoundingClientRect().height,
         };
     });
     expect(mobileControls.barWidth).toBeGreaterThan(mobileControls.playerWidth * 0.8);
-    expect(mobileControls.barHeight).toBe(16);
-    expect(mobileControls.speedHeight).toBe(32);
+    expect(Math.round(mobileControls.barHeight)).toBe(14);
+    expect(Math.round(mobileControls.settingsHeight)).toBe(34);
     await expect(page.locator('.react-player-label')).toBeHidden();
     await page.screenshot({ path: '/tmp/uebtv-vod-mobile-controls.png' });
     await page.evaluate(() => { document.documentElement.dataset.theme = 'dark'; });
-    await expect(page.locator('.uebtv-watch-state').first()).toHaveCSS('color', 'rgb(228, 242, 255)');
+    await expect(page.locator('.wv-state').first()).toHaveCSS('color', 'rgb(228, 242, 255)');
     await page.screenshot({ path: '/tmp/uebtv-vod-mobile-controls-dark.png' });
 });
 
@@ -1418,4 +1473,207 @@ test("event form explains each usage license and records the authorization", asy
     await page.waitForURL(/admin\/eventos\/\d+$/);
     await expect(page.getByText("Creative Commons BY 4.0 (compartir citando a la UEB)")).toBeVisible();
     await expect(page.getByText("Oficio 45-UEB-2026")).toBeVisible();
+});
+test("double tap seeks ±10 s on recordings but never on the live signal", async ({ page }) => {
+    const doubleTap = (fraction) => page.locator(".uebtv-player-shell").evaluate((shell, x) => {
+        const rect = shell.getBoundingClientRect();
+        const tap = () => shell.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, pointerType: "touch",
+            clientX: rect.left + rect.width * x, clientY: rect.top + rect.height * 0.3 }));
+        tap(); tap();
+    }, fraction);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.route("**/test-video.mp4", (route) => route.fulfill({
+        body: readFileSync("/tmp/uebtv-react-test.mp4"), contentType: "video/mp4", headers: { "Accept-Ranges": "bytes" },
+    }));
+    await page.goto("/eventos/1");
+    const video = page.locator("video");
+    await expect.poll(() => video.evaluate((v) => v.readyState)).toBeGreaterThanOrEqual(1);
+    await video.evaluate((v) => { v.currentTime = 20; });
+    await expect.poll(() => video.evaluate((v) => Math.round(v.currentTime))).toBe(20);
+    await doubleTap(0.85);
+    await expect(page.locator(".uebtv-player-seek-hint")).toHaveText("10 s »");
+    await expect.poll(() => video.evaluate((v) => Math.round(v.currentTime))).toBe(30);
+    await doubleTap(0.15);
+    await expect.poll(() => video.evaluate((v) => Math.round(v.currentTime))).toBe(20);
+
+    // Live: the same gesture does nothing.
+    await page.route("**/eventos/1", async (route) => {
+        const response = await route.fetch();
+        let html = await response.text();
+        const match = html.match(/data-react-page="Watch" data-props="([^"]*)"/);
+        const decode = (value) => value.replaceAll("&quot;", '"').replaceAll("&amp;", "&").replaceAll("&#039;", "'").replaceAll("&lt;", "<").replaceAll("&gt;", ">");
+        const props = JSON.parse(decode(match[1]));
+        Object.assign(props.event, { status: "en_vivo", scheduled: null, videoUrl: null, adaptiveUrl: null, hlsUrl: "/mock-live.m3u8", viewersUrl: null });
+        const encoded = JSON.stringify(props).replaceAll("&", "&amp;").replaceAll('"', "&quot;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+        await route.fulfill({ response, body: html.replace(match[1], encoded) });
+    });
+    await page.route("**/mock-live.m3u8**", (route) => route.fulfill({ body: "#EXTM3U\n", contentType: "application/vnd.apple.mpegurl" }));
+    await page.goto("/eventos/1");
+    await expect(page.locator(".uebtv-player-shell")).toBeVisible();
+    await doubleTap(0.85);
+    await doubleTap(0.15);
+    await expect(page.locator(".uebtv-player-seek-hint")).toHaveCount(0);
+    await expect(page.getByRole("slider", { name: "Posición del video" })).toHaveCount(0);
+});
+test("channel room status explains what is on air and opens the right panel tab", async ({ page }) => {
+    const soon = new Date(Date.now() + 80 * 60000).toISOString();
+    const next = [{ id: 31, title: "Clase magistral", starts_at: soon, duration: 3600 }];
+    const summary = { count: 1, totalSeconds: 3600, remainingSeconds: 3600 };
+    let state = { mode: "idle", event: null, playback: null, advertisement: null, next, agenda: next, summary };
+    await page.route("**/senal/estado", (route) => route.fulfill({ json: state }));
+    await page.goto("/senal");
+    // What is on air is told once, in the card under the screen.
+    const room = page.locator(".cv-now");
+    await expect(page.locator(".cv-room")).toHaveCount(0);
+    await expect(room).toContainText("Sin emisión");
+    await expect(room).toContainText("Próxima: Clase magistral");
+    await expect(page.locator(".cv-countdown")).toContainText(/Comienza en 1 h/);
+    // Nothing on air (or an ad): it opens folded — "Mostrar programación" and the app card.
+    await expect(page.getByRole("tab")).toHaveCount(0);
+    await expect(page.getByRole("img", { name: "Código QR para descargar UEBTV" })).toBeVisible();
+    await page.locator(".wv-side__show").click();
+    // No chat, only the guide.
+    await expect(page.getByRole("heading", { name: "Programación" })).toBeVisible();
+    await page.getByRole("button", { name: "Ocultar panel" }).click();
+    await expect(page.locator(".wv-side__show")).toBeFocused();
+    // A choice made by the viewer is remembered.
+    await page.locator(".wv-side__show").click();
+    await page.reload();
+    await expect(page.getByRole("heading", { name: "Programación" })).toBeVisible();
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect(page.locator(".cv-now__text")).toContainText("Próxima: Clase magistral");
+    await expect(page.locator("body")).toHaveJSProperty("scrollWidth", 390);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    // A live broadcast: viewers in the room and the conversation in the panel.
+    await page.route("**/eventos/3/chat**", (route) => route.fulfill({ json: [{ id: 1, user: "Ana", message: "¡Saludos!", created_at: new Date().toISOString() }] }));
+    state = { ...state, mode: "live", event: { id: 3, title: "Conferencia", url: "/eventos/3", status: "en_vivo", chatUrl: "/eventos/3/chat", chatEnabled: true, viewers: 12, hlsUrl: "/mock-live.m3u8" } };
+    await page.reload();
+    await expect(room).toContainText("En vivo");
+    await expect(room).toContainText("12 espectadores conectados");
+    await expect(page.getByRole("tab", { name: "Chat" })).toHaveAttribute("aria-selected", "true");
+    await expect(page.locator(".cv-panel .wv-msg")).toContainText("¡Saludos!");
+    await expect(page.locator(".uebtv-credits-button")).toBeVisible();
+    await expect(page.locator("body")).toHaveJSProperty("scrollWidth", 1440);
+});
+
+test("share opens a menu with social links and really copies the link", async ({ page, context }) => {
+    await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+    for (const [path, name, url] of [["/eventos/1", /^Compartir$/, /\/eventos\/1$/], ["/senal", /Compartir la señal/, /\/senal$/]]) {
+        await page.goto(path);
+        await page.getByRole("button", { name }).click();
+        const menu = page.getByRole("dialog", { name: /Compartir/ });
+        await expect(menu).toBeVisible();
+        await expect(menu.getByRole("link", { name: "WhatsApp" })).toHaveAttribute("href", /^https:\/\/wa\.me\/\?text=/);
+        await expect(menu.getByRole("link", { name: "Facebook" })).toHaveAttribute("href", /facebook\.com\/sharer/);
+        await menu.getByRole("button", { name: "Copiar" }).click();
+        await expect(menu.getByRole("status")).toHaveText("¡Enlace copiado!");
+        expect(await page.evaluate(() => navigator.clipboard.readText())).toMatch(url);
+        const box = await menu.boundingBox();
+        expect(box.x).toBeGreaterThanOrEqual(0);
+        await page.keyboard.press("Escape");
+        await expect(menu).toHaveCount(0);
+        await expect(page.getByRole("button", { name })).toBeFocused();
+    }
+});
+
+test("the watch panel folds into the app card and comes back, remembering the choice", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/eventos/1");
+    const panel = page.locator(".wv-panel"), app = page.locator(".wv-side__app");
+    await expect(app).toBeHidden();
+    await page.getByRole("button", { name: "Ocultar panel" }).click();
+    await expect(panel).toBeHidden();
+    await expect(app.getByRole("img", { name: "Código QR para descargar UEBTV" })).toBeVisible();
+    const show = page.locator(".wv-side__show");
+    await expect(show).toBeFocused();
+    await page.reload();
+    await expect(panel).toBeHidden();
+    await show.click();
+    await expect(panel).toBeVisible();
+    await expect(app).toBeHidden();
+    await expect(page.getByRole("button", { name: "Ocultar panel" })).toBeFocused();
+    // Desktop: the open panel keeps the height of the video.
+    const video = await page.locator(".wv-player").boundingBox(), box = await panel.boundingBox();
+    expect(Math.abs(video.height - box.height)).toBeLessThan(3);
+});
+
+test("advertising list keeps the ad name readable and has no subtitles block", async ({ page }) => {
+    await page.setViewportSize({ width: 1600, height: 1000 });
+    await login(page);
+    await page.goto("/admin/contenido-programado");
+    await page.getByRole("navigation", { name: "Navegación rápida de la parrilla" })
+        .getByRole("button", { name: /Anuncios institucionales/ }).click();
+    const item = page.locator(".ad-studio-item").filter({ hasText: "UEB music" });
+    // Advertising never carries subtitles.
+    await expect(item.locator(".subtitle-form")).toHaveCount(0);
+    await expect(item.getByRole("button", { name: "Eliminar" })).toBeVisible();
+    // The title stays on one line instead of one letter per line.
+    const title = await item.locator("h4").boundingBox();
+    expect(title.height).toBeLessThan(30);
+    expect(title.width).toBeGreaterThan(60);
+    // Light theme: the name is dark (dark-theme colours must not leak into light).
+    await page.evaluate(() => { document.documentElement.dataset.theme = "light"; });
+    await expect(item.locator("h4")).toHaveCSS("color", "rgb(24, 56, 92)");
+    await item.screenshot({ path: "/tmp/uebtv-ad-item.png" });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect(page.locator("body")).toHaveJSProperty("scrollWidth", 390);
+});
+
+test("credits move out of the way of the side panel and stay reachable from the menu", async ({ page }) => {
+    // Short window: the bottom of the comments panel lands under the floating label.
+    await page.setViewportSize({ width: 1440, height: 790 });
+    await page.goto("/eventos/1");
+    // The floating label would cover the panel: it steps aside.
+    await expect(page.locator("body")).toHaveClass(/uebtv-credits-yield/);
+    await expect(page.locator(".uebtv-credits-widget")).toHaveCSS("opacity", "0");
+    // Scrolled past the panel it comes back.
+    await page.locator(".wv-more").scrollIntoViewIfNeeded();
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await expect(page.locator("body")).not.toHaveClass(/uebtv-credits-yield/);
+    // Always available from the ☰ menu, with the team names.
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.getByRole("button", { name: "Abrir menú" }).click();
+    await page.getByRole("button", { name: /Créditos/ }).click();
+    const credits = page.getByRole("region", { name: "Créditos de UEBTV" });
+    await expect(credits).toBeVisible();
+    await expect(credits).toContainText("Javier Solis");
+    await expect(credits).toContainText("Cristhian Rochina");
+});
+
+test("channel guide shows a thumbnail for every upcoming broadcast, generic when there is none", async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem("uebtv-channel-panel-collapsed", "0"));
+    const soon = (m) => new Date(Date.now() + m * 60000).toISOString();
+    const next = [{ id: 31, title: "Con miniatura", starts_at: soon(30), duration: 600, image: "/images/brand/ueb-wordmark.png" },
+        { id: 32, title: "Sin miniatura", starts_at: soon(60), duration: 600, image: null }];
+    await page.route("**/senal/estado", (route) => route.fulfill({ json: { mode: "idle", event: null, playback: null, advertisement: null, next, agenda: next, summary: { count: 2, totalSeconds: 1200, remainingSeconds: 1200 } } }));
+    await page.goto("/senal");
+    const items = page.locator(".cv-guide__item");
+    await expect(items).toHaveCount(2);
+    await expect(items.nth(0).locator(".guide-thumb")).toHaveClass(/has-image/);
+    await expect(items.nth(1).locator(".guide-thumb img")).toBeVisible();
+    await expect(page.locator("body")).toHaveJSProperty("scrollWidth", 1440);
+});
+
+test("channel advertising starts really muted and its controls stay hidden when the ad loops", async ({ page }) => {
+    await page.route("**/senal/estado", (route) => route.fulfill({ json: {
+        mode: "advertisement", event: null, playback: { state: "playing", position: 1, duration: 60 },
+        advertisement: { id: 21, title: "Aviso en bucle", mediaUrl: "/loop-check.mp4" }, next: [], agenda: [],
+        summary: { count: 0, totalSeconds: 0, remainingSeconds: 0 },
+    } }));
+    await page.route("**/loop-check.mp4*", (route) => route.fulfill({
+        body: readFileSync("/tmp/uebtv-react-test.mp4"), contentType: "video/mp4", headers: { "Accept-Ranges": "bytes" },
+    }));
+    await page.goto("/senal");
+    const video = page.locator(".channel-screen video");
+    // The icon says "muted" and the element really is muted (no sound on phones).
+    await expect(page.getByRole("button", { name: "Activar sonido" })).toBeVisible();
+    await expect(video).toHaveJSProperty("muted", true);
+    await expect(video).toHaveJSProperty("paused", false);
+    // Once the controls have faded, a brief pause/restart (the ad looping) keeps them hidden.
+    const shell = page.locator(".channel-screen .uebtv-player-shell");
+    await page.mouse.move(5, 5);
+    await expect(shell).not.toHaveClass(/is-chrome-visible/, { timeout: 5000 });
+    await video.evaluate(async (v) => { v.pause(); await new Promise((r) => setTimeout(r, 300)); await v.play(); });
+    await page.waitForTimeout(1500);
+    await expect(shell).not.toHaveClass(/is-chrome-visible/);
 });

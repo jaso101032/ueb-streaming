@@ -97,15 +97,6 @@ class SubtitleController extends Controller
         return back()->with('success', 'Subtítulos de la publicidad eliminados.');
     }
 
-    public function generateAd(InstitutionalAd $ad)
-    {
-        abort_unless($ad->processing_status === 'ready', 409, 'La publicidad todavía se está preparando.');
-        $this->queueGeneration($ad);
-        Audit::record('subtitulos.generacion_solicitada', $ad);
-
-        return back()->with('success', self::QUEUED);
-    }
-
     public function showAd(InstitutionalAd $ad)
     {
         abort_unless($ad->is_active && $ad->processing_status === 'ready', 404);

@@ -1,5 +1,5 @@
 import { durationLabel } from "../platform/Channel";
-import { Action, SubtitleForm, useShell } from "../platform/shared";
+import { Action, useShell } from "../platform/shared";
 import React, { useEffect, useRef, useState } from "react";
 
 function Icon({ name = "play", size = 22 }) {
@@ -20,6 +20,9 @@ function Icon({ name = "play", size = 22 }) {
         chart: <><path d="M4 19V5m0 14h16" /><path d="m7 15 3-4 3 2 5-6" /></>,
         arrow: <path d="M5 12h14m-5-5 5 5-5 5" />,
         check: <path d="m5 12 4 4L19 6" />,
+        pause: <path d="M9 5v14M15 5v14" />,
+        trash: <><path d="M4 7h16M10 11v6m4-6v6" /><path d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3" /></>,
+        retry: <><path d="M20 11a8 8 0 1 0-2.3 5.7" /><path d="M20 5v6h-6" /></>,
     };
     return (
         <svg
@@ -175,10 +178,10 @@ function InstitutionalAds({ action, csrf, ads, old, uploadLimits }) {
                     <div className="ad-studio-item__mark" aria-hidden="true">P</div>
                     <div className="ad-studio-item__body"><h4>{ad.title}</h4><p>{stateLabels[ad.status] || ad.status}{ad.status === "ready" ? ` · ${durationLabel(ad.duration)}` : ""}{ad.status === "ready" && !ad.active ? " · Fuera del aire" : ""}</p><ConversionProgress status={ad.status} percent={ad.progress} />{ad.error && <small role="status">{ad.error}</small>}</div>
                     <div className="ad-studio-item__actions">
-                        {ad.status === "failed" && <Action url={ad.retryUrl} className="studio-button">Reintentar</Action>}
-                        <Action url={ad.toggleUrl} className="studio-button" confirm={ad.active ? "¿Quitar este anuncio de la señal continua?" : undefined}>{ad.active ? "Desactivar" : "Activar"}</Action>
+                        {ad.status === "failed" && <Action url={ad.retryUrl} className="studio-button"><Icon name="retry" size={15} />Reintentar</Action>}
+                        <Action url={ad.toggleUrl} className="studio-button" confirm={ad.active ? "¿Quitar este anuncio de la señal continua?" : undefined}><Icon name={ad.active ? "pause" : "play"} size={15} />{ad.active ? "Desactivar" : "Activar"}</Action>
+                        {ad.status !== "processing" && <Action url={ad.deleteUrl} method="DELETE" className="studio-button studio-delete" confirm={`¿Eliminar «${ad.title}» definitivamente? Se borrarán el video y sus subtítulos; esta acción no se puede deshacer.`}><Icon name="trash" size={15} />Eliminar</Action>}
                     </div>
-                    <SubtitleForm subtitles={ad.subtitles} idPrefix={`ad-${ad.id}-subtitles`} />
                 </article>) : <div className="schedule-empty"><h4>Aún no hay anuncios</h4><p>Mientras no haya programación ni directo, la señal mostrará la pantalla de espera.</p></div>}
             </div>
         </div>

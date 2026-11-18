@@ -20,7 +20,8 @@ class GenerateSubtitles extends Command
             while (true) sleep(3600);
         }
         // Un solo trabajador a la vez: transcribir usa mucha CPU.
-        $lock = fopen(storage_path('framework/subtitles-worker.lock'), 'c');
+        // Un candado por entorno: las pruebas no chocan con un trabajador local.
+        $lock = fopen(storage_path('framework/subtitles-worker-'.app()->environment().'.lock'), 'c');
         if (! $lock) return self::FAILURE;
         if (! flock($lock, LOCK_EX | LOCK_NB)) {
             fclose($lock);

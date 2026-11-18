@@ -42,9 +42,10 @@ class Subtitles
         $present = (bool) $media->subtitles_path;
         $status = $media->subtitles_status;
         $auto = config('streaming.auto_subtitles.enabled');
-        // Se puede pedir una nueva generación si no hay subtítulos y el
-        // trabajador no está ya ocupándose de este video.
-        $canGenerate = $auto && ! $present && ! in_array($status, [null, 'pending', 'processing'], true);
+        // Los subtítulos se generan solos. El botón solo aparece para reintentar
+        // un fallo o para videos anteriores a la función ("skipped"); nunca si
+        // el video no tiene voz o el trabajador ya se está ocupando.
+        $canGenerate = $auto && ! $present && in_array($status, ['failed', 'skipped'], true);
 
         return ['present' => $present, 'source' => $present ? ($media->subtitles_source ?? 'manual') : null,
             'status' => $present ? 'ready' : ($auto ? ($status ?? 'pending') : null),

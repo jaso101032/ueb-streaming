@@ -1,0 +1,665 @@
+/*
+ * Página de un video (directo, programa del canal o grabación): distribución
+ * tipo plataforma de streaming. Escritorio: video con el panel (Comentarios |
+ * Programación) al lado; modo cine: video a todo el ancho y panel debajo.
+ * Celular: video, información y panel uno debajo de otro.
+ * Se carga al final de app.css y usa clases propias (wv-*).
+ */
+.wv, .cv, .ct, .share-layer {
+    /* Modo claro con más contraste: superficies blancas que se despegan del
+       fondo, bordes visibles y botones teñidos de azul (no gris pálido). */
+    --wv-surface:#ffffff; --wv-surface-2:#eef4fb; --wv-border:#c9d8ea; --wv-text:#0b2240; --wv-muted:#4d6380;
+    --wv-accent:#1557ab; --wv-accent-soft:#dce9fa; --wv-live:#d61f3a; --wv-live-bg:#d61f3a; --wv-chip:#e3edf9; --wv-chip-hover:#d2e2f5;
+    --wv-chip-text:#11407a; --wv-chip-border:#c3d6ee; --wv-shadow:0 1px 2px #0b22400f, 0 10px 28px -18px #0b224059;
+    --wv-name-light:38%; --wv-avatar-light:44%;
+    /* Escala tipográfica común (catálogo, video y señal). De mayor a menor:
+       título de página → título del video → sección → tarjeta → texto → datos. */
+    --fs-page:clamp(26px, 2.4vw, 32px); --fs-title:clamp(18px, 1.7vw, 22px); --fs-section:17px;
+    --fs-card:14px; --fs-body:14px; --fs-meta:12.5px; --fs-chip:13px; --fs-kicker:11px;
+
+}
+.wv { width:min(100%, 1480px); margin:0 auto; color:var(--wv-text); }
+@media (max-width:640px) {
+    .wv, .cv, .ct { --fs-page:22px; --fs-title:17px; --fs-section:15px; --fs-card:13.5px; --fs-body:13px; --fs-meta:11.5px; --fs-chip:12px; --fs-kicker:10px; }
+}
+html[data-theme="dark"] :is(.wv, .cv, .ct, .share-layer) {
+    --wv-surface:#0f2038; --wv-surface-2:#0b192d; --wv-border:#223d5e; --wv-text:#eaf3ff; --wv-muted:#9fb4cc;
+    --wv-accent:#7ab6ff; --wv-accent-soft:#16365a; --wv-live:#ff4d63; --wv-live-bg:#cf1d36; --wv-chip:#17304f; --wv-chip-hover:#1f3d63;
+    --wv-name-light:72%; --wv-avatar-light:40%;
+    --wv-chip-text:var(--wv-text); --wv-chip-border:transparent; --wv-shadow:none;
+}
+.wv .uebtv-watch-breadcrumb { margin-bottom:14px; }
+.wv-icon { width:16px; height:16px; flex:0 0 auto; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+.wv-live-dot { display:inline-block; flex:0 0 auto; width:8px; height:8px; border-radius:50%; background:currentColor; animation:wv-pulse 1.6s ease-in-out infinite; }
+@keyframes wv-pulse { 50% { opacity:.35; } }
+
+/* Distribución */
+.wv-grid {
+    display:grid; grid-template-columns:minmax(0,1fr) 360px; gap:16px 20px; align-items:start;
+    grid-template-areas:"player panel" "info panel" "more more";
+}
+.wv-player { grid-area:player; }
+.wv-info { grid-area:info; }
+.wv-side { grid-area:panel; }
+.wv-grid > .wv-more { grid-area:more; margin-top:12px; }
+/* Modo cine: el video ocupa todo el ancho; debajo, a la izquierda la información
+   y "Más para ver", y a la derecha el panel (como YouTube), sin huecos. */
+.wv.is-theater .wv-grid { grid-template-areas:"player player" "info panel" "more panel"; grid-template-rows:auto auto 1fr; }
+.wv.is-theater .wv-player { justify-self:center; width:100%; }
+.wv.is-theater .wv-player { max-height:calc(100vh - 150px); }
+.wv.is-theater .wv-side:not(.is-collapsed) .wv-panel { height:min(620px, 75vh); }
+
+.wv-player { position:relative; overflow:hidden; aspect-ratio:16/9; border-radius:16px; background:#000; box-shadow:0 18px 40px -26px #071a35; }
+/* Mantiene el tamaño del video también mientras carga, reconecta o espera. */
+.wv-player > * { height:100%; }
+/* La etiqueta "Pregrabado · …" es una pastilla pequeña (no se estira) y se
+   oculta junto con los controles para no tapar el video. */
+.wv-player > .react-player-label { height:auto; top:14px; left:14px; padding:4px 10px; border-radius:999px; background:#071a35b3; font-size:11px; transition:opacity .2s; backdrop-filter:blur(6px); }
+.wv-player:has(.uebtv-player-shell:not(.is-chrome-visible)) > .react-player-label { opacity:0; }
+.wv-player .uebtv-player-empty { justify-content:center; gap:4px; padding:20px; text-align:center; }
+.wv-player .uebtv-player-empty h2 { margin:0; }
+.wv-player .uebtv-player-empty p { margin:0; }
+
+/* Título y datos (como YouTube) */
+.wv-info { min-width:0; display:grid; grid-template-columns:minmax(0,1fr); gap:10px; }
+.wv-info > * { min-width:0; }
+.wv-title { margin:0; font-size:var(--fs-title); font-weight:750; line-height:1.25; letter-spacing:-.02em; color:var(--wv-text); }
+.wv-subline { display:flex; flex-wrap:wrap; align-items:center; gap:6px 14px; color:var(--wv-muted); font-size:var(--fs-meta); }
+.wv-subline__item { display:inline-flex; align-items:center; gap:5px; }
+.wv-subline__item .wv-icon { width:15px; height:15px; opacity:.75; }
+.wv-state { display:inline-flex; align-items:center; gap:6px; padding:3px 10px; border-radius:999px; background:var(--wv-accent-soft); color:var(--wv-accent); font-size:12px; font-weight:750; }
+html[data-theme="dark"] .wv-state { color:#e4f2ff; }
+.wv-state .wv-icon { width:13px; height:13px; }
+.wv-state.is-live { background:var(--wv-live-bg); color:#fff; }
+.wv-count { display:inline-flex; align-items:center; gap:5px; color:var(--wv-text); }
+.wv-count .wv-icon { opacity:.75; }
+.wv-count strong { font-weight:750; }
+.wv-count__label { color:var(--wv-muted); }
+
+/* Acciones: píldoras pequeñas; en el celular se deslizan de lado. */
+.wv-actions { display:flex; align-items:center; gap:8px; overflow-x:auto; scrollbar-width:none; padding-bottom:2px; }
+.wv-actions::-webkit-scrollbar { display:none; }
+.wv-chip {
+    display:inline-flex; flex:0 0 auto; align-items:center; gap:7px; height:36px; padding:0 14px; border:0; border-radius:999px;
+    background:var(--wv-chip); color:var(--wv-text); font-weight:600; font-size:13px; line-height:1; font-family:inherit; text-decoration:none; white-space:nowrap; cursor:pointer;
+}
+.wv-chip:hover { background:var(--wv-chip-hover); }
+.wv-chip:focus-visible { outline:2px solid var(--wv-accent); outline-offset:2px; }
+.wv-actions__feedback { flex:0 0 auto; color:var(--wv-muted); font-size:12px; }
+.wv-actions__feedback:empty { display:none; }
+
+/* Descripción plegable */
+.wv-about { padding:12px 14px; border-radius:14px; background:var(--wv-surface-2); border:1px solid var(--wv-border); font-size:var(--fs-body); line-height:1.55; }
+.wv-about p { margin:0; }
+.wv-about__meta { display:flex; align-items:center; gap:6px; color:var(--wv-text); font-weight:650; font-size:13px; }
+.wv-about__meta .wv-icon { opacity:.7; }
+.wv-about__text { margin-top:4px !important; color:var(--wv-muted); white-space:pre-line; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.wv-about.is-open .wv-about__text { display:block; -webkit-line-clamp:unset; }
+.wv-about__license { margin-top:8px !important; color:var(--wv-muted); font-size:12px; }
+.wv-about__toggle { display:inline-block; margin-top:6px; padding:0; border:0; background:none; color:var(--wv-text); font-weight:700; font-size:13px; line-height:1.4; font-family:inherit; cursor:pointer; }
+.wv-about__toggle:hover { text-decoration:underline; }
+.wv-about__toggle:focus-visible { outline:2px solid var(--wv-accent); outline-offset:2px; border-radius:4px; }
+
+/* Panel lateral con pestañas */
+.wv-panel {
+    display:flex; flex-direction:column; min-width:0; min-height:0; overflow:hidden;
+    border:1px solid var(--wv-border); border-radius:16px; background:var(--wv-surface); color:var(--wv-text);
+}
+.wv-tabs { display:flex; flex:0 0 auto; gap:4px; padding:6px; border-bottom:1px solid var(--wv-border); }
+.wv-tab {
+    display:inline-flex; flex:1; align-items:center; justify-content:center; gap:7px; min-height:38px; padding:0 10px; border:0; border-radius:10px;
+    background:transparent; color:var(--wv-muted); font-weight:700; font-size:13px; line-height:1; font-family:inherit; cursor:pointer; white-space:nowrap;
+}
+.wv-tab:hover { background:var(--wv-surface-2); color:var(--wv-text); }
+.wv-tab[aria-selected="true"] { background:var(--wv-accent-soft); color:var(--wv-accent); }
+html[data-theme="dark"] .wv-tab[aria-selected="true"] { color:#e4f2ff; }
+.wv-tab:focus-visible { outline:2px solid var(--wv-accent); outline-offset:-2px; }
+.wv-tab__count { padding:1px 7px; border-radius:999px; background:var(--wv-chip); color:var(--wv-text); font-size:11px; }
+.wv-tabpanel { display:flex; flex:1; flex-direction:column; min-height:0; }
+.wv-tabpanel[hidden] { display:none; }
+
+/* Chat */
+.wv-chat { position:relative; display:flex; flex:1; flex-direction:column; min-height:0; }
+.wv-chat__bar { display:flex; flex-wrap:wrap; align-items:center; gap:6px 10px; padding:8px 14px; border-bottom:1px solid var(--wv-border); }
+.wv-chat__status { display:inline-flex; align-items:center; gap:5px; color:var(--wv-muted); font-size:12px; font-weight:700; }
+.wv-chat__status i { width:7px; height:7px; border-radius:50%; background:currentColor; }
+.wv-chat__status.is-open { color:#11793f; }
+html[data-theme="dark"] .wv-chat__status.is-open { color:#4ade80; }
+.wv-chat__viewers { display:inline-flex; align-items:center; gap:4px; color:var(--wv-muted); font-size:12px; font-weight:700; }
+.wv-chat__viewers svg { width:15px; height:15px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; }
+.wv-chat__hint { color:var(--wv-muted); font-size:11px; }
+.wv-chat__body { position:relative; display:flex; flex:1; flex-direction:column; min-height:0; }
+.wv-chat__control { display:flex; flex-wrap:wrap; align-items:center; gap:4px 10px; padding:8px 14px; border-bottom:1px solid var(--wv-border); font-size:12px; color:var(--wv-muted); }
+.wv-chat__control button { padding:5px 10px; border:1px solid var(--wv-border); border-radius:999px; background:var(--wv-chip); color:var(--wv-text); font-weight:600; font-size:12px; line-height:1; font-family:inherit; cursor:pointer; }
+.wv-chat__list { flex:1; min-height:0; overflow-y:auto; overscroll-behavior:contain; padding:8px 6px 8px 10px; scrollbar-width:thin; }
+.wv-chat__history { display:block; margin:4px auto 8px; padding:6px 12px; border:1px solid var(--wv-border); border-radius:999px; background:var(--wv-surface-2); color:var(--wv-text); font-weight:600; font-size:12px; line-height:1; font-family:inherit; cursor:pointer; }
+.wv-msg { display:flex; gap:10px; padding:7px 8px; border-radius:10px; }
+.wv-msg:hover { background:var(--wv-surface-2); }
+.wv-msg__avatar {
+    display:grid; place-items:center; flex:0 0 32px; width:32px; height:32px; border-radius:50%;
+    background:hsl(var(--hue) 62% var(--wv-avatar-light)); color:#fff; font-size:13px; font-weight:800;
+}
+.wv-msg__body { min-width:0; flex:1; }
+.wv-msg__meta { display:flex; align-items:baseline; gap:8px; min-width:0; }
+.wv-msg__meta strong { overflow:hidden; color:hsl(var(--hue) 65% var(--wv-name-light)); font-size:13px; font-weight:750; text-overflow:ellipsis; white-space:nowrap; }
+.wv-msg__meta time { flex:0 0 auto; color:var(--wv-muted); font-size:11px; }
+/* Minuto del comentario: enlace discreto que lleva a ese momento del video. */
+.wv-msg__moment { display:inline-flex; flex:0 0 auto; align-items:center; gap:3px; padding:0; border:0; background:none; color:var(--wv-accent); font-weight:700; font-size:11px; line-height:1.4; font-family:inherit; font-variant-numeric:tabular-nums; cursor:pointer; }
+.wv-msg__moment span { font-size:8px; }
+.wv-msg__moment:hover { text-decoration:underline; }
+.wv-msg__moment:focus-visible { outline:2px solid var(--wv-accent); outline-offset:2px; border-radius:4px; }
+.wv-msg__remove { margin-left:auto; padding:2px 7px; border:0; border-radius:6px; background:transparent; color:var(--wv-muted); font-weight:600; font-size:11px; line-height:1.4; font-family:inherit; cursor:pointer; opacity:0; }
+.wv-msg:hover .wv-msg__remove, .wv-msg__remove:focus-visible { opacity:1; }
+.wv-msg__remove:hover { background:#e5263f1f; color:var(--wv-live); }
+@media (hover:none) { .wv-msg__remove { opacity:1; } }
+.wv-msg__text { margin:1px 0 0; color:var(--wv-text); font-size:14px; line-height:1.45; overflow-wrap:anywhere; }
+.wv-chat__empty { display:grid; justify-items:center; gap:8px; padding:36px 18px; color:var(--wv-muted); font-size:13px; text-align:center; }
+.wv-chat__empty svg { width:28px; height:28px; fill:none; stroke:currentColor; stroke-width:1.6; stroke-linejoin:round; opacity:.6; }
+.wv-chat__new {
+    position:absolute; left:50%; bottom:68px; z-index:2; transform:translateX(-50%); padding:7px 14px; border:0; border-radius:999px;
+    background:var(--wv-accent); color:#fff; font-weight:700; font-size:12px; line-height:1; font-family:inherit; box-shadow:0 6px 18px #0005; cursor:pointer;
+}
+html[data-theme="dark"] .wv-chat__new { color:#06203d; }
+.wv-chat__feedback { margin:0; padding:4px 14px; color:var(--wv-muted); font-size:12px; }
+.wv-chat__feedback.is-error { color:var(--wv-live); }
+.wv-chat__footer { padding:10px; border-top:1px solid var(--wv-border); }
+.wv-chat__form { position:relative; display:flex; align-items:center; gap:8px; }
+.wv-chat__form input {
+    flex:1; min-width:0; height:42px; padding:0 16px; border:1px solid var(--wv-border); border-radius:999px;
+    background:var(--wv-surface-2); color:var(--wv-text); font-size:14px;
+}
+.wv-chat__form input::placeholder { color:var(--wv-muted); }
+.wv-chat__form input:focus { outline:none; border-color:var(--wv-accent); box-shadow:0 0 0 3px color-mix(in srgb, var(--wv-accent) 25%, transparent); }
+.wv-chat__counter { position:absolute; right:58px; color:var(--wv-muted); font-size:11px; }
+.wv-chat__form button { display:grid; place-items:center; flex:0 0 42px; width:42px; height:42px; padding:0; border:0; border-radius:50%; background:var(--wv-accent); color:#fff; cursor:pointer; }
+html[data-theme="dark"] .wv-chat__form button { color:#06203d; }
+.wv-chat__form button:disabled { opacity:.55; cursor:wait; }
+.wv-chat__form button svg { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; }
+.wv-chat__closed { display:flex; align-items:flex-start; gap:8px; margin:0; color:var(--wv-muted); font-size:12px; line-height:1.4; }
+.wv-chat__closed strong { color:var(--wv-text); }
+.wv-chat__closed svg { flex:0 0 16px; width:16px; height:16px; margin-top:1px; fill:none; stroke:currentColor; stroke-width:1.8; }
+.wv-chat__login { display:flex; align-items:center; justify-content:space-between; gap:10px; color:var(--wv-muted); font-size:13px; }
+.wv-chat__login a { flex:0 0 auto; padding:9px 16px; border-radius:999px; background:var(--wv-accent); color:#fff; font-weight:700; text-decoration:none; }
+html[data-theme="dark"] .wv-chat__login a { color:#06203d; }
+
+/* Programación */
+.wv-guide { display:flex; flex:1; flex-direction:column; gap:16px; min-height:0; overflow-y:auto; padding:14px; }
+.wv-guide h3 { display:flex; align-items:center; gap:7px; margin:0 0 8px; color:var(--wv-muted); font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; }
+.wv-guide h3 .wv-live-dot { color:var(--wv-live); }
+.wv-guide ul { display:grid; gap:6px; margin:0; padding:0; list-style:none; }
+.wv-guide__item { display:grid; gap:3px; padding:10px 12px; border:1px solid var(--wv-border); border-radius:12px; background:var(--wv-surface-2); color:var(--wv-text); text-decoration:none; }
+.wv-guide__item:hover { border-color:var(--wv-accent); }
+.wv-guide__item:focus-visible { outline:2px solid var(--wv-accent); outline-offset:2px; }
+.wv-guide__item.is-current { border-color:var(--wv-accent); box-shadow:inset 3px 0 0 var(--wv-accent); }
+.wv-guide__item strong { font-size:14px; line-height:1.35; }
+.wv-guide__item small { color:var(--wv-muted); font-size:12px; }
+.wv-guide__kind { display:inline-flex; align-items:center; gap:5px; color:var(--wv-muted); font-size:11px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; }
+.wv-guide__kind.is-live { color:var(--wv-live); }
+.wv-guide__kind .wv-icon { width:13px; height:13px; }
+.wv-guide__kind .wv-live-dot { width:7px; height:7px; }
+.wv-guide__empty { display:grid; justify-items:center; gap:10px; padding:28px 10px 8px; color:var(--wv-muted); text-align:center; }
+.wv-guide__empty .wv-icon { width:30px; height:30px; opacity:.6; }
+.wv-guide__empty p { margin:0; font-size:13px; line-height:1.5; }
+.wv-guide__empty strong { display:block; color:var(--wv-text); font-size:14px; }
+.wv-guide__links { position:sticky; bottom:-14px; display:grid; gap:8px; margin:auto -14px -14px; padding:10px 14px 14px; background:var(--wv-surface); border-top:1px solid var(--wv-border); }
+.wv-guide__links a { display:flex; align-items:center; justify-content:center; gap:7px; min-height:40px; border-radius:999px; background:var(--wv-chip); color:var(--wv-text); font-size:13px; font-weight:700; text-decoration:none; }
+.wv-guide__links a:first-child { background:var(--wv-accent); color:#fff; }
+html[data-theme="dark"] .wv-guide__links a:first-child { color:#06203d; }
+.wv-guide__links a:hover { filter:brightness(1.06); }
+
+/* Más para ver */
+.wv-more { margin-top:28px; }
+.wv-more__heading { display:flex; flex-wrap:wrap; align-items:center; gap:8px 14px; margin-bottom:12px; }
+.wv-more__heading h2 { margin:0; font-size:var(--fs-section); font-weight:800; color:var(--wv-text); }
+/* "Ver todo el catálogo" va junto al título, no suelto al otro extremo. */
+.wv-more__heading a { display:inline-flex; align-items:center; min-height:30px; padding:0 12px; border:1px solid var(--wv-border); border-radius:999px; color:var(--wv-accent); font-size:12px; font-weight:700; text-decoration:none; }
+.wv-more__heading a:hover { background:var(--wv-chip); }
+.wv-more__heading a:focus-visible { outline:2px solid var(--wv-accent); outline-offset:2px; }
+.wv-more__list { display:grid; grid-template-columns:repeat(auto-fill, minmax(230px, 1fr)); gap:16px; }
+.wv-card { display:grid; gap:8px; color:var(--wv-text); text-decoration:none; }
+.wv-card__thumb { position:relative; display:grid; place-items:center; aspect-ratio:16/9; overflow:hidden; border-radius:12px; background:linear-gradient(140deg,#123a66,#071a35) center/cover no-repeat; }
+.wv-card__thumb[style] { background-color:#071a35; background-size:cover; }
+.wv-card__logo { width:44%; opacity:.85; }
+.wv-card__tag { position:absolute; left:8px; bottom:8px; display:inline-flex; align-items:center; gap:5px; padding:3px 8px; border-radius:6px; background:#000c; color:#fff; font-size:11px; font-weight:700; }
+.wv-card__tag .wv-icon { width:12px; height:12px; }
+.wv-card__tag .wv-live-dot { width:6px; height:6px; }
+.wv-card__tag.is-live { background:var(--wv-live-bg); }
+.wv-card__body { display:grid; gap:3px; }
+.wv-card__body strong { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; font-size:var(--fs-card); line-height:1.35; }
+.wv-card__body small { color:var(--wv-muted); font-size:var(--fs-meta); }
+.wv-card:hover .wv-card__thumb { box-shadow:0 0 0 2px var(--wv-accent); }
+.wv-card:focus-visible { outline:2px solid var(--wv-accent); outline-offset:3px; border-radius:12px; }
+.wv-more__empty { color:var(--wv-muted); }
+
+
+@media (max-width:1199px) { .wv-grid { grid-template-columns:minmax(0,1fr) 320px; } }
+
+/* Tableta y celular: una columna (video, información, panel). */
+@media (max-width:960px) {
+    .wv-grid, .wv.is-theater .wv-grid { grid-template-columns:minmax(0,1fr); grid-template-areas:"player" "info" "panel" "more"; grid-template-rows:none; gap:14px; }
+    .wv.is-theater .wv-player { max-height:none; }
+    .wv-panel, .wv.is-theater .wv-panel { height:clamp(380px, 70dvh, 640px); }
+    .wv-panel.is-guide, .wv-panel:has(.wv-chat.is-empty):not(.is-guide) { height:auto; }
+    .wv-chat.is-empty .wv-chat__empty { padding:22px 18px; }
+    .wv-more__list { display:flex; overflow-x:auto; scroll-snap-type:x mandatory; scrollbar-width:none; gap:12px; padding-bottom:4px; }
+    .wv-more__list::-webkit-scrollbar { display:none; }
+    .wv-card { flex:0 0 min(72%, 280px); scroll-snap-align:start; }
+}
+@media (max-width:640px) {
+    .wv { padding-bottom:64px; }
+    .wv .uebtv-watch-breadcrumb { display:none; }
+    .wv-grid { gap:12px; }
+    .wv-player { border-radius:12px; }
+    .wv-subline { gap:6px 12px; }
+    .wv-count__label { display:none; }
+    .wv-chip { height:32px; padding:0 12px; }
+    .wv-about { padding:10px 12px; }
+    .wv-more { margin-top:20px; }
+}
+@media (prefers-reduced-motion:reduce) { .wv-live-dot, :is(.cv, .wv) .cv-app::after { animation:none; } }
+
+/* ───────────── Señal 24/7 (página principal) ─────────────
+ * La pantalla y su sincronización no cambian; alrededor usa el mismo lenguaje
+ * de la página del video: "En esta sala", panel Chat | Programación,
+ * "Mientras tanto, mira…", la app y los créditos. */
+.cv .channel-layout { grid-template-columns:minmax(0,1fr) 360px; gap:20px; }
+.cv .channel-rail { display:flex; flex-direction:column; gap:12px; min-width:0; }
+.cv .cv-now { display:grid; gap:10px; padding:18px 22px 22px; color:var(--wv-text); }
+.cv .cv-now .wv-title { margin:0; font-size:var(--fs-title); }
+.cv-now__text { margin:0; color:var(--wv-muted); font-size:var(--fs-body); line-height:1.55; }
+.cv-countdown { display:inline-block; margin-top:10px; padding:5px 12px; border-radius:999px; background:#ffffff1f; color:#fff; font-size:12px; font-weight:700; }
+
+
+.cv-panel { height:clamp(420px, 62vh, 640px); }
+.cv-panel__empty { display:grid; justify-items:center; align-content:center; gap:10px; flex:1; padding:28px 18px; color:var(--wv-muted); text-align:center; }
+.cv-panel__empty .wv-icon { width:28px; height:28px; opacity:.6; }
+.cv-panel__empty p { margin:0; font-size:13px; line-height:1.5; }
+.cv-panel__empty strong { display:block; color:var(--wv-text); font-size:14px; }
+.cv-panel__empty--small { padding:16px 8px; }
+
+.cv-guide { display:flex; flex:1; flex-direction:column; gap:10px; min-height:0; overflow-y:auto; padding:14px; }
+.cv-guide h3 { display:flex; align-items:center; gap:7px; margin:4px 0 0; color:var(--wv-muted); font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; }
+.cv-guide h3 .wv-live-dot { color:var(--wv-live); }
+.cv-guide__now a { display:grid; gap:3px; margin-top:8px; padding:10px 12px; border:1px solid var(--wv-accent); border-radius:12px; background:var(--wv-accent-soft); color:var(--wv-text); text-decoration:none; box-shadow:inset 3px 0 0 var(--wv-accent); }
+.cv-guide__now strong { font-size:14px; }
+.cv-guide__now small { color:var(--wv-muted); font-size:12px; }
+.cv .channel-agenda { display:grid; gap:6px; }
+.cv .cv-guide__item { display:grid; gap:2px; margin:0; padding:10px 12px; border:1px solid var(--wv-border); border-radius:12px; background:var(--wv-surface-2); }
+.cv .cv-guide__item time { color:var(--wv-accent); font-size:12px; font-weight:800; }
+.cv .cv-guide__item h4 { margin:0; color:var(--wv-text); font-size:14px; font-weight:700; line-height:1.35; }
+.cv .cv-guide__item p { margin:0; color:var(--wv-muted); font-size:12px; }
+.cv .cv-guide__all { display:flex; align-items:center; justify-content:center; gap:8px; width:100%; min-height:40px; margin-top:auto; border:0; border-radius:999px; background:var(--wv-accent); color:#fff; font-weight:700; font-size:13px; line-height:1; font-family:inherit; cursor:pointer; }
+html[data-theme="dark"] .cv .cv-guide__all { color:#06203d; }
+.cv .cv-guide__all:focus-visible { outline:2px solid var(--wv-accent); outline-offset:2px; }
+.cv-guide__note { margin:0; color:var(--wv-muted); font-size:11px; text-align:center; }
+
+.cv .cv-more { margin-top:28px; color:var(--wv-text); }
+/* Columna izquierda: pantalla + "Mientras tanto, mira…". En escritorio la
+   columna derecha mide lo mismo y el panel Chat | Programación ocupa el resto,
+   así no quedan huecos debajo de ninguna de las dos. */
+.cv-left { min-width:0; }
+html.uebtv-tv-mode .cv-left { height:100%; }
+@media (min-width:1201px) {
+    /* Como Kick/Twitch: el chat mide lo mismo que la pantalla con su
+       información; "Grabaciones recientes" va debajo, a todo el ancho. */
+    .cv .channel-layout { align-items:stretch; grid-template-rows:auto auto; row-gap:28px; }
+    .cv-left { display:contents; }
+    .cv .channel-main { grid-column:1; grid-row:1; }
+    .cv .cv-rail { grid-column:2; grid-row:1; align-self:start; min-height:0; }
+    .cv .cv-more { grid-column:1 / -1; grid-row:2; margin-top:0; }
+    /* El chat (o la programación) mide lo mismo que el video, como en Kick. */
+    .cv .cv-rail > .wv-side { flex:0 0 auto; height:var(--cv-video-h, 560px); min-height:360px; }
+    /* Plegado: la tarjeta de la app conserva su tamaño natural (termina a la
+       altura del video), sin estirarse hasta el final de la columna. */
+    .cv .cv-rail > .wv-side.is-collapsed { height:auto; min-height:var(--cv-video-h, 0px); }
+    .cv .wv-side.is-collapsed > .wv-side__app { align-self:stretch; }
+    .cv .wv-side.is-collapsed > .wv-side__app .cv-app { display:flex; flex:1 1 auto; flex-direction:column; justify-content:center; }
+    .cv .wv-side:not(.is-collapsed) > .cv-panel { height:100%; }
+}
+/* La app: última tarjeta de la columna, debajo de la sala y del panel, para que
+   resalte sin quitarle protagonismo al chat ni a la programación. Usa la ilustración
+   original (el zorrito con el cartel) y el QR va sobre el cartel con las mismas proporciones. */
+:is(.cv, .wv) .cv-app {
+    position:relative; overflow:hidden;
+    border:1px solid #4f8fd6; border-radius:18px; background:radial-gradient(circle at 65% 30%, #2f6db566, transparent 60%), linear-gradient(150deg,#123a68,#0a1b34 80%);
+    box-shadow:0 0 0 1px #6fb0ff22, 0 14px 34px -14px #1d5fae99;
+}
+:is(.cv, .wv) .cv-app::after { position:absolute; inset:0; border-radius:inherit; pointer-events:none; content:""; background:linear-gradient(110deg, transparent 35%, #ffffff14 50%, transparent 65%); background-size:250% 100%; animation:cv-shine 6s ease-in-out infinite; }
+@keyframes cv-shine { 0%, 60% { background-position:120% 0; } 100% { background-position:-120% 0; } }
+/* Escritorio: la ilustración a todo el ancho, recortada abajo (piernas) para ser compacta. */
+:is(.cv, .wv) .cv-app .channel-app-art { height:auto; aspect-ratio:960 / 690; background:none; }
+:is(.cv, .wv) .cv-app .channel-app-copy { padding:2px 18px 16px; }
+:is(.cv, .wv) .cv-app .channel-app-eyebrow { margin:0 0 4px; }
+:is(.cv, .wv) .cv-app .channel-app-copy h2 { margin:0 0 6px; font-size:22px; line-height:1.1; }
+:is(.cv, .wv) .cv-app .channel-app-copy p { margin:0 0 12px; font-size:12px; line-height:1.45; }
+:is(.cv, .wv) .cv-app .channel-app-download { min-height:40px; }
+:is(.cv, .wv) .cv-app .channel-app-copy small { display:block; margin-top:8px; }
+
+@media (max-width:1200px) {
+    .cv .channel-layout { grid-template-columns:minmax(0,1fr); }
+    /* Una sola columna: pantalla, luego la sala y el chat, y al final las grabaciones. */
+    .cv-left { display:contents; }
+    .cv .channel-main { order:1; }
+    .cv .cv-rail { order:2; }
+    .cv .cv-more { order:3; margin-top:8px; }
+    /* Tableta: ilustración a la izquierda y texto a la derecha. */
+    :is(.cv, .wv) .cv-app { display:grid; grid-template-columns:minmax(260px, 340px) minmax(0,1fr); align-items:center; }
+    :is(.cv, .wv) .cv-app .channel-app-copy { padding:18px 24px; }
+    :is(.cv, .wv) .cv-app .channel-app-download { max-width:280px; }
+    .cv .cv-panel { height:clamp(380px, 62dvh, 580px); }
+    .cv .cv-panel:has(#cv-tabpanel-guide:not([hidden])) { height:auto; }
+}
+@media (max-width:700px) {
+    .cv .cv-now { gap:8px; padding:12px 14px 14px; }
+    .cv .cv-now__text { line-height:1.45; }
+    .cv .channel-layout { gap:12px; }
+    .cv .cv-rail { gap:10px; }
+    /* Sin emisión: la pantalla mantiene el formato 16:9 del video en lugar de
+       crecer a 370 px, con el logo y el texto a escala del celular. */
+    html .cv .channel-screen.is-idle { aspect-ratio:16 / 9; min-height:0; }
+    html .cv .channel-idle { min-height:0; height:100%; padding:10px 16px; }
+    html .cv .channel-idle-logo { width:min(210px, 52vw); }
+    html .cv .channel-idle-caption { margin:6px 0 10px; font-size:7px; }
+    html .cv .channel-idle h2 { margin:0 0 4px; font-size:17px; }
+    html .cv .channel-idle p { font-size:11.5px; line-height:1.45; }
+    html .cv .channel-idle-link { margin-top:4px; padding:6px 0; font-size:11.5px; }
+    html .cv .channel-idle-footer { display:none; }
+    /* Celular: vertical, justo debajo de la información de la señal. */
+    :is(.cv, .wv) .cv-app { display:block; }
+    :is(.cv, .wv) .cv-app .channel-app-copy { padding:2px 18px 18px; }
+    :is(.cv, .wv) .cv-app .channel-app-copy h2 { font-size:21px; }
+}
+@media (max-width:380px) { html .cv .channel-idle p { display:none; } }
+/* Neutraliza los estilos anteriores de la columna de programación dentro del panel. */
+html .cv .cv-guide.channel-next { margin:0; padding:14px; border:0; border-radius:0; background:transparent; box-shadow:none; }
+html .cv .cv-guide .channel-agenda { margin:0; padding:0; border:0; background:none; box-shadow:none; }
+html .cv .cv-guide .cv-guide__item { border:1px solid var(--wv-border); background:var(--wv-surface-2); }
+html .cv .cv-guide .cv-guide__item time { color:var(--wv-accent); }
+html .cv .cv-guide .cv-guide__all { margin-top:auto; padding:0 14px; border:0; background:var(--wv-accent); color:#fff; box-shadow:none; transform:none; }
+html[data-theme="dark"] .cv .cv-guide .cv-guide__all { color:#06203d; }
+html .cv .cv-guide .cv-guide__all:hover { filter:brightness(1.06); }
+@media (prefers-reduced-motion:reduce) { :is(.cv, .wv) .cv-app::after { animation:none; } }
+
+/* ───────────── Menú "Compartir" (video y señal) ─────────────
+ * Se abre bajo el botón; en el celular se ancla al borde para no salirse. */
+.share { position:relative; display:inline-flex; }
+.share__menu {
+    position:fixed; z-index:1000; padding:12px;
+    border:1px solid var(--wv-border); border-radius:16px; background:var(--wv-surface); color:var(--wv-text);
+    box-shadow:0 20px 44px -18px #0a234299; animation:share-in .14s ease-out;
+}
+@keyframes share-in { from { opacity:0; transform:translateY(-4px); } }
+.share__head { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+.share__head strong { font-size:var(--fs-section, 15px); font-weight:800; }
+.share__close { display:grid; place-items:center; width:32px; height:32px; border:0; border-radius:50%; background:transparent; color:var(--wv-muted); font-size:14px; cursor:pointer; }
+.share__close:hover { background:var(--wv-chip); color:var(--wv-text); }
+.share__targets { display:grid; grid-template-columns:repeat(5, minmax(0,1fr)); gap:4px; }
+.share__target { display:grid; justify-items:center; gap:6px; padding:6px 2px; border-radius:12px; color:var(--wv-text); font-size:11px; font-weight:600; text-align:center; text-decoration:none; }
+.share__target:hover { background:var(--wv-chip); }
+.share__target span { display:grid; place-items:center; width:44px; height:44px; border-radius:50%; background:var(--share-color, var(--wv-accent)); color:#fff; }
+.share__target svg { width:22px; height:22px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+.share__target.is-whatsapp { --share-color:#1da851; }
+.share__target.is-facebook { --share-color:#1877f2; }
+.share__target.is-x { --share-color:#111; }
+.share__target.is-telegram { --share-color:#1d8fcf; }
+.share__target.is-email { --share-color:#5b6b80; }
+html[data-theme="dark"] .share__target.is-x span { box-shadow:inset 0 0 0 1px #ffffff40; }
+.share__copy { display:flex; gap:6px; margin-top:12px; padding:4px; border:1px solid var(--wv-border); border-radius:999px; background:var(--wv-surface-2); }
+.share__copy input { flex:1 1 auto; min-width:0; padding:0 10px; border:0; outline:0; background:transparent; color:var(--wv-muted); font-size:13px; font-family:inherit; text-overflow:ellipsis; }
+.share__copy button { flex:0 0 auto; height:34px; padding:0 16px; border:0; border-radius:999px; background:var(--wv-accent); color:#fff; font-weight:700; font-size:13px; font-family:inherit; cursor:pointer; }
+html[data-theme="dark"] .share__copy button { color:#06203d; }
+.share__status { min-height:16px; margin:8px 2px 0; color:var(--wv-muted); font-size:12px; }
+.share__status:empty { display:none; }
+:is(.share__target, .share__close, .share__copy button):focus-visible { outline:2px solid var(--wv-accent); outline-offset:2px; }
+@media (prefers-reduced-motion:reduce) { .share__menu { animation:none; } }
+
+
+/* ───────────── Contraste y relieve (sobre todo en modo claro) ─────────────
+ * Botones secundarios: azul suave con texto azul oscuro y borde; primarios:
+ * azul sólido. Paneles blancos con sombra suave para separarse del fondo. */
+html :is(.wv-chip, .ct-tabs a:not(.is-active), .ct-search__filters-toggle, .ct-signal, .wv-more__heading a, .ct-section-head a) {
+    border:1px solid var(--wv-chip-border); background:var(--wv-chip); color:var(--wv-chip-text);
+}
+html :is(.wv-chip, .ct-tabs a:not(.is-active), .ct-search__filters-toggle, .ct-signal, .wv-more__heading a, .ct-section-head a):hover {
+    background:var(--wv-chip-hover); border-color:var(--wv-accent);
+}
+/* En claro, sobre el fondo gris azulado: botones blancos con borde y texto azul. */
+html:not([data-theme="dark"]) :is(.wv-chip, .ct-tabs a:not(.is-active), .ct-search__filters-toggle, .ct-signal, .wv-more__heading a, .ct-section-head a) {
+    background:#fff; border-color:#b9cde8; color:#11407a; box-shadow:0 1px 2px #0b224014;
+}
+html:not([data-theme="dark"]) :is(.wv-chip, .ct-tabs a:not(.is-active), .ct-search__filters-toggle, .ct-signal, .wv-more__heading a, .ct-section-head a):hover {
+    background:#eaf2fc; border-color:var(--wv-accent);
+}
+/* Dentro de paneles blancos (canal) el botón se tiñe para no perderse. */
+html:not([data-theme="dark"]) .cv-now .wv-chip { background:#e8f0fb; }
+.wv-chip .wv-icon, .ct-search__filters-toggle .ct-icon { color:var(--wv-accent); }
+:is(.wv-panel, .wv-about, .ct-search__field, .ct-upcoming__list a, .wv .wv-info) { box-shadow:var(--wv-shadow); }
+.wv .wv-info { box-shadow:none; }
+.wv-panel { border-color:var(--wv-border); }
+/* Pestañas del panel: la activa en azul sólido, la otra legible. */
+.wv-tabs { background:var(--wv-surface-2); }
+.wv-tab { color:var(--wv-muted); }
+.wv-tab[aria-selected="true"] { background:var(--wv-accent); color:#fff; box-shadow:0 4px 12px -6px var(--wv-accent); }
+html[data-theme="dark"] .wv-tab[aria-selected="true"] { background:var(--wv-accent-soft); color:#e4f2ff; box-shadow:none; }
+/* Estado (Finalizado, Pregrabado…) con borde para que no se pierda. */
+.wv-state:not(.is-live) { border:1px solid var(--wv-chip-border); }
+/* Miniaturas sin imagen: logo en blanco, visible sobre el azul. */
+.wv-card__logo { filter:brightness(0) invert(1); opacity:.9; }
+/* El texto de la sección de resultados y títulos de tarjetas, un poco más oscuro. */
+.ct-card__title h3, .wv-card__body strong { color:var(--wv-text); }
+
+
+/* ───────────── Panel plegable (página del video) ─────────────
+ * Las dos caras (panel y tarjeta de la app) ocupan el mismo lugar; al cambiar,
+ * una se desvanece y baja un poco mientras la otra aparece subiendo, sin saltos
+ * de tamaño en escritorio. En el celular la altura también se anima. */
+.wv-side { display:grid; min-width:0; min-height:0; }
+.wv-side > * { grid-area:1 / 1; min-width:0; min-height:0; }
+.wv-side[style*="height"] > .wv-panel { height:100%; }
+.wv-side > .wv-panel, .wv-side__app {
+    transition:opacity .34s ease, transform .42s cubic-bezier(.2,.8,.2,1), visibility 0s linear 0s;
+}
+.wv-side.is-collapsed > .wv-panel, .wv-side:not(.is-collapsed) > .wv-side__app {
+    opacity:0; transform:translateY(10px) scale(.98); visibility:hidden; pointer-events:none;
+    transition:opacity .22s ease, transform .3s ease, visibility 0s linear .3s;
+}
+.wv-side.is-collapsed > .wv-side__app, .wv-side:not(.is-collapsed) > .wv-panel { transition-delay:.12s, .12s, 0s; }
+.wv-side__app { display:flex; flex-direction:column; gap:10px; align-self:start; }
+.wv-tabbar { display:flex; flex:0 0 auto; align-items:center; gap:4px; padding-right:6px; border-bottom:1px solid var(--wv-border); background:var(--wv-surface-2); }
+.wv-tabbar .wv-tabs { flex:1 1 auto; border-bottom:0; background:transparent; }
+.wv-side__toggle { display:grid; flex:0 0 auto; place-items:center; width:34px; height:34px; border:1px solid var(--wv-border); border-radius:10px; background:var(--wv-surface); color:var(--wv-muted); cursor:pointer; transition:color .15s, border-color .15s; }
+.wv-side__toggle:hover { border-color:var(--wv-accent); color:var(--wv-accent); }
+.wv-side__show {
+    display:flex; align-items:center; gap:10px; width:100%; min-height:48px; padding:0 14px; border:1px solid var(--wv-border); border-radius:14px;
+    background:var(--wv-surface); color:var(--wv-text); box-shadow:var(--wv-shadow); font-weight:700; font-size:var(--fs-chip); font-family:inherit; text-align:left; cursor:pointer;
+    transition:border-color .15s, transform .15s;
+}
+.wv-side__show-text { flex:1 1 auto; }
+.wv-side__show .wv-icon:first-child { color:var(--wv-accent); }
+.wv-side__show b { display:grid; place-items:center; min-width:22px; height:22px; padding:0 6px; border-radius:999px; background:var(--wv-accent); color:#fff; font-size:11px; }
+html[data-theme="dark"] .wv-side__show b { color:#06203d; }
+.wv-side__show:hover { border-color:var(--wv-accent); transform:translateY(-1px); }
+:is(.wv-side__toggle, .wv-side__show):focus-visible { outline:2px solid var(--wv-accent); outline-offset:2px; }
+.wv .wv-side__app .cv-app { border-radius:18px; }
+@media (max-width:960px) {
+    /* Celular/tableta: la cara oculta no ocupa espacio; la altura se anima. */
+    .wv-side { display:block; }
+    .wv-side > .wv-panel, .wv-side__app { overflow:hidden; max-height:1200px; transition:opacity .3s ease, transform .4s ease, max-height .45s ease, visibility 0s; }
+    .wv-side.is-collapsed > .wv-panel, .wv-side:not(.is-collapsed) > .wv-side__app { max-height:0; margin:0; border-width:0; transition:opacity .2s ease, transform .3s ease, max-height .35s ease, visibility 0s linear .35s, border-width 0s linear .35s; }
+    .wv .wv-side__app .cv-app { display:grid; grid-template-columns:minmax(200px, 300px) minmax(0,1fr); align-items:center; }
+}
+@media (max-width:640px) { .wv .wv-side__app .cv-app { display:block; } }
+@media (prefers-reduced-motion:reduce) {
+    .wv-side > .wv-panel, .wv-side__app, .wv-side.is-collapsed > .wv-panel, .wv-side:not(.is-collapsed) > .wv-side__app { transition:none; transform:none; }
+}
+@media (min-width:961px) {
+    /* Plegado: la columna mide lo que la tarjeta (aunque el video sea más bajo)
+       y el panel, ya invisible, deja de ocupar alto. */
+    .wv-side { position:relative; }
+    .wv-side.is-collapsed { height:auto !important; }
+    .wv-side.is-collapsed > .wv-panel { position:absolute; inset:0; }
+}
+
+
+/* ───────────── Señal: más limpia (sobre todo en el celular) ─────────────
+ * Sin chat cuando no hay programa ni directo (solo "Programación"), textos de
+ * una línea y la sala "En esta sala" solo en escritorio (en el celular la
+ * tarjeta bajo la pantalla ya dice qué está al aire). */
+.cv-panel__title { display:flex; flex:1 1 auto; align-items:center; gap:8px; min-height:38px; margin:0; padding:6px 12px; color:var(--wv-text); font-size:var(--fs-chip); font-weight:800; }
+.cv-panel__title .wv-icon { color:var(--wv-accent); }
+.cv .cv-now__text { color:var(--wv-muted); font-size:var(--fs-body); }
+.cv .cv-now .wv-actions { margin-top:2px; }
+@media (max-width:1200px) {
+}
+@media (max-width:640px) {
+    .cv .cv-now { gap:6px; padding:10px 14px 14px; }
+    .cv .cv-now .wv-subline { gap:4px 10px; }
+    .cv .cv-guide { gap:8px; padding:12px; }
+    .cv .cv-guide__note { display:none; }
+    .cv .cv-panel__empty--small { padding:8px 4px; gap:6px; }
+    .cv .cv-panel__empty--small .wv-icon { width:22px; height:22px; }
+}
+
+
+/* ───────────── Botón "Ver programación completa" llamativo ─────────────
+ * Degradado azul con un brillo que lo cruza cada pocos segundos, el calendario
+ * en una burbuja que se despega y una flecha que avanza al pasar el mouse. */
+html .cv .cv-guide .cv-guide__all {
+    position:relative; overflow:hidden; isolation:isolate; display:flex; align-items:center; justify-content:flex-start; gap:12px;
+    min-height:52px; margin-top:auto; padding:0 16px 0 8px; border:0; border-radius:16px;
+    background:linear-gradient(120deg, #0d3f86 0%, #1557ab 50%, #1e6bd0 100%); color:#fff;
+    font-weight:800; font-size:14px; font-family:inherit; letter-spacing:.01em; text-align:left;
+    box-shadow:0 10px 24px -12px #1557ab, inset 0 1px 0 #ffffff33;
+    transition:transform .2s ease, box-shadow .2s ease, filter .2s ease;
+}
+html .cv .cv-guide .cv-guide__all::before {
+    position:absolute; inset:0; z-index:-1; content:""; pointer-events:none;
+    background:linear-gradient(105deg, transparent 30%, #ffffff40 48%, transparent 66%); background-size:260% 100%; background-position:120% 0;
+    animation:cv-guide-shine 4.5s ease-in-out infinite;
+}
+html .cv .cv-guide .cv-guide__all:hover { transform:translateY(-2px); box-shadow:0 16px 30px -14px #1557ab, inset 0 1px 0 #ffffff40; filter:saturate(1.1); }
+html .cv .cv-guide .cv-guide__all:active { transform:translateY(0); }
+html .cv .cv-guide .cv-guide__all:focus-visible { outline:3px solid #8cc4ff; outline-offset:3px; }
+.cv-guide__all-icon {
+    display:grid; flex:0 0 auto; place-items:center; width:38px; height:38px; border-radius:12px;
+    background:#ffffff; color:#1557ab; box-shadow:0 4px 10px -4px #0009;
+    animation:cv-guide-pop 4.5s ease-in-out infinite;
+}
+.cv-guide__all-icon .wv-icon { width:20px; height:20px; stroke-width:2; }
+.cv-guide__all-text { flex:1 1 auto; }
+.cv-guide__all-arrow { display:grid; place-items:center; width:28px; height:28px; border-radius:50%; background:#ffffff26; font-size:15px; transition:transform .2s ease, background .2s ease; }
+html .cv .cv-guide .cv-guide__all:hover .cv-guide__all-arrow { transform:translateX(4px); background:#ffffff40; }
+/* Oscuro: degradado más luminoso para destacar sobre el fondo azul noche. */
+html[data-theme="dark"] .cv .cv-guide .cv-guide__all {
+    background:linear-gradient(120deg, #1a4fae 0%, #2563c9 55%, #2b6bd4 100%); color:#fff;
+    box-shadow:0 12px 28px -12px #3b86f0aa, inset 0 1px 0 #ffffff33;
+}
+html[data-theme="dark"] .cv-guide__all-icon { background:#0b1f3a; color:#8cc4ff; box-shadow:0 4px 12px -4px #000c, inset 0 0 0 1px #8cc4ff55; }
+@keyframes cv-guide-shine { 0%, 55% { background-position:120% 0; } 85%, 100% { background-position:-40% 0; } }
+@keyframes cv-guide-pop { 0%, 60%, 100% { transform:none; } 68% { transform:translateY(-3px) rotate(-6deg) scale(1.06); } 76% { transform:translateY(0) rotate(4deg); } 84% { transform:none; } }
+@media (prefers-reduced-motion:reduce) {
+    html .cv .cv-guide .cv-guide__all::before, .cv-guide__all-icon { animation:none; }
+    html .cv .cv-guide .cv-guide__all, .cv-guide__all-arrow { transition:none; }
+}
+
+
+/* ───────────── Botón "Mostrar programación" (panel plegado) ─────────────
+ * Es lo primero que ve quien plegó el panel: mismo estilo llamativo que
+ * "Ver programación completa" (degradado, brillo, burbuja que se despega). */
+html .wv-side__show {
+    position:relative; overflow:hidden; isolation:isolate; gap:12px; min-height:56px; padding:0 10px 0 8px; border:0; border-radius:16px;
+    background:linear-gradient(120deg, #0d3f86 0%, #1557ab 50%, #1e6bd0 100%); color:#fff; font-weight:800; font-size:14px;
+    box-shadow:0 12px 26px -12px #1557ab, inset 0 1px 0 #ffffff33;
+    transition:transform .2s ease, box-shadow .2s ease, filter .2s ease;
+}
+html .wv-side__show::before {
+    position:absolute; inset:0; z-index:-1; content:""; pointer-events:none;
+    background:linear-gradient(105deg, transparent 30%, #ffffff40 48%, transparent 66%); background-size:260% 100%; background-position:120% 0;
+    animation:cv-guide-shine 4.5s ease-in-out infinite;
+}
+html .wv-side__show:hover { border-color:transparent; transform:translateY(-2px); box-shadow:0 18px 32px -14px #1557ab, inset 0 1px 0 #ffffff40; filter:saturate(1.1); }
+html .wv-side__show:focus-visible { outline:3px solid #8cc4ff; outline-offset:3px; }
+.wv-side__show-icon { display:grid; flex:0 0 auto; place-items:center; width:40px; height:40px; border-radius:12px; background:#fff; color:#1557ab; box-shadow:0 4px 10px -4px #0009; animation:cv-guide-pop 4.5s ease-in-out infinite; }
+html .wv-side__show .wv-side__show-icon .wv-icon { width:20px; height:20px; color:inherit; stroke-width:2; }
+.wv-side__show-text { flex:1 1 auto; }
+html .wv-side__show b { background:#fff; color:#1557ab; }
+.wv-side__show-arrow { display:grid; flex:0 0 auto; place-items:center; width:30px; height:30px; border-radius:50%; background:#ffffff26; transition:transform .2s ease, background .2s ease; }
+html .wv-side__show .wv-side__show-arrow .wv-icon { width:16px; height:16px; color:#fff; stroke-width:2.2; }
+html .wv-side__show:hover .wv-side__show-arrow { transform:translateY(2px); background:#ffffff40; }
+html[data-theme="dark"] .wv-side__show { background:linear-gradient(120deg, #1a4fae 0%, #2563c9 55%, #2b6bd4 100%); color:#fff; box-shadow:0 12px 28px -12px #3b86f0aa, inset 0 1px 0 #ffffff33; }
+html[data-theme="dark"] .wv-side__show-icon { background:#0b1f3a; color:#8cc4ff; box-shadow:0 4px 12px -4px #000c, inset 0 0 0 1px #8cc4ff55; }
+html[data-theme="dark"] .wv-side__show b { background:#0b1f3a; color:#8cc4ff; }
+@media (prefers-reduced-motion:reduce) {
+    html .wv-side__show::before, .wv-side__show-icon { animation:none; }
+    html .wv-side__show, .wv-side__show-arrow { transition:none; }
+}
+
+/* ───────────── Programación vacía, equilibrada ─────────────
+ * La lista ocupa el espacio libre del panel y, si no hay emisiones, el aviso
+ * queda centrado entre el título y el botón (no pegado arriba con un hueco). */
+html .cv .cv-guide .channel-agenda { display:flex; flex:1 1 auto; flex-direction:column; gap:6px; min-height:0; }
+html .cv .cv-guide .channel-agenda > .cv-panel__empty { flex:1 1 auto; justify-content:center; align-content:center; padding:20px 12px; }
+html .cv .cv-guide .cv-panel__empty .wv-icon {
+    box-sizing:content-box; width:26px; height:26px; padding:16px; border-radius:50%;
+    background:var(--wv-accent-soft); color:var(--wv-accent); opacity:1;
+    box-shadow:0 0 0 8px color-mix(in srgb, var(--wv-accent-soft) 45%, transparent);
+}
+html .cv .cv-guide .cv-panel__empty strong { margin-top:6px; font-size:var(--fs-card); }
+html .cv .cv-guide .cv-panel__empty p { color:var(--wv-muted); }
+@media (max-width:640px) {
+    html .cv .cv-guide .cv-panel__empty .wv-icon { width:22px; height:22px; padding:12px; box-shadow:0 0 0 6px color-mix(in srgb, var(--wv-accent-soft) 45%, transparent); }
+}
+
+
+/* Programación sin emisiones ni chat: panel corto + tarjeta de la app debajo
+   (sin huecos). El botón "Mostrar…" solo hace falta con el panel plegado. */
+.wv-side.is-quiet:not(.is-collapsed) { display:flex; flex-direction:column; gap:12px; }
+.wv-side.is-quiet:not(.is-collapsed) > .wv-panel { height:auto !important; flex:0 0 auto; }
+.wv-side.is-quiet:not(.is-collapsed) > .wv-side__app { opacity:1; transform:none; visibility:visible; pointer-events:auto; max-height:none; overflow:visible; transition-delay:.12s, .12s, 0s; }
+.wv-side.is-quiet:not(.is-collapsed) .wv-side__show { display:none; }
+@media (min-width:1201px) {
+    .cv .cv-rail > .wv-side.is-quiet:not(.is-collapsed) { height:auto; min-height:0; }
+}
+html .cv .wv-side.is-quiet .channel-agenda > .cv-panel__empty { padding:14px 12px 18px; }
+
+
+/* "Créditos" se aparta mientras quedaría encima del panel (ver Shell.jsx). */
+.uebtv-credits-widget { transition:opacity .22s ease, transform .22s ease; }
+body.uebtv-credits-yield .uebtv-credits-widget:not(:has(.uebtv-credits-panel)) { opacity:0; transform:translateY(14px); pointer-events:none; }
+@media (prefers-reduced-motion:reduce) { .uebtv-credits-widget { transition:none; } }
+/* Créditos dentro del menú ☰ (siempre disponible). */
+.studio-guest-menu > .studio-guest-menu__credits { display:flex; align-items:center; gap:12px; width:100%; min-height:67px; padding:10px; border:1px solid transparent; border-radius:11px; background:transparent; color:#eff6ff; font:inherit; text-align:left; cursor:pointer; }
+.studio-guest-menu > .studio-guest-menu__credits:hover, .studio-guest-menu > .studio-guest-menu__credits:focus-visible { border-color:#5483b6; background:#183d65; outline:none; }
+.studio-guest-menu__credits .studio-guest-menu__icon svg { width:20px; height:20px; fill:#ffd36b; }
+/* Celular: con dos acciones, "Compartir la señal" queda solo con su ícono. */
+.share__label { white-space:nowrap; }
+@media (max-width:640px) {
+    .cv .cv-now .wv-actions:has(> a) .share__label { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
+    .cv .cv-now .wv-actions:has(> a) .share > .wv-chip { width:34px; padding:0; justify-content:center; }
+}
+
+
+/* ───────────── Programación con miniaturas ─────────────
+ * Cada emisión lleva su miniatura 16:9; sin imagen, una genérica azul con el
+ * logo de la UEB. Más llamativo que solo texto. */
+.guide-thumb {
+    position:relative; display:grid; flex:0 0 auto; place-items:center; width:104px; aspect-ratio:16 / 9; overflow:hidden; border-radius:10px;
+    background:linear-gradient(140deg, #1a4f8f, #071a35) center / cover no-repeat; box-shadow:0 4px 10px -6px #0a2342aa;
+}
+.guide-thumb.has-image { background-color:#071a35; background-size:cover; }
+.guide-thumb img { width:62%; filter:brightness(0) invert(1); opacity:.9; }
+.guide-thumb__live { position:absolute; left:4px; bottom:4px; padding:1px 5px; border-radius:4px; background:var(--wv-live-bg, #d61f3a); color:#fff; font-size:8px; font-style:normal; font-weight:800; letter-spacing:.06em; }
+html .cv .cv-guide .cv-guide__item { display:flex; align-items:center; gap:12px; padding:8px; }
+.cv-guide__body { display:grid; gap:2px; min-width:0; }
+.cv .cv-guide__item h4 { display:-webkit-box; overflow:hidden; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+.wv-guide__item { display:flex !important; align-items:center; gap:12px; padding:8px !important; }
+.wv-guide__text { display:grid; gap:2px; min-width:0; }
+.wv-guide__text strong { display:-webkit-box; overflow:hidden; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+@media (max-width:640px) { .guide-thumb { width:92px; } }
+/* Panel de alto fijo: solo la lista de emisiones se desplaza; el botón
+   "Ver programación completa" queda siempre visible abajo. */
+html .cv .cv-guide { overflow:hidden; }
+html .cv .cv-guide .channel-agenda { flex:1 1 auto; min-height:0; overflow-y:auto; overscroll-behavior:contain; scrollbar-width:thin; padding-right:2px; }
+html .cv .cv-guide .channel-agenda > * { flex:0 0 auto; }
+html .cv .cv-guide > :is(h3, .cv-guide__now, .cv-guide__all, .cv-guide__note) { flex:0 0 auto; }
+html .cv .cv-guide__now a { display:flex; align-items:center; gap:12px; padding:8px; }

@@ -22,6 +22,9 @@ case "${1:-web}" in
     scheduled)
         exec su-exec www-data:www-data php artisan scheduled:process --watch
         ;;
+    renditions)
+        exec su-exec www-data:www-data php artisan media:renditions --watch
+        ;;
     recordings)
         while :; do
             su-exec www-data:www-data php artisan streaming:prepare-recordings

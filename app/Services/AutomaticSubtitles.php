@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Models\InstitutionalAd;
 use App\Models\ScheduledVideo;
 use App\Models\Transmision;
 use App\Support\Audit;
@@ -23,7 +22,9 @@ use Throwable;
  */
 class AutomaticSubtitles
 {
-    public const MODELS = [Transmision::class, ScheduledVideo::class, InstitutionalAd::class];
+    // Solo el contenido del catálogo (grabaciones y videos programados); la
+    // publicidad institucional no lleva subtítulos.
+    public const MODELS = [Transmision::class, ScheduledVideo::class];
 
     private const EXIT_NO_SPEECH = 3;
 
@@ -164,7 +165,7 @@ class AutomaticSubtitles
             if (! $fresh || $fresh->subtitles_path || $fresh->subtitles_status !== 'processing') return 'superseded';
             $fresh->update($values);
             if ($result === 'ready') {
-                Audit::record('subtitulos.generados_automaticamente', $fresh instanceof InstitutionalAd ? $fresh : $fresh->evento, [], 'Sistema');
+                Audit::record('subtitulos.generados_automaticamente', $fresh->evento, [], 'Sistema');
             }
 
             return $result;

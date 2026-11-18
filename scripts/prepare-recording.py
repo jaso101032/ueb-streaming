@@ -7,7 +7,9 @@ import subprocess
 import sys
 from fractions import Fraction
 
-source, destination, ffmpeg, ffprobe, fps_limit = sys.argv[1:]
+source, destination, ffmpeg, ffprobe, fps_limit = sys.argv[1:6]
+# Filtro de escala opcional (altura máxima configurada en Laravel).
+scale_filter = sys.argv[6] if len(sys.argv) > 6 else None
 if fps_limit not in ('source', '30', '60'):
     raise ValueError('Invalid recording FPS limit')
 output = pathlib.Path(destination)
@@ -25,7 +27,7 @@ try:
             ffmpeg, '-nostdin', '-hide_banner', '-loglevel', 'error', '-xerror', '-y',
             '-i', source, '-map', '0:v:0', '-map', '0:a:0?',
             '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '23', '-pix_fmt', 'yuv420p',
-            '-vf', 'pad=ceil(iw/2)*2:ceil(ih/2)*2', '-threads', '2',
+            '-vf', (scale_filter + ',' if scale_filter else '') + 'pad=ceil(iw/2)*2:ceil(ih/2)*2', '-threads', '2',
             '-c:a', 'aac', '-b:a', '160k', '-movflags', '+faststart',
         ]
         if fps_limit != 'source':

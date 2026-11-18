@@ -145,4 +145,32 @@ class InstitutionalAdTest extends TestCase
             if (is_file($path)) unlink($path);
         }
     }
+
+    public function test_admin_can_delete_an_ad_with_its_files_but_not_while_it_converts(): void
+    {
+        Storage::fake('local');
+        $ad = $this->ad('Borrable', 10);
+        Storage::disk('local')->put('institutional-ad-sources/original.mp4', 'original');
+        Storage::disk('local')->put('subtitles/borrable.vtt', "WEBVTT\n");
+        $ad->update(['source_path' => 'institutional-ad-sources/original.mp4', 'subtitles_path' => 'subtitles/borrable.vtt']);
+
+        $this->actingAs(User::factory()->create(['role' => 'operador']))
+            ->delete(route('admin.ads.destroy', $ad))->assertForbidden();
+        $this->assertModelExists($ad);
+
+        $admin = User::factory()->create(['role' => 'admin']);
+        $converting = $this->ad('Convirtiendo', 10);
+        $converting->update(['processing_status' => 'processing']);
+        $this->actingAs($admin)->from(route('admin.scheduled.index'))
+            ->delete(route('admin.ads.destroy', $converting))->assertSessionHas('error');
+        $this->assertModelExists($converting);
+
+        $this->actingAs($admin)->delete(route('admin.ads.destroy', $ad))
+            ->assertRedirect(route('admin.scheduled.index').'#schedule-ads')->assertSessionHas('success');
+        $this->assertModelMissing($ad);
+        Storage::disk('local')->assertMissing(['institutional-ads/Borrable.mp4', 'institutional-ad-sources/original.mp4', 'subtitles/borrable.vtt']);
+        $this->assertDatabaseHas('audit_logs', ['action' => 'publicidad.eliminada']);
+        // The channel no longer offers the deleted ad.
+        $this->get(route('channel.ad.media', $ad->id))->assertNotFound();
+    }
 }

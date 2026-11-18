@@ -29,6 +29,7 @@ const actionNames = {
     "publicidad.creada": "Publicidad creada",
     "publicidad.activada": "Publicidad activada",
     "publicidad.desactivada": "Publicidad desactivada",
+    "publicidad.eliminada": "Publicidad eliminada",
     "marca_agua.actualizada": "Marca de agua actualizada",
     "marca_agua.eliminada": "Marca de agua eliminada",
 };

@@ -99,10 +99,16 @@ class RecordingController extends Controller
 
     private function playablePath(Request $request, Evento $evento): ?string
     {
+        return self::playableRecording($evento, $request->user());
+    }
+
+    /** Ruta del MP4 si este usuario puede ver la grabación; también protege sus calidades. */
+    public static function playableRecording(Evento $evento, $user): ?string
+    {
         $stream = $evento->transmision;
         $path = $stream?->recordingPath();
-        if (! $path || $evento->estado !== 'finalizado' || ! $evento->isVisibleTo($request->user())) return null;
-        $staff = in_array($request->user()?->role, ['admin', 'operador'], true);
+        if (! $path || $evento->estado !== 'finalizado' || ! $evento->isVisibleTo($user)) return null;
+        $staff = in_array($user?->role, ['admin', 'operador'], true);
 
         return $stream->isPublished() || $staff ? $path : null;
     }

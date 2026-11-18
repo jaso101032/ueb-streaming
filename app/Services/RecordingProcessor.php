@@ -60,7 +60,7 @@ class RecordingProcessor
             $temporary = $root.'/vod/.'.$filename;
             $process = new Process(['/usr/bin/python3', base_path('scripts/prepare-recording.py'),
                 $source, $temporary, config('streaming.ffmpeg'), config('streaming.ffprobe'),
-                (string) ($claimed->recording_fps_limit ?: 'source')]);
+                (string) ($claimed->recording_fps_limit ?: 'source'), ScheduledVideoProcessor::scaleFilter()]);
             $process->setTimeout(21600);
             $process->run();
             if ($process->getExitCode() === 75) {

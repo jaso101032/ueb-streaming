@@ -89,6 +89,29 @@ export default function Shell({ shell, children }) {
         return () => document.removeEventListener("pointerdown", closeOutside);
     }, [creditsOpen]);
     useEffect(() => {
+        // "Créditos" nunca tapa el panel de chat/programación ni la tarjeta de la
+        // app: mientras quedaría encima, se aparta; al hacer scroll vuelve.
+        let frame = 0;
+        const check = () => {
+            frame = 0;
+            const button = creditsButtonRef.current;
+            if (!button) return;
+            const r = button.getBoundingClientRect(), pad = 8;
+            const covers = [...document.querySelectorAll(".wv-panel, .wv-side__app, .wv-side__show")].some((el) => {
+                const b = el.getBoundingClientRect(), style = getComputedStyle(el);
+                if (!b.width || !b.height || style.visibility === "hidden" || style.opacity === "0") return false;
+                return !(b.right < r.left - pad || b.left > r.right + pad || b.bottom < r.top - pad || b.top > r.bottom + pad);
+            });
+            document.body.classList.toggle("uebtv-credits-yield", covers);
+        };
+        const schedule = () => { if (!frame) frame = requestAnimationFrame(check); };
+        window.addEventListener("scroll", schedule, { passive: true });
+        window.addEventListener("resize", schedule);
+        const timer = window.setInterval(schedule, 1000);
+        schedule();
+        return () => { window.removeEventListener("scroll", schedule); window.removeEventListener("resize", schedule); window.clearInterval(timer); cancelAnimationFrame(frame); document.body.classList.remove("uebtv-credits-yield"); };
+    }, []);
+    useEffect(() => {
         document.documentElement.dataset.theme = theme;
         window.localStorage.setItem("uebtv-theme", theme);
     }, [theme]);
@@ -190,6 +213,10 @@ export default function Shell({ shell, children }) {
                                 <span className="studio-guest-menu__copy"><strong>Explorar catálogo</strong><small>Eventos y videos de la UEB</small></span>
                                 <span className="studio-guest-menu__arrow" aria-hidden="true">↗</span>
                             </a>
+                            <button type="button" className="studio-guest-menu__credits" onClick={() => { setMenu(false); setCreditsOpen(true); }}>
+                                <span className="studio-guest-menu__icon" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 14.6 8.3 20.5 9.1 16.2 13.2 17.2 19 12 16.2 6.8 19 7.8 13.2 3.5 9.1 9.4 8.3 12 3Z" /></svg></span>
+                                <span className="studio-guest-menu__copy"><strong>Créditos</strong><small>Equipo que desarrolló UEBTV</small></span>
+                            </button>
                             <div className="studio-guest-menu__account">
                                 <span>{shell.user ? "TU CUENTA" : "ÚNETE A LA COMUNIDAD"}</span>
                                 <a href={shell.user ? shell.profile : shell.register}>

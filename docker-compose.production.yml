@@ -54,6 +54,10 @@ services:
       STREAMING_FFMPEG: /usr/bin/ffmpeg
       STREAMING_FFPROBE: /usr/bin/ffprobe
       STREAMING_AUTO_SUBTITLES: ${STREAMING_AUTO_SUBTITLES:-true}
+      STREAMING_ADAPTIVE_QUALITY: ${STREAMING_ADAPTIVE_QUALITY:-true}
+      STREAMING_MAX_HEIGHT: ${STREAMING_MAX_HEIGHT:-1080}
+      STREAMING_RENDITIONS_PRESET: ${STREAMING_RENDITIONS_PRESET:-fast}
+      STREAMING_RENDITIONS_THREADS: ${STREAMING_RENDITIONS_THREADS:-0}
     volumes:
       - app_storage:/var/www/html/storage
       - recordings:/var/lib/uebtv/recordings
@@ -114,6 +118,24 @@ services:
       - app_storage:/var/www/html/storage
       - recordings:/var/lib/uebtv/recordings
       - hls:/tmp/hls
+
+  # Calidades adaptativas (1080p, 720p, 480p y 360p) de grabaciones y videos
+  # programados. Un video a la vez y con prioridad baja.
+  renditions:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    init: true
+    command: ["renditions"]
+    depends_on:
+      app:
+        condition: service_healthy
+    environment: *app-environment
+    cpus: ${STREAMING_RENDITIONS_CPUS:-4}
+    volumes:
+      - app_storage:/var/www/html/storage
+      - recordings:/var/lib/uebtv/recordings
 
   # Subtítulos automáticos (Whisper) de grabaciones, programación y publicidad.
   # Transcribe un video a la vez y con prioridad baja; el directo no se toca.

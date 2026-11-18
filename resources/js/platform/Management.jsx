@@ -210,6 +210,24 @@ export function EventDetail({ event: e }) {
                 </article>
                 <aside className="studio-panel react-panel">
                     <Recording event={e} />
+                    {e.renditions && (
+                        <div className="react-subtitles react-renditions" data-renditions-status={e.renditions.status}>
+                            <span className="studio-eyebrow">CALIDADES</span>
+                            {e.renditions.status === "ready" ? (
+                                <>
+                                    <p>El reproductor elige la calidad según la conexión de cada persona, que también puede cambiarla a mano.</p>
+                                    <div className="react-renditions__levels">{e.renditions.levels.map((name) => <span key={name}>{name}</span>)}</div>
+                                </>
+                            ) : e.renditions.status === "failed" ? (
+                                <p className="subtitle-form__status is-error" role="status">{e.renditions.error || "No se pudieron preparar las calidades."} Mientras tanto se reproduce el video original.</p>
+                            ) : (
+                                <>
+                                    <p role="status">{e.renditions.status === "processing" ? "Preparando 1080p, 720p, 480p y 360p…" : "En cola para preparar las calidades."} Mientras tanto se reproduce el video original.</p>
+                                    {e.renditions.status === "processing" && <div className="subtitle-form__progress"><progress max="100" value={e.renditions.progress || 0} aria-label="Avance de las calidades" /><small>{e.renditions.progress || 0}% · Actualiza la página para ver el avance.</small></div>}
+                                </>
+                            )}
+                        </div>
+                    )}
                     {e.subtitles && (
                         <div className="react-subtitles">
                             <span className="studio-eyebrow">SUBTÍTULOS</span>

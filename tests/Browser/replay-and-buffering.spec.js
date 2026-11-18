@@ -2,8 +2,8 @@ import { test, expect } from "@playwright/test";
 
 test("the archived chat follows recording time, including backward seeks", async ({ page }) => {
     await page.goto("/eventos/1");
-    const comments = page.locator(".uebtv-live-chat__messages");
-    await expect(page.locator(".uebtv-chat-message")).toHaveCount(1);
+    const comments = page.locator(".wv-chat__list");
+    await expect(page.locator(".wv-msg")).toHaveCount(1);
     await expect(comments.getByText("Comentario del minuto cinco.")).toHaveCount(0);
 
     await page.locator("video").evaluate((video) => {
