@@ -35,7 +35,7 @@ Thumbs.db
 /storage/framework/recordings-worker.lock
 /storage/framework/subtitles-worker*.lock
 /storage/framework/renditions-worker*.lock
-/scripts/__pycache__/
+__pycache__/
 
 /test-results/
 /playwright-report/
