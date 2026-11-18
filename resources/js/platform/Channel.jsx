@@ -188,7 +188,15 @@ function ChannelVideo({ snapshot, received, startMuted, onMuteChange }) {
                 allowPictureInPicture={!isAd}
                 startMuted={startMuted}
                 autoStart={false}
+                quietChrome
                 onMuteChange={onMuteChange}
+                onEnded={() => {
+                    // El anuncio se repite al instante, sin esperar al reloj del servidor.
+                    const v = video.current;
+                    if (!isAd || !v || manualPause.current) return;
+                    v.currentTime = 0;
+                    play();
+                }}
                 onLoadedMetadata={() => { lastProgress.current.at = performance.now(); align(true); play(); }}
                 onSeeked={() => { lastProgress.current.at = performance.now(); }}
                 onUserPause={() => { manualPause.current = true; }}

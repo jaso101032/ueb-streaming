@@ -133,11 +133,13 @@ test("channel pause button stops a scheduled video and resumes at the current br
     const video = page.locator(".channel-screen video");
     await expect(video).toHaveJSProperty("paused", false);
     await expect(page.getByRole("button", { name: "Play, reproducir señal" })).toHaveCount(0);
+    await page.locator(".channel-screen .uebtv-player-shell").hover(); // controls appear on hover
     await page.getByRole("button", { name: "Pausar", exact: true }).click();
     await expect(video).toHaveJSProperty("paused", true);
     const pausedAt = await video.evaluate((v) => v.currentTime);
     // The server clock keeps running while the viewer is paused.
     await page.waitForTimeout(5000);
+    await page.locator(".channel-screen .uebtv-player-shell").hover(); // controls appear on hover
     await page.getByRole("button", { name: "Reproducir", exact: true }).click();
     await expect(video).toHaveJSProperty("paused", false);
     // Resuming rejoins the broadcast instead of continuing from the paused frame.
@@ -163,6 +165,7 @@ test("channel CC button shows and hides the program subtitles", async ({ page })
     await expect(video.locator("track")).toHaveAttribute("label", "Español");
     const show = page.getByRole("button", { name: "Mostrar subtítulos" });
     await expect(show).toHaveAttribute("aria-pressed", "false");
+    await page.locator(".channel-screen .uebtv-player-shell").hover(); // controls appear on hover
     await show.click();
     await expect(page.getByRole("button", { name: "Ocultar subtítulos" })).toHaveAttribute("aria-pressed", "true");
     await expect.poll(() => video.evaluate((v) => v.textTracks[0]?.mode)).toBe("showing");
@@ -1104,6 +1107,7 @@ test("continuous channel switches from schedule to live and resumes before the n
     await expect
         .poll(() => page.locator("video").evaluate((v) => v.currentTime))
         .toBeGreaterThan(11);
+    await page.locator(".channel-screen .uebtv-player-shell").hover(); // controls appear on hover
     await page.getByRole("button", { name: "Pantalla completa" }).click();
     // The title overlay renders after the asynchronous fullscreenchange event.
     await expect(page.locator(".uebtv-player-shell .uebtv-player-title")).toBeVisible();
@@ -1201,10 +1205,12 @@ test("institutional advertising fills a channel gap with a P, no seek control an
     await expect(video).toHaveJSProperty("paused", false);
     await expect(page.getByRole("button", { name: "Imagen en imagen" })).toHaveCount(0);
     await expect(video).toHaveJSProperty("disablePictureInPicture", true);
+    await page.locator(".channel-screen .uebtv-player-shell").hover(); // controls appear on hover
     await page.getByRole("button", { name: "Pausar", exact: true }).click();
     await expect(video).toHaveJSProperty("paused", true);
     const pausedAt = await video.evaluate((v) => v.currentTime);
     await page.waitForTimeout(5000);
+    await page.locator(".channel-screen .uebtv-player-shell").hover(); // controls appear on hover
     await page.getByRole("button", { name: "Reproducir", exact: true }).click();
     await expect(video).toHaveJSProperty("paused", false);
     await expect.poll(() => video.evaluate((v) => v.currentTime), { timeout: 5000 }).toBeGreaterThan(pausedAt + 3.5);
@@ -1213,6 +1219,7 @@ test("institutional advertising fills a channel gap with a P, no seek control an
     await expect(volume).toHaveCSS("height", "6px");
     const badge = page.locator(".channel-ad-indicator");
     const title = page.locator(".uebtv-player-title");
+    await page.locator(".channel-screen .uebtv-player-shell").hover(); // controls appear on hover
     await page.getByRole("button", { name: "Pantalla completa" }).click();
     await expect(title).toBeVisible();
     let badgeBox = await badge.boundingBox(), titleBox = await title.boundingBox();
@@ -1221,6 +1228,7 @@ test("institutional advertising fills a channel gap with a P, no seek control an
     await page.setViewportSize({ width: 390, height: 844 });
     await expect(volume).toBeHidden();
     await expect(page.getByRole("button", { name: "Activar sonido" })).toBeVisible();
+    await page.locator(".channel-screen .uebtv-player-shell").hover(); // controls appear on hover
     await page.getByRole("button", { name: "Pantalla completa" }).click();
     await expect(title).toBeVisible();
     badgeBox = await badge.boundingBox(); titleBox = await title.boundingBox();
@@ -1254,6 +1262,7 @@ test("channel keeps playing muted when the browser rejects audible autoplay on t
     });
     await page.goto("/senal");
     await expect.poll(() => page.locator("video").evaluate((v) => v.currentTime)).toBeGreaterThan(1);
+    await page.locator(".channel-screen .uebtv-player-shell").hover(); // controls appear on hover
     await page.getByRole("button", { name: "Activar sonido" }).click();
     await expect(page.locator("video")).toHaveJSProperty("muted", false);
     id = 2;
@@ -1655,9 +1664,10 @@ test("channel guide shows a thumbnail for every upcoming broadcast, generic when
 });
 
 test("channel advertising starts really muted and its controls stay hidden when the ad loops", async ({ page }) => {
+    let adId = 21;
     await page.route("**/senal/estado", (route) => route.fulfill({ json: {
         mode: "advertisement", event: null, playback: { state: "playing", position: 1, duration: 60 },
-        advertisement: { id: 21, title: "Aviso en bucle", mediaUrl: "/loop-check.mp4" }, next: [], agenda: [],
+        advertisement: { id: adId, title: "Aviso en bucle", mediaUrl: "/loop-check.mp4" }, next: [], agenda: [],
         summary: { count: 0, totalSeconds: 0, remainingSeconds: 0 },
     } }));
     await page.route("**/loop-check.mp4*", (route) => route.fulfill({
@@ -1676,4 +1686,17 @@ test("channel advertising starts really muted and its controls stay hidden when 
     await video.evaluate(async (v) => { v.pause(); await new Promise((r) => setTimeout(r, 300)); await v.play(); });
     await page.waitForTimeout(1500);
     await expect(shell).not.toHaveClass(/is-chrome-visible/);
+    // The ad reaches its end: it starts over at once, still without controls.
+    await video.evaluate((v) => { v.currentTime = Math.max(0, v.duration - 0.3); });
+    await expect.poll(() => video.evaluate((v) => v.currentTime), { timeout: 8000 }).toBeLessThan(5);
+    await expect(video).toHaveJSProperty("paused", false);
+    await expect(shell).not.toHaveClass(/is-chrome-visible/);
+    // Another ad comes in (a new player): controls stay hidden too.
+    adId = 22;
+    await expect(page.locator(".channel-screen video")).toHaveJSProperty("paused", false, { timeout: 15000 });
+    await page.waitForTimeout(6000);
+    await expect(page.locator(".channel-screen .uebtv-player-shell")).not.toHaveClass(/is-chrome-visible/);
+    // Hovering still reveals them.
+    await page.locator(".channel-screen .uebtv-player-shell").hover();
+    await expect(page.locator(".channel-screen .uebtv-player-shell")).toHaveClass(/is-chrome-visible/);
 });

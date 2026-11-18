@@ -40,7 +40,7 @@ function PlayerIcon({ name }) {
     return <svg className="uebtv-player-icon-svg" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">{paths[name]}</svg>;
 }
 
-export function BrandedVideo({ videoRef, src, poster, mediaTitle, live = false, dvr = false, seekable = false, hidden = false, allowPause = true, allowPictureInPicture = true, showTransportButtons = false, startMuted = live, autoStart = live || startMuted, onMuteChange, onLoadedMetadata, onSeeking, onSeeked, onPlay, onPlaying, onPause, onWaiting, onEnded, onUserPause, onUserResume, onTimeUpdate, onError, subtitles, adaptiveSrc, theater = false, onTheater, children }) {
+export function BrandedVideo({ videoRef, src, poster, mediaTitle, live = false, dvr = false, seekable = false, hidden = false, allowPause = true, allowPictureInPicture = true, showTransportButtons = false, startMuted = live, autoStart = live || startMuted, onMuteChange, onLoadedMetadata, onSeeking, onSeeked, onPlay, onPlaying, onPause, onWaiting, onEnded, onUserPause, onUserResume, onTimeUpdate, onError, subtitles, adaptiveSrc, theater = false, onTheater, quietChrome = false, children }) {
     const [captions, setCaptions] = useState(false);
     // Calidades adaptativas (HLS): automática según la conexión o elegida a mano.
     const hlsRef = useRef(null);
@@ -49,7 +49,7 @@ export function BrandedVideo({ videoRef, src, poster, mediaTitle, live = false, 
     const [compact, setCompact] = useState(false), [menu, setMenu] = useState(null), [seekHint, setSeekHint] = useState(null);
     const menuRef = useRef(null), settingsButton = useRef(null), menuOpen = useRef(false), lastTap = useRef({ at: 0, side: 0 }), seekHintTimer = useRef();
     const shell = useRef(null), controlsBar = useRef(null), playbackChanging = useRef(false), autoplayAttempted = useRef(false), controlsTimer = useRef(), bufferTimer = useRef(), slowBufferTimer = useRef();
-    const [playing, setPlaying] = useState(false), [autoplayBlocked, setAutoplayBlocked] = useState(false), [controlsVisible, setControlsVisible] = useState(true), [current, setCurrent] = useState(0), [duration, setDuration] = useState(0), [liveWindow, setLiveWindow] = useState({ start: 0, end: 0 }), [volume, setVolume] = useState(1), [muted, setMuted] = useState(startMuted), [rate, setRate] = useState(1), [inPictureInPicture, setInPictureInPicture] = useState(false), [isFullscreen, setIsFullscreen] = useState(false);
+    const [playing, setPlaying] = useState(false), [autoplayBlocked, setAutoplayBlocked] = useState(false), [controlsVisible, setControlsVisible] = useState(!quietChrome), [current, setCurrent] = useState(0), [duration, setDuration] = useState(0), [liveWindow, setLiveWindow] = useState({ start: 0, end: 0 }), [volume, setVolume] = useState(1), [muted, setMuted] = useState(startMuted), [rate, setRate] = useState(1), [inPictureInPicture, setInPictureInPicture] = useState(false), [isFullscreen, setIsFullscreen] = useState(false);
     const [buffering, setBuffering] = useState(0);
     const stopBuffering = () => {
         window.clearTimeout(bufferTimer.current);
@@ -284,7 +284,13 @@ export function BrandedVideo({ videoRef, src, poster, mediaTitle, live = false, 
         // Una pausa breve (el anuncio que vuelve a empezar, un salto del reloj)
         // no debe mostrar los controles: solo si sigue en pausa. Cuando la
         // persona pausa, togglePlay ya los muestra al instante.
-        if (!playing) { controlsTimer.current = window.setTimeout(() => setControlsVisible(true), 1200); return () => window.clearTimeout(controlsTimer.current); }
+        // quietChrome (señal 24/7): los controles solo aparecen cuando la persona
+        // mueve el mouse, toca o pausa; nunca solos al cambiar o repetir el video.
+        if (!playing) {
+            if (quietChrome) return undefined;
+            controlsTimer.current = window.setTimeout(() => setControlsVisible(true), 1200);
+            return () => window.clearTimeout(controlsTimer.current);
+        }
         // Los controles no quedan fijados al atrasarse: el botón de directo se
         // muestra automáticamente cuando el usuario vuelve a tocarlos.
         controlsTimer.current = window.setTimeout(() => setControlsVisible(false), 2200);
