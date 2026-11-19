@@ -24,7 +24,11 @@ try:
         if stat.st_size < 14:
             raise ValueError('Empty recording')
         command = [
-            ffmpeg, '-nostdin', '-hide_banner', '-loglevel', 'error', '-xerror', '-y',
+            # Una pérdida de red al transmitir puede dejar algún paquete dañado en el FLV.
+            # Se descartan esos paquetes y se conserva el resto, en vez de abortar toda la
+            # conversión con -xerror. La validación posterior con ffprobe sigue vigente.
+            ffmpeg, '-nostdin', '-hide_banner', '-loglevel', 'error', '-y',
+            '-fflags', '+discardcorrupt+genpts', '-err_detect', 'ignore_err',
             '-i', source, '-map', '0:v:0', '-map', '0:a:0?',
             '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '23', '-pix_fmt', 'yuv420p',
             '-vf', (scale_filter + ',' if scale_filter else '') + 'pad=ceil(iw/2)*2:ceil(ih/2)*2', '-threads', '2',
