@@ -111,7 +111,7 @@ class TransmisionController extends Controller
         return response()->json([
             'en_vivo' => (bool) $enVivo,
             'finalizado' => $evento->estado === 'finalizado',
-            'espectadores' => $transmision?->espectadores_activos ?: 0,
+            'espectadores' => $evento->estado === 'en_vivo' ? app(\App\Services\ViewerPresence::class)->count($evento) : ($transmision?->espectadores_activos ?: 0),
             'actualizado' => now()->toIso8601String(),
         ]);
     }
@@ -130,16 +130,7 @@ class TransmisionController extends Controller
             return response()->json(['viewers' => 0]);
         }
 
-        $now = now();
-        DB::table('event_viewers')->updateOrInsert(
-            ['evento_id' => $evento->id, 'viewer_key' => $data['viewer']],
-            ['last_seen_at' => $now, 'created_at' => $now, 'updated_at' => $now],
-        );
-
-        // Old entries are only housekeeping; the count itself uses a short live window.
-        DB::table('event_viewers')->where('evento_id', $evento->id)->where('last_seen_at', '<', $now->copy()->subDay())->delete();
-        $viewers = DB::table('event_viewers')->where('evento_id', $evento->id)->where('last_seen_at', '>=', $now->copy()->subSeconds(75))->count();
-        $stream->update(['espectadores_activos' => $viewers]);
+        $viewers = app(\App\Services\ViewerPresence::class)->touch($evento, $data['viewer']);
 
         return response()->json(['viewers' => $viewers]);
     }

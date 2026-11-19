@@ -1,25 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useShell, statusLabel, ShareButton, AppCard, GuideThumb } from "./shared";
+import { useShell, statusLabel, ShareButton, AppCard, GuideThumb, browserViewerKey, useViewerPresence } from "./shared";
 import Player from "./Player";
 import Chat from "./Chat";
 import { VideoAnalyticsInline } from "./VideoAnalytics";
-
-function browserViewerKey() {
-    const storageKey = "uebtv-viewer-id";
-    let viewer;
-    try { viewer = localStorage.getItem(storageKey); } catch {}
-    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(viewer || "")) {
-        const bytes = new Uint8Array(16);
-        if (globalThis.crypto?.getRandomValues) globalThis.crypto.getRandomValues(bytes);
-        else for (let i = 0; i < bytes.length; i++) bytes[i] = Math.floor(Math.random() * 256);
-        bytes[6] = (bytes[6] & 0x0f) | 0x40;
-        bytes[8] = (bytes[8] & 0x3f) | 0x80;
-        const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
-        viewer = `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
-        try { localStorage.setItem(storageKey, viewer); } catch {}
-    }
-    return viewer;
-}
 
 export default function Watch({
     event: e,
@@ -37,8 +20,7 @@ export default function Watch({
         draft = useRef(""),
         viewProgress = useRef({ last: null, seconds: 0, sent: false, working: false, retryAt: 0 }),
         [scheduledState, setScheduledState] = useState(e.scheduled?.state),
-        [viewerCount, setViewerCount] = useState(e.viewers ?? 0),
-        [viewCount, setViewCount] = useState(videoViews),
+                [viewCount, setViewCount] = useState(videoViews),
         [playbackSeconds, setPlaybackSeconds] = useState(0),
         [detailsOpen, setDetailsOpen] = useState(false),
         // Modo cine (escritorio): video a todo el ancho y el panel debajo.
@@ -111,31 +93,8 @@ export default function Watch({
             controller?.abort();
         };
     }, [e.playbackUrl, e.status, initialReady, e.scheduled]);
-    useEffect(() => {
-        if (e.status !== "en_vivo" || !e.viewersUrl) return;
-        const viewer = browserViewerKey();
-        let stopped = false, timer, controller;
-        async function heartbeat() {
-            controller?.abort();
-            controller = new AbortController();
-            try {
-                const response = await fetch(e.viewersUrl, {
-                    method: "POST",
-                    signal: controller.signal,
-                    credentials: "same-origin",
-                    headers: { Accept: "application/json", "Content-Type": "application/json", "X-CSRF-TOKEN": shell.csrf },
-                    body: JSON.stringify({ viewer }),
-                });
-                const data = response.ok ? await response.json() : null;
-                if (!stopped && Number.isInteger(data?.viewers)) setViewerCount(data.viewers);
-            } catch {}
-            if (!stopped) timer = setTimeout(heartbeat, 20000);
-        }
-        heartbeat();
-        const resume = () => { if (!document.hidden) { clearTimeout(timer); heartbeat(); } };
-        document.addEventListener("visibilitychange", resume);
-        return () => { stopped = true; clearTimeout(timer); controller?.abort(); document.removeEventListener("visibilitychange", resume); };
-    }, [e.status, e.viewersUrl, shell.csrf]);
+    const liveViewers = useViewerPresence(e.viewersUrl, e.status === "en_vivo", shell.csrf);
+    const viewerCount = liveViewers ?? e.viewers ?? 0;
     function onVideoProgress(event) {
         const video = event.currentTarget;
         const progress = viewProgress.current;

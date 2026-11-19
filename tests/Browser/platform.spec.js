@@ -1005,7 +1005,9 @@ test("React event form creates, updates and deletes through Laravel routes", asy
     await page
         .getByRole("button", { name: "Guardar y generar clave OBS" })
         .click();
-    await page.waitForURL(/admin\/eventos\/\d+$/);
+    // Al crear, quien puede emitir llega a "Emitir con OBS", donde está la clave.
+    await page.waitForURL(/streaming\/control\?evento=\d+/);
+    await page.goto(`/admin/eventos/${new URL(page.url()).searchParams.get("evento")}`);
     await expect(
         page.getByRole("heading", { name: "Evento de integración React." }),
     ).toBeVisible();
@@ -1479,7 +1481,8 @@ test("event form explains each usage license and records the authorization", asy
     await page.getByLabel("Fecha y hora de inicio *").fill("2027-10-02T12:00");
     await page.getByLabel("Referencia de autorización (opcional)").fill("Oficio 45-UEB-2026");
     await page.getByRole("button", { name: "Guardar y generar clave OBS" }).click();
-    await page.waitForURL(/admin\/eventos\/\d+$/);
+    await page.waitForURL(/streaming\/control\?evento=\d+/);
+    await page.goto(`/admin/eventos/${new URL(page.url()).searchParams.get("evento")}`);
     await expect(page.getByText("Creative Commons BY 4.0 (compartir citando a la UEB)")).toBeVisible();
     await expect(page.getByText("Oficio 45-UEB-2026")).toBeVisible();
 });
@@ -1699,4 +1702,32 @@ test("channel advertising starts really muted and its controls stay hidden when 
     // Hovering still reveals them.
     await page.locator(".channel-screen .uebtv-player-shell").hover();
     await expect(page.locator(".channel-screen .uebtv-player-shell")).toHaveClass(/is-chrome-visible/);
+});
+
+test("the live channel counts this viewer and stops reporting when the live ends", async ({ page }) => {
+    const live = { id: 3, title: "Conferencia", url: "/eventos/3", status: "en_vivo", chatUrl: "/eventos/3/chat", chatEnabled: true, viewers: 0, viewersUrl: "/eventos/3/espectadores", hlsUrl: "/mock-live.m3u8" };
+    const next = [];
+    let state = { mode: "live", event: live, playback: null, advertisement: null, next, agenda: next, summary: { count: 0, totalSeconds: 0, remainingSeconds: 0 } };
+    const beats = [];
+    await page.route("**/senal/estado", (route) => route.fulfill({ json: state }));
+    await page.route("**/eventos/3/chat**", (route) => route.fulfill({ json: [] }));
+    await page.route("**/eventos/3/espectadores", async (route) => {
+        beats.push(JSON.parse(route.request().postData() || "{}"));
+        await route.fulfill({ json: { viewers: 5 } });
+    });
+    await page.goto("/senal");
+    // The channel reports presence by itself: the count shows this viewer even
+    // though the server state still says 0.
+    await expect.poll(() => beats.length).toBeGreaterThan(0);
+    expect(beats[0].viewer).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
+    await expect(page.locator(".cv-now")).toContainText("5 espectadores conectados");
+    // The same anonymous id is reused by the event room.
+    const stored = await page.evaluate(() => localStorage.getItem("uebtv-viewer-id"));
+    expect(stored).toBe(beats[0].viewer);
+    // When the live ends there are no more signals.
+    state = { ...state, mode: "idle", event: null };
+    await expect(page.locator(".cv-now")).toContainText("Sin emisión", { timeout: 8000 });
+    const after = beats.length;
+    await page.waitForTimeout(1500);
+    expect(beats.length).toBe(after);
 });

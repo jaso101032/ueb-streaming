@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import Player, { BrandedVideo, clockedMediaTarget, isTimeBuffered } from "./Player";
-import { useShell, statusLabel, ShareButton, AppCard, GuideThumb } from "./shared";
+import { useShell, statusLabel, ShareButton, AppCard, GuideThumb, useViewerPresence } from "./shared";
 import Chat from "./Chat";
 import { createPortal } from "react-dom";
 
@@ -304,6 +304,9 @@ export default function Channel({ stateUrl, recent = [] }) {
         };
     }, [stateUrl]);
     const live = data?.mode === "live";
+    // Mientras haya directo, este navegador avisa que está viendo la señal para
+    // entrar en el conteo de espectadores (igual que en la sala del evento).
+    const ownViewers = useViewerPresence(data?.event?.viewersUrl, live, shell.csrf);
     const advertising = data?.mode === "advertisement";
     const playing = live || data?.mode === "scheduled" || advertising;
     const next = data?.next?.[0];
@@ -316,7 +319,7 @@ export default function Channel({ stateUrl, recent = [] }) {
     // Sin chat ni emisiones anunciadas, la programación es corta: el panel toma su
     // alto natural y la tarjeta de la app ocupa el resto de la columna.
     const quietGuide = Boolean(data) && !chatEvent && !data.next?.length;
-    const room = roomStatus(data, clock);
+    const room = roomStatus(data, clock, ownViewers);
     return (
         <div className={`studio-page channel-page cv ${tvMode ? "channel-page--tv" : ""}`}>
             {error && (
@@ -548,11 +551,13 @@ function untilLabel(iso, now) {
 }
 
 /** "En esta sala": qué está pasando en la señal, en palabras simples. */
-function roomStatus(data, now) {
+function roomStatus(data, now, ownViewers = null) {
     if (!data) return { badge: "Conectando" };
     const next = data.next?.[0];
     if (data.mode === "live") {
-        const viewers = data.event?.viewers ?? 0;
+        // El servidor calcula los conectados al momento en cada consulta; la propia
+        // señal de este navegador evita mostrar 0 justo al entrar.
+        const viewers = Math.max(data.event?.viewers ?? 0, ownViewers ?? 0);
         return { detail: `${viewers} ${viewers === 1 ? "espectador" : "espectadores"} conectados${data.resumeTitle ? ` · luego, «${data.resumeTitle}»` : ""}`, badge: "En vivo" };
     }
     if (data.mode === "scheduled") {
