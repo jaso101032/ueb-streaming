@@ -80,7 +80,7 @@ class EventoManagementTest extends TestCase
         $response = $this->post(route('admin.eventos.store'), $this->data(['miniatura' => $this->image()]));
         $response->assertSessionHasNoErrors();
         $evento = Evento::firstOrFail();
-        $response->assertRedirect(route('admin.eventos.show', $evento));
+        $response->assertRedirect(route('streaming.control', ['evento' => $evento->id]));
         $this->assertSame('programado', $evento->estado);
         $this->assertSame($this->admin->id, $evento->organizador_id);
         $this->assertNotNull($evento->transmision);
@@ -194,6 +194,27 @@ class EventoManagementTest extends TestCase
         }
         $this->assertDatabaseCount('eventos', 0);
         $this->assertSame([], Storage::disk('public')->allFiles());
+    }
+
+    public function test_operator_without_stream_permission_lands_on_event_detail_after_creating(): void
+    {
+        $this->actingAs(User::factory()->create(['role' => 'operador', 'operator_permissions' => ['events']]));
+        $response = $this->post(route('admin.eventos.store'), $this->data());
+        $response->assertRedirect(route('admin.eventos.show', Evento::firstOrFail()));
+    }
+
+    public function test_obs_panel_opens_the_page_that_contains_the_new_event(): void
+    {
+        foreach (range(1, 12) as $i) {
+            $this->post(route('admin.eventos.store'), $this->data([
+                'titulo' => 'Evento '.$i, 'fecha_inicio' => '2026-10-'.str_pad((string) $i, 2, '0', STR_PAD_LEFT).'T10:00',
+                'fecha_fin' => '2026-10-'.str_pad((string) $i, 2, '0', STR_PAD_LEFT).'T12:00',
+            ]))->assertSessionHasNoErrors();
+        }
+        $last = Evento::where('titulo', 'Evento 12')->firstOrFail();
+        // Sin indicar el evento, el 12.º queda en la segunda página.
+        $this->get(route('streaming.control'))->assertOk()->assertDontSee($last->transmision->stream_key);
+        $this->get(route('streaming.control', ['evento' => $last->id]))->assertOk()->assertSee($last->transmision->stream_key);
     }
 
     public function test_regular_user_cannot_access_or_mutate_events(): void

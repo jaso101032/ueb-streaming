@@ -16,16 +16,31 @@ class TransmisionController extends Controller
     /**
      * Muestra el panel de control de transmisiones para operadores/admins.
      */
-    public function index()
+    public function index(Request $request)
     {
         // This is an OBS workspace, not an archive or the scheduled playlist.
         // Finished events belong to "Gestionar eventos" and scheduled videos
         // belong to "Parrilla 24/7", keeping one clear purpose per screen.
-        $eventos = Evento::with(['transmision', 'organizador', 'facultad', 'carrera', 'categoria'])
+        $query = Evento::with(['transmision', 'organizador', 'facultad', 'carrera', 'categoria'])
             ->whereNotIn('estado', ['finalizado', 'cancelado'])
-            ->whereDoesntHave('scheduledVideo')
-            ->orderBy('fecha_inicio')
-            ->paginate(10);
+            ->whereDoesntHave('scheduledVideo');
+
+        // Al llegar desde "Crear evento" se abre la página donde está ese evento,
+        // para que la clave aparezca sin buscarla entre las demás páginas.
+        $page = null;
+        $target = $request->integer('evento');
+        if ($target && ! $request->has('page')) {
+            $selected = (clone $query)->whereKey($target)->first();
+            if ($selected) {
+                $before = (clone $query)->where(fn ($q) => $q
+                    ->where('fecha_inicio', '<', $selected->fecha_inicio)
+                    ->orWhere(fn ($q) => $q->where('fecha_inicio', $selected->fecha_inicio)->where('id', '<', $selected->id)))
+                    ->count();
+                $page = intdiv($before, 10) + 1;
+            }
+        }
+
+        $eventos = $query->orderBy('fecha_inicio')->orderBy('id')->paginate(10, ['*'], 'page', $page);
 
         return view('streaming.index', compact('eventos'));
     }

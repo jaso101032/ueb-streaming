@@ -76,7 +76,13 @@ class EventoController extends Controller
 
         Audit::record('evento.creado', $evento, ['visibilidad' => $evento->visibilidad, 'licencia' => $evento->licencia, 'autorizacion' => $evento->autorizacion_referencia]);
 
-        return redirect()->route('admin.eventos.show', $evento)->with('success', 'Evento creado y clave de OBS generada correctamente.');
+        // Quien puede emitir va directo a "Emitir con OBS", donde están la dirección
+        // del servidor y la clave del evento recién creado.
+        $destination = $request->user()->allowsOperatorAction('stream')
+            ? redirect()->route('streaming.control', ['evento' => $evento->id])
+            : redirect()->route('admin.eventos.show', $evento);
+
+        return $destination->with('success', 'Evento creado y clave de OBS generada correctamente.');
     }
 
     public function show(Evento $evento)
