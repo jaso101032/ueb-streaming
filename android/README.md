@@ -22,6 +22,6 @@ La dirección del sitio está en `app/src/main/res/values/strings.xml` (`channel
 
 1. Editar `channel_url` y generar un APK nuevo.
 2. Copiarlo a `public/descargas/uebtv.apk`.
-3. Regenerar el QR de `public/images/download/uebtv-apk-qr.png` con la URL `https://<dominio>/descargas/uebtv.apk`.
+3. Regenerar el QR (usa un nombre de archivo nuevo para que los navegadores no muestren el anterior desde su caché; hay una versión grande para imprimir, `uebtv-apk-qr-impresion.png`) de `public/images/download/uebtv-apk-qr-v2.png` con la URL `https://<dominio>/descargas/uebtv.apk`.
 
 Un APK firmado con otra clave de depuración no se instala encima de uno anterior: quien ya lo tenga debe desinstalarlo primero.

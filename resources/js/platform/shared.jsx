@@ -294,7 +294,7 @@ export function AppCard({ titleId = "channel-app-title" }) {
                 <div className="channel-app-art-inner">
                     <img className="channel-app-mascot" src="/images/download/zorrito-qr-gafas.webp" alt="" width="960" height="800" />
                     <div className="channel-app-qr">
-                        <img src="/images/download/uebtv-apk-qr.png" alt="Código QR para descargar UEBTV" width="400" height="400" />
+                        <img src="/images/download/uebtv-apk-qr-v2.png" alt="Código QR para descargar UEBTV" width="400" height="400" />
                     </div>
                 </div>
             </div>
