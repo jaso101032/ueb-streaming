@@ -372,3 +372,53 @@ export function useViewerPresence(url, active, csrf) {
     }, [url, active, csrf]);
     return count;
 }
+
+/** Número compacto como en las plataformas de video: 950, 1,2 mil, 12 mil. */
+export function compactCount(value) {
+    const n = Number(value) || 0;
+    return n < 1000 ? String(n) : new Intl.NumberFormat("es-EC", { notation: "compact", maximumFractionDigits: 1 }).format(n);
+}
+
+/** "12 min", "1 h 05 min": cuánto lleva el directo. */
+export function liveDuration(since, now = Date.now()) {
+    const start = new Date(since).getTime();
+    if (!since || Number.isNaN(start)) return "";
+    const minutes = Math.max(0, Math.floor((now - start) / 60000));
+    if (minutes < 1) return "menos de 1 min";
+    if (minutes < 60) return `${minutes} min`;
+    return `${Math.floor(minutes / 60)} h ${String(minutes % 60).padStart(2, "0")} min`;
+}
+
+/** Re-renderiza cada `ms` (para contadores de tiempo). */
+export function useNow(ms = 30000) {
+    const [now, setNow] = useState(() => Date.now());
+    useEffect(() => { const t = window.setInterval(() => setNow(Date.now()), ms); return () => window.clearInterval(t); }, [ms]);
+    return now;
+}
+
+const PERSON_ICON = "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 8.5a7 7 0 0 1 14 0";
+const CLOCK_ICON = "M12 7v5l3 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z";
+
+
+/** Espectadores conectados con ícono (rojo durante el directo). */
+export function ViewerStat({ count, label = true }) {
+    const text = `${count} ${count === 1 ? "espectador" : "espectadores"}`;
+    return (
+        <span className="live-stat is-viewers" title={`${text} conectados`} aria-label={`${text} conectados`}>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d={PERSON_ICON} /></svg>
+            <strong>{compactCount(count)}</strong>{label && <span className="live-stat__label">{count === 1 ? "espectador" : "espectadores"}</span>}
+        </span>
+    );
+}
+
+/** Tiempo en directo con ícono de reloj. */
+export function LiveTimeStat({ since, now }) {
+    const value = liveDuration(since, now);
+    if (!value) return null;
+    return (
+        <span className="live-stat" title="Tiempo en directo">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d={CLOCK_ICON} /></svg>
+            <span>En directo hace {value}</span>
+        </span>
+    );
+}

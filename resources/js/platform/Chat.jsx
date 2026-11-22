@@ -227,7 +227,7 @@ export default function Chat({
         bottom.current = true; setUnseen(0);
         if (list.current) list.current.scrollTop = list.current.scrollHeight;
     };
-    const statusText = commentsOpen ? (isRecording ? "Comentarios abiertos" : "En vivo") : "Solo lectura";
+    const statusText = commentsOpen ? (isRecording ? "Comentarios abiertos" : "Chat abierto") : "Solo lectura";
     // El minuto del comentario solo se muestra si lleva a un momento real de la grabación.
     const momentFor = (m) => replay && onSeek && m.playback_seconds != null && videoDuration > 0 && m.playback_seconds <= videoDuration + 1
         ? m.playback_seconds : null;
@@ -261,18 +261,20 @@ export default function Chat({
                         setVisibleLimit((limit) => limit + 80);
                     }}>Ver {Math.min(earlierCount, 80)} comentarios anteriores</button>}
                     {visibleMessages.map((m) => (
+                        // Compacto, como YouTube/Kick: avatar pequeño, nombre en color y
+                        // mensaje en la misma línea; la hora aparece al pasar el mouse.
                         <div className="wv-msg" key={m.id} style={{ "--hue": userHue(m.user) }}>
                             <span className="wv-msg__avatar" aria-hidden="true">{Array.from(m.user)[0]?.toUpperCase()}</span>
-                            <div className="wv-msg__body">
-                                <div className="wv-msg__meta">
-                                    <strong>{m.user}</strong>
-                                    {momentFor(m) != null
-                                        ? <button type="button" className="wv-msg__moment" onClick={() => onSeek(m.playback_seconds)} aria-label={`Ir al minuto ${formatPlaybackTime(m.playback_seconds)} del video`} title="Ver este momento del video"><span aria-hidden="true">▶</span>{formatPlaybackTime(m.playback_seconds)}</button>
-                                        : m.created_at && <time dateTime={m.created_at} title={new Date(m.created_at).toLocaleString("es-EC")}>{clockTime(m.created_at)}</time>}
-                                    {canModerate && <button type="button" className="wv-msg__remove" aria-label={`Retirar mensaje de ${m.user}`} disabled={removing === m.id} onClick={() => remove(m)}>Retirar</button>}
-                                </div>
-                                <p className="wv-msg__text">{m.message}</p>
-                            </div>
+                            <p className="wv-msg__line">
+                                <strong className="wv-msg__name">{m.user}</strong>
+                                <span className="wv-msg__text">{m.message}</span>
+                            </p>
+                            <span className="wv-msg__side">
+                                {momentFor(m) != null
+                                    ? <button type="button" className="wv-msg__moment" onClick={() => onSeek(m.playback_seconds)} aria-label={`Ir al minuto ${formatPlaybackTime(m.playback_seconds)} del video`} title="Ver este momento del video"><span aria-hidden="true">▶</span>{formatPlaybackTime(m.playback_seconds)}</button>
+                                    : m.created_at && <time dateTime={m.created_at} title={new Date(m.created_at).toLocaleString("es-EC")}>{clockTime(m.created_at)}</time>}
+                                {canModerate && <button type="button" className="wv-msg__remove" aria-label={`Retirar mensaje de ${m.user}`} disabled={removing === m.id} onClick={() => remove(m)}>Retirar</button>}
+                            </span>
                         </div>
                     ))}
                     {!visibleMessages.length && !connection && (

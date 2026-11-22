@@ -1,0 +1,186 @@
+/*
+ * Pantallas de acceso (iniciar sesión, crear cuenta, recuperar contraseña…).
+ * Escritorio: marca oscura a la izquierda y formulario limpio a la derecha.
+ * Celular: logo pequeño arriba y el formulario completo en una sola pantalla.
+ * El formulario sigue el tema (claro u oscuro); la marca siempre es oscura.
+ */
+.au {
+    --au-bg:#f4f7fb; --au-text:#0b2240; --au-muted:#4d6380; --au-border:#c9d8ea; --au-field:#ffffff;
+    --au-accent:#1557ab; --au-accent-2:#1e6bd0; --au-focus:#1557ab33; --au-error:#c0283e;
+    display:grid; grid-template-columns:minmax(380px, 46%) minmax(0, 1fr); min-height:100vh; min-height:100dvh;
+    background:var(--au-bg); color:var(--au-text);
+}
+/* El acceso siempre se muestra en modo claro (diseño fijo). */
+.au-icon { width:18px; height:18px; flex:0 0 auto; fill:none; stroke:currentColor; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; }
+
+/* ── Marca ─────────────────────────────────────────────── */
+.au-brand {
+    position:relative; isolation:isolate; display:flex; flex-direction:column; justify-content:space-between; gap:32px;
+    overflow:hidden; padding:44px clamp(32px, 4.5vw, 72px);
+    background:radial-gradient(120% 80% at 0% 0%, #12345f 0%, transparent 60%), linear-gradient(160deg, #071a35 0%, #0a2448 55%, #0d3266 100%);
+    color:#fff;
+}
+.au-brand__glow {
+    position:absolute; right:-25%; bottom:-30%; z-index:-1; width:85%; aspect-ratio:1; border-radius:50%;
+    background:radial-gradient(circle, #2a7bd655 0%, transparent 65%); filter:blur(10px);
+}
+.au-brand::before {
+    position:absolute; inset:0; z-index:-1; content:""; opacity:.35;
+    background-image:radial-gradient(#ffffff22 1px, transparent 1px); background-size:22px 22px;
+    -webkit-mask-image:linear-gradient(180deg, #000 0%, transparent 70%); mask-image:linear-gradient(180deg, #000 0%, transparent 70%);
+}
+.au-brand__logo { display:flex; align-items:center; gap:10px; width:max-content; text-decoration:none; }
+.au-brand__mascot { width:40px; height:auto; filter:drop-shadow(0 4px 10px #0007); }
+.au-brand__ueb { width:180px; height:auto; filter:brightness(0) invert(1); }
+.au-brand__copy { position:relative; z-index:1; max-width:460px; }
+.au-live {
+    display:inline-flex; align-items:center; gap:8px; margin-bottom:22px; padding:6px 12px; border:1px solid #ffffff26; border-radius:999px;
+    background:#ffffff12; color:#fff; font-size:12px; font-weight:700; letter-spacing:.02em; text-decoration:none; backdrop-filter:blur(6px);
+}
+.au-live:hover { background:#ffffff1f; }
+.au-brand h2 { margin:0; font-size:clamp(34px, 3.6vw, 54px); font-weight:800; letter-spacing:-.04em; line-height:1.02; }
+.au-brand h2 em { display:block; color:#8cc4ff; font-style:normal; }
+.au-brand__copy p { max-width:380px; margin:18px 0 0; color:#c2d5ec; font-size:15px; line-height:1.6; }
+
+.au-brand__foot { position:relative; z-index:1; color:#8fa8c6; font-size:11px; letter-spacing:.08em; }
+@keyframes au-pulse { 50% { opacity:.4; } }
+
+/* ── Formulario ────────────────────────────────────────── */
+.au-main { display:flex; flex-direction:column; min-width:0; padding:28px clamp(20px, 5vw, 72px) 40px; }
+.au-top { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.au-back { display:inline-flex; align-items:center; gap:6px; min-height:36px; padding:0 12px 0 8px; border-radius:999px; color:var(--au-muted); font-size:13px; font-weight:600; text-decoration:none; }
+.au-back:hover { background:color-mix(in srgb, var(--au-text) 6%, transparent); color:var(--au-text); }
+.au-back .au-icon { width:16px; height:16px; }
+.au-top__logo { display:none; align-items:center; gap:6px; }
+.au-top__logo img:last-child { width:110px; height:auto; }
+html:not([data-theme="dark"]) .au-top__logo img:last-child { filter:brightness(0) saturate(100%) invert(14%) sepia(42%) saturate(1980%) hue-rotate(196deg) brightness(92%); }
+.au-form-wrap { width:100%; max-width:400px; margin:auto; padding:32px 0; }
+.au-form-wrap h1 { margin:0; color:var(--au-text); font-size:clamp(28px, 2.6vw, 34px); font-weight:800; letter-spacing:-.03em; line-height:1.1; }
+.au-sub { margin:8px 0 26px; color:var(--au-muted); font-size:15px; line-height:1.5; }
+.au-form { display:grid; gap:18px; }
+.au-field { display:grid; gap:7px; }
+.au-field label, .au-field__label label { color:var(--au-text); font-size:13px; font-weight:700; }
+.au-field__label { display:flex; align-items:baseline; justify-content:space-between; gap:10px; }
+.au-input {
+    position:relative; display:flex; align-items:center; gap:10px; height:50px; padding:0 6px 0 14px;
+    border:1px solid var(--au-border); border-radius:12px; background:var(--au-field); color:var(--au-muted);
+    transition:border-color .15s, box-shadow .15s;
+}
+.au-input:focus-within { border-color:var(--au-accent); box-shadow:0 0 0 4px var(--au-focus); color:var(--au-accent); }
+.au-input input {
+    flex:1 1 auto; min-width:0; height:100%; margin:0; padding:0; border:0 !important; outline:0; background:transparent !important;
+    color:var(--au-text); font-family:inherit; font-size:15px; font-weight:500; line-height:1.2; box-shadow:none !important;
+}
+.au-input input::placeholder { color:color-mix(in srgb, var(--au-muted) 75%, transparent); }
+.au-input input:-webkit-autofill { -webkit-text-fill-color:var(--au-text); transition:background-color 9999s; }
+.au-input__eye { display:grid; place-items:center; width:38px; height:38px; padding:0; border:0; border-radius:9px; background:transparent; color:var(--au-muted); cursor:pointer; }
+.au-input__eye:hover { background:color-mix(in srgb, var(--au-text) 7%, transparent); color:var(--au-text); }
+.au-input__eye:focus-visible { outline:2px solid var(--au-accent); outline-offset:1px; }
+.au-hint { margin:-8px 0 0; color:var(--au-muted); font-size:12px; line-height:1.45; }
+.au-link { color:var(--au-accent); font-size:13px; font-weight:700; text-decoration:none; background:none; border:0; padding:0; cursor:pointer; font-family:inherit; }
+.au-link:hover { text-decoration:underline; }
+.au-check { display:flex; align-items:center; gap:10px; width:max-content; color:var(--au-text); font-size:14px; cursor:pointer; }
+.au-check input { width:18px; height:18px; margin:0; accent-color:var(--au-accent); cursor:pointer; }
+.au-submit {
+    display:inline-flex; align-items:center; justify-content:center; gap:10px; width:100%; height:52px; margin-top:4px; padding:0 20px;
+    border:0; border-radius:12px; background:linear-gradient(120deg, var(--au-accent) 0%, var(--au-accent-2) 100%); color:#fff;
+    font-family:inherit; font-size:15px; font-weight:800; line-height:1; letter-spacing:.01em; box-shadow:0 12px 24px -14px var(--au-accent); cursor:pointer;
+    transition:transform .15s, box-shadow .15s, filter .15s;
+}
+.au-submit:hover:not(:disabled) { transform:translateY(-1px); filter:brightness(1.05); box-shadow:0 16px 28px -14px var(--au-accent); }
+.au-submit:focus-visible { outline:3px solid var(--au-focus); outline-offset:2px; }
+.au-submit:disabled { opacity:.75; cursor:progress; }
+.au-submit .au-icon { transition:transform .15s; }
+.au-submit:hover .au-icon { transform:translateX(3px); }
+.au-spinner { width:18px; height:18px; border:2.5px solid currentColor; border-right-color:transparent; border-radius:50%; animation:au-spin .7s linear infinite; }
+@keyframes au-spin { to { transform:rotate(360deg); } }
+.au-actions { display:grid; gap:12px; justify-items:center; }
+.au-switch { margin:26px 0 0; padding-top:20px; border-top:1px solid var(--au-border); color:var(--au-muted); font-size:14px; text-align:center; }
+.au-switch a { color:var(--au-accent); font-weight:800; text-decoration:none; }
+.au-switch a:hover { text-decoration:underline; }
+/* Mensajes del servidor (errores, avisos). */
+.au-form-wrap .uebtv-form-errors, .au-form-wrap .studio-alert { margin:0 0 18px; padding:12px 14px; border:1px solid color-mix(in srgb, var(--au-error) 40%, transparent); border-radius:12px; background:color-mix(in srgb, var(--au-error) 9%, transparent); color:var(--au-error); font-size:13px; }
+.au-form-wrap .studio-alert:not(.is-error) { border-color:#1f8a4c55; background:#1f8a4c14; color:#137a3f; }
+
+/* Perfil y otras pantallas que reutilizan el campo de contraseña. */
+.studio-page .au-field { gap:6px; }
+.studio-page .au-input { height:46px; }
+
+/* ── Tableta y celular ─────────────────────────────────── */
+@media (max-width:900px) {
+    .au { grid-template-columns:minmax(0, 1fr); }
+    .au { color-scheme:light; }
+.au-brand { display:none; }
+    .au-main { padding:16px 20px 28px; }
+    .au-top__logo { display:inline-flex; }
+    .au-back { order:2; padding:0 10px; }
+    .au-back span, .au-back { font-size:0; gap:0; }
+    .au-back .au-icon { width:20px; height:20px; }
+    .au-back::after { content:"Catálogo"; margin-left:4px; font-size:13px; }
+    .au-form-wrap { margin:0 auto; padding:clamp(20px, 6vh, 56px) 0 8px; }
+}
+@media (max-width:480px) {
+    .au-form-wrap h1 { font-size:26px; }
+    .au-sub { margin-bottom:22px; font-size:14px; }
+    .au-form { gap:15px; }
+    .au-input input { font-size:16px; } /* evita el zoom automático de iOS */
+    .au-switch { margin-top:20px; padding-top:16px; }
+}
+@media (prefers-reduced-motion:reduce) { .au-spinner { animation:none; } .au-submit, .au-submit .au-icon { transition:none; } }
+
+/* Lado de marca: contenido centrado y lista de lo que ofrece, sin huecos. */
+.au-brand { justify-content:space-between; }
+.au-brand__copy { margin-block:auto; }
+.au-features { display:grid; gap:16px; margin:32px 0 0; padding:0; list-style:none; }
+.au-features li { display:flex; align-items:center; gap:14px; }
+.au-features li > span { display:grid; flex:0 0 auto; place-items:center; width:42px; height:42px; border:1px solid #ffffff22; border-radius:12px; background:#ffffff10; color:#8cc4ff; }
+.au-features svg { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; }
+.au-features strong { display:block; color:#fff; font-size:14px; font-weight:700; }
+.au-features small { display:block; margin-top:2px; color:#a9c2de; font-size:13px; }
+@media (max-height:700px) { .au-features { display:none; } }
+
+/* Elementos solo del celular (ocultos en escritorio). */
+.au-top__row { display:contents; }
+.au-top__hero, .au-mini, .au-foot { display:none; }
+
+/* Celular: franja azul de marca arriba, formulario en tarjeta que se monta
+   sobre la franja, e íconos de la plataforma al pie (sin espacios vacíos). */
+@media (max-width:900px) {
+    .au-main { min-height:100vh; min-height:100dvh; padding:0 0 18px; }
+    .au-top {
+        display:grid; gap:16px; padding:16px 20px 24px; border-radius:0 0 24px 24px; color:#fff;
+        background:radial-gradient(120% 90% at 0% 0%, #12345f 0%, transparent 60%), linear-gradient(160deg, #071a35 0%, #0a2448 55%, #0d3266 100%);
+    }
+    .au-top__row { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    .au-top__logo img:last-child { filter:brightness(0) invert(1) !important; }
+    .au-back { color:#cfe0f5; }
+    .au-back:hover { background:#ffffff14; color:#fff; }
+    .au-top__hero { display:grid; justify-items:start; gap:10px; }
+    .au-top__hero .au-live { margin:0; }
+    .au-top__hero p { margin:0; color:#fff; font-size:25px; font-weight:800; letter-spacing:-.03em; line-height:1.1; }
+    .au-top__hero em { color:#8cc4ff; font-style:normal; }
+    .au-form-wrap {
+        position:relative; width:auto; max-width:440px; margin:18px 16px 0; padding:22px 20px 20px;
+        border:1px solid var(--au-border); border-radius:20px; background:#fff; box-shadow:0 18px 40px -24px #0b224080;
+    }
+    @media (min-width:480px) { .au-form-wrap { margin-inline:auto; width:calc(100% - 32px); } }
+    .au-mini { display:flex; justify-content:center; gap:8px; margin:auto 16px 0; padding:22px 0 0; list-style:none; }
+    .au-mini li { display:flex; flex:1 1 0; flex-direction:column; align-items:center; gap:7px; max-width:120px; color:var(--au-muted); font-size:12px; font-weight:600; text-align:center; }
+    .au-mini svg { box-sizing:content-box; width:20px; height:20px; padding:10px; border-radius:12px; background:#e3edf9; color:var(--au-accent); fill:none; stroke:currentColor; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; }
+    .au-foot { display:block; margin-top:16px; color:var(--au-muted); font-size:11px; letter-spacing:.06em; text-align:center; opacity:.8; }
+}
+@media (max-width:480px) {
+    .au-form-wrap h1 { font-size:24px; }
+    .au-sub { margin-bottom:18px; }
+    .au-switch { margin-top:16px; padding-top:14px; }
+}
+@media (max-width:900px) and (max-height:680px) { .au-mini { display:none; } }
+/* Que nada del formulario sea más ancho que la pantalla. */
+.au, .au * { box-sizing:border-box; }
+.au-main, .au-form, .au-field, .au-input { min-width:0; max-width:100%; }
+.au-form-wrap { min-width:0; }
+.au-field__label { flex-wrap:wrap; }
+.au-input input { width:auto; }
+
+/* Etiqueta de la señal: ícono de TV (no siempre es un directo). */
+.au-live svg { width:15px; height:15px; fill:none; stroke:#8cc4ff; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }

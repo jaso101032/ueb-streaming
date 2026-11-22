@@ -40,7 +40,7 @@ function PlayerIcon({ name }) {
     return <svg className="uebtv-player-icon-svg" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">{paths[name]}</svg>;
 }
 
-export function BrandedVideo({ videoRef, src, poster, mediaTitle, live = false, dvr = false, seekable = false, hidden = false, allowPause = true, allowPictureInPicture = true, showTransportButtons = false, startMuted = live, autoStart = live || startMuted, onMuteChange, onLoadedMetadata, onSeeking, onSeeked, onPlay, onPlaying, onPause, onWaiting, onEnded, onUserPause, onUserResume, onTimeUpdate, onError, subtitles, adaptiveSrc, theater = false, onTheater, quietChrome = false, children }) {
+export function BrandedVideo({ videoRef, src, poster, mediaTitle, live = false, dvr = false, seekable = false, hidden = false, allowPause = true, allowPictureInPicture = true, showTransportButtons = false, startMuted = live, autoStart = live || startMuted, onMuteChange, onLoadedMetadata, onSeeking, onSeeked, onPlay, onPlaying, onPause, onWaiting, onEnded, onUserPause, onUserResume, onTimeUpdate, onError, subtitles, adaptiveSrc, theater = false, onTheater, quietChrome = false, viewers = null, children }) {
     const [captions, setCaptions] = useState(false);
     // Calidades adaptativas (HLS): automática según la conexión o elegida a mano.
     const hlsRef = useRef(null);
@@ -342,7 +342,13 @@ export function BrandedVideo({ videoRef, src, poster, mediaTitle, live = false, 
         </video>
         {!hidden && <>
             <PlayerWatermark />
-            {live && <span className="uebtv-player-live">● EN VIVO</span>}
+            {live && <span className="uebtv-player-live-badges">
+                <span className="uebtv-player-live"><i aria-hidden="true" />EN VIVO</span>
+                {Number.isInteger(viewers) && <span className="uebtv-player-viewers" title={`${viewers} ${viewers === 1 ? "espectador" : "espectadores"} conectados`}>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 8.5a7 7 0 0 1 14 0" /></svg>
+                    {viewers < 1000 ? viewers : new Intl.NumberFormat("es-EC", { notation: "compact", maximumFractionDigits: 1 }).format(viewers)}
+                </span>}
+            </span>}
             {showTransportButtons && allowPause && <div className="uebtv-player-transport" role="group" aria-label="Controles de reproducción">
                 <button type="button" onClick={playVideo} disabled={playing} aria-label="Play, reproducir señal"><span aria-hidden="true">▶</span> Play</button>
                 <button type="button" onClick={stopVideo} disabled={!playing} aria-label="Stop, detener reproducción"><span aria-hidden="true">■</span> Stop</button>
@@ -445,7 +451,7 @@ export function ScheduledPlayer({ scheduled, poster, onState, onVideoProgress, s
     }} onSeeked={() => { if (externalSeek.current) { externalSeek.current = false; align(true); } }} onPlay={() => { setNotice(""); setPlay(false); }} onPause={() => { if (snapshot.current?.state === "playing") { setNotice("Reanudar te llevará al momento actual de la emisión."); setPlay(true); } }} onTimeUpdate={onVideoProgress} onError={() => setNotice("No se pudo cargar el video. Comprueba tu conexión y vuelve a abrir la sala.")} /><span className="react-player-label">{state === "ended" ? "Pregrabado · Disponible bajo demanda" : "Emisión programada · Pregrabado"}</span>{notice && <div className="react-player-notice" role="status"><span aria-hidden="true">▷</span><p>{notice}</p>{play && <button className="studio-button" onClick={start}>Reproducir</button>}</div>}</>;
 }
 
-export default function Player({ event: e, onScheduledState, recordingRef, onVideoProgress, startMuted, onMuteChange, showTransportButtons = false, theater = false, onTheater }) {
+export default function Player({ event: e, onScheduledState, recordingRef, onVideoProgress, startMuted, onMuteChange, showTransportButtons = false, theater = false, onTheater, viewers = null }) {
     const video = useRef(); const manualPause = useRef(false), retryAttempts = useRef(0); const [error, setError] = useState(""); const [retry, setRetry] = useState(0); const live = e.status === "en_vivo" && !e.scheduled;
     useEffect(() => {
         if (!live || !e.hlsUrl) return;
@@ -527,7 +533,7 @@ export default function Player({ event: e, onScheduledState, recordingRef, onVid
         };
     }, [e.hlsUrl, live, retry]);
     if (e.scheduled) return <ScheduledPlayer theater={theater} onTheater={onTheater} scheduled={e.scheduled} subtitles={e.subtitlesUrl || undefined} poster={e.image} onState={onScheduledState} onVideoProgress={onVideoProgress} />;
-    if (live && e.hlsUrl) return <BrandedVideo theater={theater} onTheater={onTheater} videoRef={video} mediaTitle={e.title} live dvr showTransportButtons={showTransportButtons} startMuted={startMuted ?? true} onTimeUpdate={onVideoProgress} onMuteChange={onMuteChange} onUserPause={() => { manualPause.current = true; }} onUserResume={() => { manualPause.current = false; }} onPlay={() => { manualPause.current = false; }}>{error && <div className="react-player-notice" role="status"><p>{error}</p><button className="studio-button" onClick={() => { manualPause.current = false; retryAttempts.current = 0; setRetry((value) => value + 1); }}>Reconectar ahora</button></div>}</BrandedVideo>;
+    if (live && e.hlsUrl) return <BrandedVideo viewers={viewers} theater={theater} onTheater={onTheater} videoRef={video} mediaTitle={e.title} live dvr showTransportButtons={showTransportButtons} startMuted={startMuted ?? true} onTimeUpdate={onVideoProgress} onMuteChange={onMuteChange} onUserPause={() => { manualPause.current = true; }} onUserResume={() => { manualPause.current = false; }} onPlay={() => { manualPause.current = false; }}>{error && <div className="react-player-notice" role="status"><p>{error}</p><button className="studio-button" onClick={() => { manualPause.current = false; retryAttempts.current = 0; setRetry((value) => value + 1); }}>Reconectar ahora</button></div>}</BrandedVideo>;
     if (e.videoUrl) return <BrandedVideo theater={theater} onTheater={onTheater} videoRef={recordingRef} subtitles={e.subtitlesUrl || undefined} src={e.videoUrl} adaptiveSrc={e.adaptiveUrl || undefined} poster={e.image || undefined} mediaTitle={e.title} seekable onTimeUpdate={onVideoProgress} onSeeked={onVideoProgress} />;
     return <div className="uebtv-player-empty"><span className="uebtv-player-empty__icon">▶</span><h2>{e.status === "finalizado" ? "Transmisión finalizada" : "Video próximamente"}</h2><p>{e.status === "finalizado" ? ["waiting", "processing", "recording"].includes(e.recordingStatus) ? "Estamos preparando la grabación. Estará disponible aquí automáticamente." : "La grabación todavía no está disponible." : "Esta sala se habilitará cuando comience la transmisión."}</p></div>;
 }

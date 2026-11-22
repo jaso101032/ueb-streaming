@@ -1,16 +1,48 @@
 import React, { useState, useEffect } from "react";
 import { Token, Feedback, Action, Field, useShell } from "./shared";
+const AuthIcon = ({ name }) => {
+    const paths = {
+        mail: <><rect x="3" y="5" width="18" height="14" rx="2.5" /><path d="m4 7 8 6 8-6" /></>,
+        lock: <><rect x="5" y="10.5" width="14" height="10" rx="2.5" /><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" /></>,
+        user: <><circle cx="12" cy="8" r="4" /><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0" /></>,
+        eye: <><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z" /><circle cx="12" cy="12" r="3" /></>,
+        eyeOff: <><path d="M3 3l18 18M10.6 5.6A9.6 9.6 0 0 1 12 5.5C18 5.5 21.5 12 21.5 12a17 17 0 0 1-3.3 4.1M6.3 6.9C3.9 8.6 2.5 12 2.5 12S6 18.5 12 18.5a9 9 0 0 0 4.2-1" /><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2" /></>,
+        back: <path d="M15 5l-7 7 7 7" />,
+        arrow: <path d="M5 12h14m-6-6 6 6-6 6" />,
+    };
+    return <svg className="au-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">{paths[name]}</svg>;
+};
+
+/** Campo con ícono a la izquierda (correo, nombre…). */
+function AuthField({ name, label, icon, ...props }) {
+    return (
+        <div className="au-field">
+            <label htmlFor={name}>{label}</label>
+            <div className="au-input">
+                <AuthIcon name={icon} />
+                <input id={name} name={name} {...props} />
+            </div>
+        </div>
+    );
+}
+
 export function Password({
     name = "password",
     label = "Contraseña",
     autoComplete = "current-password",
     minLength,
     id = name,
+    aside,
 }) {
     const [visible, setVisible] = useState(false);
     return (
-        <Field name={id} label={label}>
-            <div className="react-password">
+        <div className="au-field">
+            <div className="au-field__label">
+                <label htmlFor={id}>{label}</label>
+                {aside}
+            </div>
+            <div className="au-input react-password">
+                <AuthIcon name="lock" />
                 <input
                     id={id}
                     name={name}
@@ -21,16 +53,19 @@ export function Password({
                 />
                 <button
                     type="button"
+                    className="au-input__eye"
                     aria-label={`${visible ? "Ocultar" : "Mostrar"} ${label.toLowerCase()}`}
                     aria-pressed={visible}
+                    title={visible ? "Ocultar" : "Mostrar"}
                     onClick={() => setVisible(!visible)}
                 >
-                    {visible ? "Ocultar" : "Mostrar"}
+                    <AuthIcon name={visible ? "eyeOff" : "eye"} />
                 </button>
             </div>
-        </Field>
+        </div>
     );
 }
+
 export default function Auth({ mode, action, name, email, token, forgotUrl }) {
     const shell = useShell(),
         [busy, setBusy] = useState(false);
@@ -42,182 +77,127 @@ export default function Auth({ mode, action, name, email, token, forgotUrl }) {
     const register = mode === "register",
         reset = mode === "reset",
         verify = mode === "verify",
-        forgot = mode === "forgot",
-        useUebLogo = mode === "login" || register;
+        forgot = mode === "forgot";
     const titles = {
-        login: "Bienvenido de nuevo.",
-        register: "Tu comunidad empieza aquí.",
-        forgot: "Recupera tu acceso.",
-        reset: "Una nueva contraseña.",
-        confirm: "Confirma tu identidad.",
-        verify: "Revisa tu correo.",
+        login: "Inicia sesión",
+        register: "Crea tu cuenta",
+        forgot: "Recupera tu acceso",
+        reset: "Nueva contraseña",
+        confirm: "Confirma tu identidad",
+        verify: "Revisa tu correo",
     };
+    const subtitles = {
+        login: "Bienvenido de nuevo a UEBTV.",
+        register: "Únete para comentar y vivir cada encuentro.",
+        forgot: "Te enviaremos un enlace para restablecer tu contraseña.",
+        reset: "Elige una contraseña segura para tu cuenta.",
+        confirm: "Por seguridad, confirma tu contraseña para continuar.",
+        verify: "Abre el enlace que enviamos a tu correo para verificar tu cuenta.",
+    };
+    const submit = {
+        login: "Entrar a UEBTV",
+        register: "Crear mi cuenta",
+        forgot: "Enviar enlace",
+        reset: "Guardar contraseña",
+        confirm: "Confirmar",
+    }[mode];
     return (
-        <div className="react-auth">
-            <aside className="react-auth-brand">
-                <a href={shell.catalog} className="react-auth-logo" aria-label={useUebLogo ? "Universidad Estatal de Bolívar" : "FACAGEI UEBTV"}>
-                    <img
-                        className="react-auth-mascot"
-                        src={shell.mascot}
-                        alt="Mascota de la Universidad Estatal de Bolívar"
-                        width="48"
-                        height="72"
-                    />
-                    <img
-                        className={useUebLogo ? "ueb-brand-logo--auth" : "facagei-brand-logo--auth"}
-                        src={useUebLogo ? shell.logo : shell.headerLogo}
-                        alt={useUebLogo ? "Universidad Estatal de Bolívar" : "FACAGEI · Facultad de Ciencias Administrativas, Gestión Empresarial e Informática"}
-                        width={useUebLogo ? "200" : "1665"}
-                        height={useUebLogo ? "42" : "945"}
-                    />
+        <div className="au">
+            {/* Lado de marca (escritorio): siempre oscuro, como la entrada a la señal. */}
+            <aside className="au-brand">
+                <div className="au-brand__glow" aria-hidden="true" />
+                <a href={shell.catalog} className="au-brand__logo" aria-label="Universidad Estatal de Bolívar">
+                    <img className="au-brand__mascot" src={shell.mascot} alt="" width="48" height="72" />
+                    <img className="au-brand__ueb" src={shell.logo} alt="Universidad Estatal de Bolívar" width="200" height="42" />
                 </a>
-                <div>
-                    <span className="react-overline">
-                        TU UNIVERSIDAD. TU SEÑAL.
-                    </span>
-                    <h2>
-                        Historias que nos
-                        <br />
-                        <em>conectan.</em>
-                    </h2>
-                    <p>
-                        Conocimiento, cultura y experiencias compartidas. Un
-                        espacio para toda nuestra comunidad.
-                    </p>
+                <div className="au-brand__copy">
+                    <a className="au-live" href={shell.channel}><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2" /><path d="M8 3l4 3 4-3" /></svg>Señal 24/7 de la UEB</a>
+                    <h2>Historias que nos <em>conectan.</em></h2>
+                    <p>Conferencias, cultura y momentos de nuestra comunidad, en directo y cuando quieras.</p>
+                    <ul className="au-features">
+                        <li><span aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="2.5" /><path d="M7.8 7.8a6 6 0 0 0 0 8.4m8.4-8.4a6 6 0 0 1 0 8.4M5 5a10 10 0 0 0 0 14m14-14a10 10 0 0 1 0 14" /></svg></span><div><strong>Señal 24/7 y directos</strong><small>Programación continua y transmisiones en vivo.</small></div></li>
+                        <li><span aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="14" rx="2.5" /><path d="m10 9 5 3-5 3z" /></svg></span><div><strong>Grabaciones cuando quieras</strong><small>Vuelve a ver conferencias y eventos.</small></div></li>
+                        <li><span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 6h14v9H9l-4 3z" /></svg></span><div><strong>Comenta en vivo</strong><small>Participa con tu comunidad en cada emisión.</small></div></li>
+                    </ul>
                 </div>
-                <span>UNIVERSIDAD ESTATAL DE BOLÍVAR</span>
+                <small className="au-brand__foot">UEBTV · Universidad Estatal de Bolívar</small>
             </aside>
-            <section className="react-auth-content">
-                <a href={shell.catalog} className="studio-text-link">
-                    ← Volver al catálogo
-                </a>
-                <div className="react-auth-card">
-                    <span className="react-auth-symbol" aria-hidden="true">
-                        ↗
-                    </span>
-                    <p className="studio-eyebrow">UN ESPACIO PARA CONECTAR</p>
+            <main className="au-main">
+                <div className="au-top">
+                    <div className="au-top__row">
+                        <a href={shell.catalog} className="au-back"><AuthIcon name="back" />Volver al catálogo</a>
+                        <a href={shell.catalog} className="au-top__logo" aria-label="UEBTV">
+                            <img src={shell.mascot} alt="" width="24" height="36" />
+                            <img src={shell.logo} alt="Universidad Estatal de Bolívar" width="120" height="25" />
+                        </a>
+                    </div>
+                    {/* Solo en el celular: franja de marca sobre el formulario. */}
+                    <div className="au-top__hero">
+                        <a className="au-live" href={shell.channel}><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2" /><path d="M8 3l4 3 4-3" /></svg>Señal 24/7 de la UEB</a>
+                        <p>Historias que nos <em>conectan.</em></p>
+                    </div>
+                </div>
+                <div className="au-form-wrap">
                     <h1>{titles[mode]}</h1>
-                    <p>
-                        {register
-                            ? "Crea tu cuenta para participar y vivir cada encuentro."
-                            : forgot
-                              ? "Te enviaremos un enlace para restablecer tu contraseña."
-                              : verify
-                                ? "Abre el enlace que enviamos a tu correo para verificar tu cuenta."
-                                : "Entra y sé parte de nuestra comunidad."}
-                    </p>
+                    <p className="au-sub">{subtitles[mode]}</p>
                     <Feedback />
                     {verify ? (
-                        <>
-                            <Action url={action}>
-                                Reenviar correo de verificación
-                            </Action>
-                            <Action
-                                url={shell.logout}
-                                className="studio-text-link"
-                            >
-                                Cerrar sesión
-                            </Action>
-                        </>
+                        <div className="au-actions">
+                            <Action url={action} className="au-submit">Reenviar correo de verificación</Action>
+                            <Action url={shell.logout} className="au-link">Cerrar sesión</Action>
+                        </div>
                     ) : (
-                        <form
-                            action={action}
-                            method="POST"
-                            className="react-form"
-                            onSubmit={() => setBusy(true)}
-                        >
+                        <form action={action} method="POST" className="au-form" onSubmit={() => setBusy(true)}>
                             <Token />
-                            {reset && (
-                                <input
-                                    type="hidden"
-                                    name="token"
-                                    value={token}
-                                />
-                            )}{" "}
+                            {reset && <input type="hidden" name="token" value={token} />}
                             {register && (
-                                <Field
-                                    name="name"
-                                    label="Nombre completo"
-                                    defaultValue={name}
-                                    required
-                                    autoComplete="name"
-                                    maxLength="255"
-                                />
+                                <AuthField name="name" label="Nombre completo" icon="user" defaultValue={name} required autoComplete="name" maxLength="255" placeholder="Tu nombre y apellido" />
                             )}
                             {mode !== "confirm" && (
-                                <Field
-                                    name="email"
-                                    label="Correo electrónico"
-                                    type="email"
-                                    defaultValue={email}
-                                    required
-                                    autoComplete="email"
-                                />
+                                <AuthField name="email" label="Correo electrónico" icon="mail" type="email" defaultValue={email} required autoComplete="email" placeholder="tucorreo@ueb.edu.ec" />
                             )}
                             {!forgot && (
                                 <Password
-                                    autoComplete={
-                                        register || reset
-                                            ? "new-password"
-                                            : "current-password"
-                                    }
-                                    minLength={
-                                        register || reset ? 8 : undefined
-                                    }
+                                    autoComplete={register || reset ? "new-password" : "current-password"}
+                                    minLength={register || reset ? 8 : undefined}
+                                    aside={mode === "login" ? <a className="au-link" href={forgotUrl}>¿Olvidaste tu contraseña?</a> : null}
                                 />
-                            )}{" "}
+                            )}
                             {(register || reset) && (
                                 <>
-                                    <small>
-                                        Utiliza al menos 8 caracteres,
-                                        mayúsculas, minúsculas, números y
-                                        símbolos.
-                                    </small>
-                                    <Password
-                                        name="password_confirmation"
-                                        label="Confirmar contraseña"
-                                        autoComplete="new-password"
-                                    />
+                                    <p className="au-hint">Al menos 8 caracteres, con mayúsculas, minúsculas, números y símbolos.</p>
+                                    <Password name="password_confirmation" label="Confirmar contraseña" autoComplete="new-password" />
                                 </>
                             )}
                             {mode === "login" && (
-                                <div className="react-login-options">
-                                    <label>
-                                        <input
-                                            type="checkbox"
-                                            name="remember"
-                                        />{" "}
-                                        Mantener mi sesión
-                                    </label>
-                                    <a href={forgotUrl}>¿La olvidaste?</a>
-                                </div>
+                                <label className="au-check">
+                                    <input type="checkbox" name="remember" />
+                                    <span>Mantener mi sesión iniciada</span>
+                                </label>
                             )}
-                            <button className="studio-button" disabled={busy}>
-                                {busy
-                                    ? "Procesando…"
-                                    : {
-                                          login: "Entrar a UEBTV",
-                                          register: "Crear mi cuenta",
-                                          forgot: "Enviar enlace",
-                                          reset: "Guardar contraseña",
-                                          confirm: "Confirmar",
-                                      }[mode]}{" "}
-                                <span>↗</span>
+                            <button className="au-submit" disabled={busy} aria-busy={busy}>
+                                {busy ? <><span className="au-spinner" aria-hidden="true" />{mode === "login" ? "Entrando…" : "Procesando…"}</> : <>{submit}<AuthIcon name="arrow" /></>}
                             </button>
                         </form>
                     )}
                     {(register || mode === "login") && (
-                        <p className="react-auth-bottom">
-                            {register
-                                ? "¿Ya tienes cuenta?"
-                                : "¿Primera vez aquí?"}{" "}
-                            <a href={register ? shell.login : shell.register}>
-                                {register ? "Iniciar sesión" : "Crear cuenta"}
-                            </a>
+                        <p className="au-switch">
+                            {register ? "¿Ya tienes cuenta?" : "¿Primera vez aquí?"}{" "}
+                            <a href={register ? shell.login : shell.register}>{register ? "Inicia sesión" : "Crea tu cuenta"}</a>
                         </p>
                     )}
+                    {(forgot || reset || mode === "confirm") && (
+                        <p className="au-switch"><a href={shell.login}>← Volver a iniciar sesión</a></p>
+                    )}
                 </div>
-            </section>
+                {/* Solo en el celular: lo que ofrece la plataforma, al pie. */}
+                <ul className="au-mini" aria-label="Qué encontrarás en UEBTV">
+                    <li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="2.5" /><path d="M7.8 7.8a6 6 0 0 0 0 8.4m8.4-8.4a6 6 0 0 1 0 8.4M5 5a10 10 0 0 0 0 14m14-14a10 10 0 0 1 0 14" /></svg>Señal 24/7</li>
+                    <li><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="2.5" /><path d="m10 9 5 3-5 3z" /></svg>Grabaciones</li>
+                    <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6h14v9H9l-4 3z" /></svg>Chat en vivo</li>
+                </ul>
+                <small className="au-foot">UEBTV · Universidad Estatal de Bolívar</small>
+            </main>
         </div>
     );
 }

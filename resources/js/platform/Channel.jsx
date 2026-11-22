@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import Player, { BrandedVideo, clockedMediaTarget, isTimeBuffered } from "./Player";
-import { useShell, statusLabel, ShareButton, AppCard, GuideThumb, useViewerPresence } from "./shared";
+import { useShell, statusLabel, ShareButton, AppCard, GuideThumb, useViewerPresence, ViewerStat, LiveTimeStat } from "./shared";
 import Chat from "./Chat";
 import { createPortal } from "react-dom";
 
@@ -250,7 +250,7 @@ export default function Channel({ stateUrl, recent = [] }) {
     const [clock, setClock] = useState(() => Date.now());
     useEffect(() => { const timer = setInterval(() => setClock(Date.now()), 30000); return () => clearInterval(timer); }, []);
     const rail = useRef(null);
-    const screenFrame = useRef(null);
+    const screenFrame = useRef(null), sideRef = useRef(null);
     useEffect(() => {
         // La tarjeta de la app (panel plegado) termina a la altura del video.
         const frame = screenFrame.current, column = rail.current;
@@ -316,12 +316,32 @@ export default function Channel({ stateUrl, recent = [] }) {
     // programación. El panel se puede plegar y entonces aparece la app (zorrito).
     const tab = chatEvent ? chosenTab || "chat" : "guide";
     const collapsed = chosenCollapsed ?? !chatEvent;
+    // Celular en directo: el chat ocupa el resto de la pantalla bajo el video.
+    useEffect(() => {
+        const el = sideRef.current;
+        if (!el) return undefined;
+        const fit = () => {
+            if (window.innerWidth <= 760 && live && !collapsed && !tvMode) {
+                const top = el.getBoundingClientRect().top + window.scrollY;
+                el.style.height = `${Math.max(260, Math.round(window.innerHeight - top - 10))}px`;
+            } else el.style.height = "";
+        };
+        fit();
+        const late = window.setTimeout(fit, 400);
+        // Lo de arriba (video y datos) puede cambiar de alto al cargar: recalcular.
+        const above = typeof ResizeObserver !== "undefined" ? new ResizeObserver(fit) : null;
+        const main = el.closest(".channel-layout")?.querySelector(".channel-main");
+        if (above && main) above.observe(main);
+        window.addEventListener("resize", fit);
+        return () => { window.clearTimeout(late); above?.disconnect(); window.removeEventListener("resize", fit); el.style.height = ""; };
+    }, [live, collapsed, tvMode, data?.event?.id]);
     // Sin chat ni emisiones anunciadas, la programación es corta: el panel toma su
     // alto natural y la tarjeta de la app ocupa el resto de la columna.
     const quietGuide = Boolean(data) && !chatEvent && !data.next?.length;
     const room = roomStatus(data, clock, ownViewers);
+    const liveViewers = live ? Math.max(data.event?.viewers ?? 0, ownViewers ?? 0) : null;
     return (
-        <div className={`studio-page channel-page cv ${tvMode ? "channel-page--tv" : ""}`}>
+        <div className={`studio-page channel-page cv ${tvMode ? "channel-page--tv" : ""} ${live ? "is-live-room" : ""}`}>
             {error && (
                 <p role="status" className="studio-alert">
                     {error}
@@ -340,6 +360,7 @@ export default function Channel({ stateUrl, recent = [] }) {
                                     event={data.event}
                                     startMuted={channelMuted}
                                     onMuteChange={setChannelMuted}
+                                    viewers={liveViewers}
                                 />
                             ) : data?.mode === "scheduled" || advertising ? (
                                 <ChannelVideo
@@ -418,12 +439,23 @@ export default function Channel({ stateUrl, recent = [] }) {
                         </div>
                     </div>
                     {!tvMode && <div className="channel-now cv-now">
-                        <div className="wv-subline">
-                            <span className={`wv-state ${live ? "is-live" : ""}`}>{live ? <i className="wv-live-dot" aria-hidden="true" /> : <CvIcon name={advertising ? "megaphone" : playing ? "tv" : "pause"} />}{room.badge}</span>
-                            {data?.event?.category && <span className="wv-subline__item"><CvIcon name="tag" />{data.event.category}</span>}
+                        <div className="ch-head">
+                            <div className="ch-head__text">
+                                <h2 className="wv-title">{data?.event?.title || data?.advertisement?.title || "UEBTV · La señal de nuestra comunidad"}</h2>
+                                {/* En vivo, el aviso "EN VIVO" ya está en el video y en el avatar:
+                                    aquí van los datos (espectadores, tiempo, categoría). */}
+                                <div className="wv-subline">
+                                    {live ? <>
+                                        <ViewerStat count={liveViewers} />
+                                        <LiveTimeStat since={data.event.liveSince} now={clock} />
+                                    </> : <span className="wv-state"><CvIcon name={advertising ? "megaphone" : playing ? "tv" : "pause"} />{room.badge}</span>}
+                                    {data?.event?.category && <span className="wv-subline__item"><CvIcon name="tag" />{data.event.category}</span>}
+                                </div>
+                                {!live && room.detail && <p className="cv-now__text">{room.detail}</p>}
+                                {live && data.resumeTitle && <p className="cv-now__text">Al terminar continúa «{data.resumeTitle}»</p>}
+                            </div>
+                            {live && <span className="ch-head__share"><ShareButton url={`${window.location.origin}/senal`} title="UEBTV · Señal 24/7" label="Compartir la señal" className="wv-chip ch-head__share-btn" icon={<CvIcon name="share" />} /></span>}
                         </div>
-                        <h2 className="wv-title">{data?.event?.title || data?.advertisement?.title || "UEBTV · La señal de nuestra comunidad"}</h2>
-                        {room.detail && <p className="cv-now__text">{room.detail}</p>}
                         <div className="wv-actions" role="toolbar" aria-label="Acciones de la señal">
                             {data?.event && <a className="wv-chip" href={data.event.url}><CvIcon name="info" />Información y comentarios</a>}
                             <ShareButton url={`${window.location.origin}/senal`} title="UEBTV · Señal 24/7" label="Compartir la señal" icon={<CvIcon name="share" />} />
@@ -449,7 +481,7 @@ export default function Channel({ stateUrl, recent = [] }) {
                 </section>}
                 </div>
                 {!tvMode && <aside ref={rail} className="channel-rail cv-rail" aria-label="En esta sala">
-                    <div className={`wv-side ${collapsed ? "is-collapsed" : ""} ${quietGuide ? "is-quiet" : ""}`}>
+                    <div ref={sideRef} className={`wv-side ${collapsed ? "is-collapsed" : ""} ${quietGuide ? "is-quiet" : ""}`}>
                     <div className="wv-panel cv-panel" inert={collapsed}>
                         <div className="wv-tabbar">
                             {chatEvent ? <div className="wv-tabs" role="tablist" aria-label="Panel de la señal">

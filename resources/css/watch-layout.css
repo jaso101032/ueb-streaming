@@ -663,3 +663,179 @@ html .cv .cv-guide .channel-agenda { flex:1 1 auto; min-height:0; overflow-y:aut
 html .cv .cv-guide .channel-agenda > * { flex:0 0 auto; }
 html .cv .cv-guide > :is(h3, .cv-guide__now, .cv-guide__all, .cv-guide__note) { flex:0 0 auto; }
 html .cv .cv-guide__now a { display:flex; align-items:center; gap:12px; padding:8px; }
+
+/* ───────────── Directo: estilo Twitch / Kick ─────────────
+ * Un solo "EN VIVO" (en el video y en el aro del avatar) y datos con íconos:
+ * espectadores en rojo, tiempo en directo y categoría. */
+.uebtv-player-live-badges { position:absolute; z-index:2; top:16px; left:16px; display:flex; align-items:center; gap:6px; pointer-events:none; }
+.uebtv-player-live-badges .uebtv-player-live {
+    position:static; display:inline-flex; align-items:center; gap:6px; padding:4px 9px 4px 8px; border-radius:6px;
+    background:#e91f3f; color:#fff; box-shadow:0 2px 10px #0006; font-size:11px; font-weight:800; letter-spacing:.06em; line-height:1.2;
+}
+.uebtv-player-live-badges .uebtv-player-live i { width:7px; height:7px; border-radius:50%; background:#fff; animation:wv-pulse 1.4s ease-in-out infinite; }
+.uebtv-player-viewers {
+    display:inline-flex; align-items:center; gap:5px; padding:4px 9px 4px 7px; border-radius:6px;
+    background:#000000a8; color:#fff; font-size:12px; font-weight:700; line-height:1.2; font-variant-numeric:tabular-nums;
+    backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+}
+.uebtv-player-viewers svg { width:14px; height:14px; fill:none; stroke:#ff4d63; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; }
+.uebtv-player-shell.is-compact .uebtv-player-live-badges { top:10px; left:10px; gap:5px; }
+.uebtv-player-shell.is-compact .uebtv-player-live-badges .uebtv-player-live { padding:3px 7px; font-size:10px; }
+.uebtv-player-shell.is-compact .uebtv-player-viewers { padding:3px 7px 3px 6px; font-size:11px; }
+html.uebtv-tv-mode .uebtv-player-live-badges { top:28px; left:28px; gap:10px; }
+html.uebtv-tv-mode .uebtv-player-live-badges .uebtv-player-live, html.uebtv-tv-mode .uebtv-player-viewers { padding:7px 14px; font-size:18px; }
+
+.ch-head { display:flex; align-items:flex-start; gap:14px; min-width:0; }
+.ch-head__text { display:grid; flex:1 1 auto; gap:6px; min-width:0; }
+.ch-head__text .wv-title { margin:0; }
+/* Cifras del directo con ícono. */
+.live-stat { display:inline-flex; align-items:center; gap:5px; color:var(--wv-muted); font-size:var(--fs-meta); font-variant-numeric:tabular-nums; }
+.live-stat svg { width:15px; height:15px; flex:0 0 auto; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+.live-stat.is-viewers { color:var(--wv-live); font-weight:700; }
+.live-stat.is-viewers strong { font-size:calc(var(--fs-meta) + 1px); font-weight:800; }
+.live-stat__label { font-weight:600; }
+.cv .ch-head + .wv-actions, .wv-info .ch-head + .wv-actions { margin-top:4px; }
+@media (max-width:640px) {
+    .ch-head { gap:11px; }
+}
+
+/* ───────────── Chat de directo: definitivo ─────────────
+ * 1) Mensajes compactos (YouTube/Kick): avatar 24 px, nombre en color y texto
+ *    en la misma línea; la hora aparece al pasar el mouse.
+ * 2) Tonos: sigue el tema; en claro, chat blanco con nombres intensos; en
+ *    oscuro, un fondo apenas más profundo que el panel.
+ * 3) Celular en directo: video + datos + chat a pantalla, sin desplazar.
+ * 4) Modo cine en directo: el chat se queda a la derecha (Twitch). */
+.wv-chat__list { padding:6px 4px 6px 8px; }
+.wv-msg { position:relative; display:flex; align-items:flex-start; gap:9px; padding:4px 8px; border-radius:8px; }
+.wv-msg__avatar { flex:0 0 24px; width:24px; height:24px; margin-top:1px; font-size:11px; }
+.wv-msg__line { flex:1 1 auto; min-width:0; margin:0; color:var(--wv-text); font-size:14px; line-height:1.45; overflow-wrap:anywhere; }
+.wv-msg__name { margin-right:6px; color:hsl(var(--hue) 72% var(--wv-name-light)); font-size:13.5px; font-weight:800; }
+.wv-msg__line .wv-msg__text { display:inline; margin:0; font-size:inherit; line-height:inherit; }
+.wv-msg__side { display:flex; flex:0 0 auto; align-items:center; gap:4px; margin-top:2px; }
+.wv-msg__side time { color:var(--wv-muted); font-size:11px; opacity:0; transition:opacity .15s; }
+.wv-msg:hover .wv-msg__side time, .wv-msg:focus-within .wv-msg__side time { opacity:1; }
+.wv-msg__side .wv-msg__remove { margin-left:0; }
+@media (hover:none) { .wv-msg__side time { display:none; } }
+/* Tonos del chat. */
+.wv, .cv { --wv-name-light:36%; }
+html[data-theme="dark"] :is(.wv, .cv) { --wv-name-light:70%; }
+.wv-panel .wv-chat__list { background:var(--wv-surface); }
+html[data-theme="dark"] .wv-panel .wv-chat__list { background:#0b1a2f; }
+html[data-theme="dark"] .wv-msg:hover { background:#ffffff0d; }
+
+/* Celular en directo: chat protagonista. */
+@media (max-width:760px) {
+    /* Página del evento: datos compactos arriba; la descripción, después del chat. */
+    .wv.is-live-room .wv-grid { grid-template-areas:"player" "head" "actions" "panel" "about" "extra" "more"; gap:10px; }
+    .wv.is-live-room .wv-info { display:contents; }
+    .wv.is-live-room .wv-info > .ch-head { grid-area:head; }
+    .wv.is-live-room .wv-info > .wv-actions { grid-area:actions; }
+    .wv.is-live-room .wv-info > .wv-about { grid-area:about; }
+    .wv.is-live-room .wv-info > :not(.ch-head, .wv-actions, .wv-about) { grid-area:extra; }
+    .wv.is-live-room .uebtv-watch-breadcrumb { display:none; }
+    :is(.wv, .cv).is-live-room .ch-head .wv-title { display:-webkit-box; overflow:hidden; -webkit-line-clamp:1; -webkit-box-orient:vertical; font-size:16px; }
+    :is(.wv, .cv).is-live-room .wv-subline { gap:3px 10px; }
+    :is(.wv, .cv).is-live-room .wv-subline__item { display:none; }
+    /* Señal: tarjeta de datos más baja y botones en una línea. */
+    .cv.is-live-room .cv-now { gap:8px; padding:10px 12px 12px; }
+    .cv.is-live-room .cv-now__text { display:none; }
+    .cv.is-live-room .wv-actions { flex-wrap:nowrap; }
+    .cv.is-live-room .channel-layout { gap:10px; }
+    /* El panel toma el alto calculado (resto de la pantalla). */
+    :is(.wv, .cv).is-live-room .wv-side:not(.is-collapsed) > .wv-panel { height:100% !important; }
+    :is(.wv, .cv).is-live-room .wv-panel { border-radius:14px; }
+}
+
+/* Modo cine en directo: video más grande y el chat sigue a la derecha. */
+@media (min-width:961px) {
+    .wv.is-theater.is-live-room { width:100%; max-width:none; }
+    .wv.is-theater.is-live-room .uebtv-watch-breadcrumb { display:none; }
+    .wv.is-theater.is-live-room .wv-grid { grid-template-columns:minmax(0,1fr) 360px; grid-template-areas:"player panel" "info panel" "more more"; grid-template-rows:auto auto auto; }
+    .wv.is-theater.is-live-room .wv-player { max-height:none; }
+    .wv.is-theater.is-live-room .wv-side:not(.is-collapsed) .wv-panel { height:100%; }
+}
+
+/* Compartir junto al título: solo en el celular durante el directo. */
+.ch-head__share { display:none; flex:0 0 auto; }
+@media (max-width:760px) {
+    :is(.wv, .cv).is-live-room .ch-head__share { display:block; align-self:center; }
+    :is(.wv, .cv).is-live-room .ch-head__share-btn { width:38px; height:38px; padding:0; justify-content:center; }
+    :is(.wv, .cv).is-live-room .ch-head__share-btn .share__label { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+    :is(.wv, .cv).is-live-room .ch-head + .wv-actions, .wv.is-live-room .wv-info > .wv-actions { display:none; }
+    :is(.wv, .cv).is-live-room .wv-chat__bar:has(.wv-chat__status.is-open) { display:none; }
+    :is(.wv, .cv).is-live-room .wv-tabs { padding:4px; }
+    :is(.wv, .cv).is-live-room .wv-tab { min-height:34px; }
+    :is(.wv, .cv).is-live-room .wv-side__toggle { width:32px; height:32px; }
+    :is(.wv, .cv).is-live-room .wv-chat__footer { padding:8px; }
+    :is(.wv, .cv).is-live-room .wv-chat__form input, :is(.wv, .cv).is-live-room .wv-chat__form button { height:40px; }
+    .cv.is-live-room .cv-now { padding:10px 12px; }
+}
+
+/* Barra de desplazamiento del chat y de la programación: fina, a la derecha,
+   siempre visible para saber si hay más mensajes arriba o abajo. */
+:is(.wv-chat__list, .wv-guide, .cv-guide .channel-agenda) {
+    scrollbar-width:thin; scrollbar-color:color-mix(in srgb, var(--wv-muted) 55%, transparent) transparent; scrollbar-gutter:stable;
+}
+:is(.wv-chat__list, .wv-guide, .cv-guide .channel-agenda)::-webkit-scrollbar { width:8px; }
+:is(.wv-chat__list, .wv-guide, .cv-guide .channel-agenda)::-webkit-scrollbar-track { background:transparent; margin:6px 0; }
+:is(.wv-chat__list, .wv-guide, .cv-guide .channel-agenda)::-webkit-scrollbar-thumb { border:2px solid transparent; border-radius:999px; background:color-mix(in srgb, var(--wv-muted) 55%, transparent) padding-box; }
+:is(.wv-chat__list, .wv-guide, .cv-guide .channel-agenda):hover::-webkit-scrollbar-thumb { background-color:var(--wv-accent); }
+:is(.wv-chat__list, .wv-guide, .cv-guide .channel-agenda):hover { scrollbar-color:var(--wv-accent) transparent; }
+
+/* ───────────── Notificaciones (estilo YouTube) ─────────────
+ * Panel limpio: cabecera con ajustes (⚙) y cerrar; cada aviso con miniatura
+ * 16:9 (EN VIVO en rojo), título, detalle y tiempo relativo; punto azul si no
+ * se ha leído. Los ajustes van en su propia vista con interruptores. */
+.studio-notifications__panel.nt {
+    --nt-bg:#ffffff; --nt-text:#0b2240; --nt-muted:#55698a; --nt-border:#d6e2f0; --nt-hover:#eef4fb; --nt-accent:#1557ab; --nt-soft:#e3edf9;
+    display:flex; flex-direction:column; width:min(400px, calc(100vw - 24px)); max-height:min(560px, calc(100dvh - 96px)); overflow:hidden; padding:0;
+    border:1px solid var(--nt-border); border-radius:16px; background:var(--nt-bg); color:var(--nt-text); box-shadow:0 24px 48px -20px #0a234280;
+}
+html[data-theme="dark"] .studio-notifications__panel.nt { --nt-bg:#0f2038; --nt-text:#eaf3ff; --nt-muted:#a3b8cf; --nt-border:#26425f; --nt-hover:#17304f; --nt-accent:#7ab6ff; --nt-soft:#16365a; background:var(--nt-bg); }
+.nt-head { display:flex; flex:0 0 auto; align-items:center; gap:4px; padding:10px 8px 10px 16px; border-bottom:1px solid var(--nt-border); }
+.nt-head h2 { flex:1 1 auto; margin:0; color:var(--nt-text); font-size:16px; font-weight:800; letter-spacing:-.01em; }
+.nt-head .nt-icon-btn:first-child { margin-left:-8px; }
+.nt-icon-btn { display:grid; flex:0 0 auto; place-items:center; width:36px; height:36px; padding:0; border:0; border-radius:50%; background:transparent; color:var(--nt-muted); cursor:pointer; }
+.nt-icon-btn svg { width:19px; height:19px; }
+.nt-icon-btn:hover { background:var(--nt-hover); color:var(--nt-text); }
+.nt-icon-btn:focus-visible { outline:2px solid var(--nt-accent); outline-offset:1px; }
+.nt-error { margin:10px 14px 0; padding:9px 12px; border-radius:10px; background:#e5263f17; color:#b3213a; font-size:12px; }
+.nt-list { flex:1 1 auto; overflow-y:auto; overscroll-behavior:contain; padding:6px; scrollbar-width:thin; }
+.nt-item { position:relative; display:flex; align-items:flex-start; gap:12px; width:100%; padding:10px 10px 10px 18px; border:0; border-radius:12px; background:transparent; color:var(--nt-text); font:inherit; text-align:left; cursor:pointer; }
+.nt-item:hover, .nt-item:focus-visible { background:var(--nt-hover); outline:none; }
+.nt-item:focus-visible { box-shadow:inset 0 0 0 2px var(--nt-accent); }
+.nt-dot { position:absolute; top:50%; left:6px; width:7px; height:7px; margin-top:-3.5px; border-radius:50%; background:transparent; }
+.nt-item.is-unread .nt-dot { background:var(--nt-accent); }
+.nt-thumb { position:relative; display:grid; flex:0 0 auto; place-items:center; width:112px; aspect-ratio:16 / 9; overflow:hidden; border-radius:8px; background:linear-gradient(140deg, #1a4f8f, #071a35) center / cover no-repeat; }
+.nt-thumb.has-image { background-color:#071a35; background-size:cover; }
+.nt-thumb img { width:58%; filter:brightness(0) invert(1); opacity:.9; }
+.nt-badge { position:absolute; left:4px; bottom:4px; padding:1px 5px; border-radius:4px; background:#000000b3; color:#fff; font-size:8.5px; font-weight:800; letter-spacing:.05em; }
+.nt-badge.is-live { background:#e91f3f; }
+.nt-text { display:grid; flex:1 1 auto; gap:3px; min-width:0; }
+.nt-text strong { display:-webkit-box; overflow:hidden; color:var(--nt-text); font-size:13.5px; font-weight:650; line-height:1.35; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+.nt-item:not(.is-unread) .nt-text strong { font-weight:500; }
+.nt-text > span { display:-webkit-box; overflow:hidden; color:var(--nt-muted); font-size:12.5px; line-height:1.4; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+.nt-text time { color:var(--nt-muted); font-size:11.5px; }
+.nt-empty { display:grid; justify-items:center; gap:6px; padding:36px 24px 40px; text-align:center; }
+.nt-empty > span { display:grid; place-items:center; width:56px; height:56px; margin-bottom:6px; border-radius:50%; background:var(--nt-soft); color:var(--nt-accent); }
+.nt-empty svg { width:26px; height:26px; }
+.nt-empty strong { color:var(--nt-text); font-size:15px; }
+.nt-empty p { margin:0; color:var(--nt-muted); font-size:13px; line-height:1.5; }
+.nt-settings { display:grid; gap:4px; overflow-y:auto; padding:12px 16px 18px; }
+.nt-settings__title { margin:4px 0 6px; color:var(--nt-muted); font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; }
+.nt-switch { display:flex; align-items:center; gap:14px; padding:10px 0; border-bottom:1px solid var(--nt-border); cursor:pointer; }
+.nt-switch > span { display:grid; flex:1 1 auto; gap:2px; }
+.nt-switch strong { color:var(--nt-text); font-size:14px; font-weight:700; }
+.nt-switch small { color:var(--nt-muted); font-size:12px; }
+.nt-switch input { appearance:none; -webkit-appearance:none; position:relative; flex:0 0 auto; width:42px; height:24px; margin:0; border-radius:999px; background:#b7c6d8; cursor:pointer; transition:background .18s; }
+.nt-switch input::after { position:absolute; top:3px; left:3px; width:18px; height:18px; border-radius:50%; background:#fff; box-shadow:0 1px 3px #0004; content:""; transition:transform .18s; }
+.nt-switch input:checked { background:var(--nt-accent); }
+.nt-switch input:checked::after { transform:translateX(18px); }
+.nt-switch input:focus-visible { outline:2px solid var(--nt-accent); outline-offset:2px; }
+.nt-switch input:disabled { opacity:.6; }
+.nt-push { margin-top:14px; min-height:42px; padding:0 14px; border:0; border-radius:10px; background:var(--nt-accent); color:#fff; font:inherit; font-size:13px; font-weight:700; cursor:pointer; }
+html[data-theme="dark"] .nt-push { color:#06203d; }
+.nt-hint { margin:14px 0 0; color:var(--nt-muted); font-size:12px; line-height:1.5; }
+@media (max-width:640px) { .nt-thumb { width:96px; } }
+@media (prefers-reduced-motion:reduce) { .nt-switch input, .nt-switch input::after { transition:none; } }

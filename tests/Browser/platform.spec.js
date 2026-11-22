@@ -29,14 +29,17 @@ test("notification bell keeps preferences and fits a narrow mobile header", asyn
     await page.locator(".studio-menu-toggle").click();
     await page.getByRole("button", { name: /Notificaciones/ }).click();
     await expect(page.getByRole("heading", { name: "Notificaciones" })).toBeVisible();
-    const live = page.getByRole("checkbox", { name: "Directos" });
+    // Preferences live behind ⚙, as switches.
+    await page.getByRole("button", { name: "Ajustes de notificaciones" }).click();
+    const live = page.getByRole("checkbox", { name: /Directos/ });
     await expect(live).toBeChecked();
     await live.uncheck();
     await expect(live).not.toBeChecked();
     await page.reload();
     await page.getByRole("button", { name: /Notificaciones/ }).click();
-    await expect(page.getByRole("checkbox", { name: "Directos" })).not.toBeChecked();
-    await page.getByRole("checkbox", { name: "Directos" }).check();
+    await page.getByRole("button", { name: "Ajustes de notificaciones" }).click();
+    await expect(page.getByRole("checkbox", { name: /Directos/ })).not.toBeChecked();
+    await page.getByRole("checkbox", { name: /Directos/ }).check();
     await expect(page.locator("body")).toHaveJSProperty("scrollWidth", 320);
 });
 test("student mobile menu keeps account actions outside the compact header", async ({ page }) => {
@@ -566,7 +569,7 @@ test("access, profile, administration, event form preview and mobile navigation"
     page.on("pageerror", (e) => errors.push(e.message));
     await page.goto("/register");
     await expect(
-        page.getByText("Utiliza al menos 8 caracteres", { exact: false }),
+        page.getByText("Al menos 8 caracteres", { exact: false }),
     ).toBeVisible();
     await page
         .getByRole("button", { name: "Mostrar contraseña", exact: true })
@@ -1560,8 +1563,11 @@ test("channel room status explains what is on air and opens the right panel tab"
     await page.route("**/eventos/3/chat**", (route) => route.fulfill({ json: [{ id: 1, user: "Ana", message: "¡Saludos!", created_at: new Date().toISOString() }] }));
     state = { ...state, mode: "live", event: { id: 3, title: "Conferencia", url: "/eventos/3", status: "en_vivo", chatUrl: "/eventos/3/chat", chatEnabled: true, viewers: 12, hlsUrl: "/mock-live.m3u8" } };
     await page.reload();
-    await expect(room).toContainText("En vivo");
-    await expect(room).toContainText("12 espectadores conectados");
+    // "EN VIVO" once, on the video, and the viewer count with its icon (no streamer avatar).
+    await expect(page.locator(".ch-avatar")).toHaveCount(0);
+    await expect(page.locator(".uebtv-player-live")).toContainText("EN VIVO");
+    await expect(room.getByLabel("12 espectadores conectados")).toBeVisible();
+    await expect(page.locator(".uebtv-player-viewers")).toContainText("12");
     await expect(page.getByRole("tab", { name: "Chat" })).toHaveAttribute("aria-selected", "true");
     await expect(page.locator(".cv-panel .wv-msg")).toContainText("¡Saludos!");
     await expect(page.locator(".uebtv-credits-button")).toBeVisible();
@@ -1720,7 +1726,7 @@ test("the live channel counts this viewer and stops reporting when the live ends
     // though the server state still says 0.
     await expect.poll(() => beats.length).toBeGreaterThan(0);
     expect(beats[0].viewer).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
-    await expect(page.locator(".cv-now")).toContainText("5 espectadores conectados");
+    await expect(page.locator(".cv-now").getByLabel("5 espectadores conectados")).toBeVisible();
     // The same anonymous id is reused by the event room.
     const stored = await page.evaluate(() => localStorage.getItem("uebtv-viewer-id"));
     expect(stored).toBe(beats[0].viewer);

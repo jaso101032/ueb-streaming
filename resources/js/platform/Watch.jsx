@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useShell, statusLabel, ShareButton, AppCard, GuideThumb, browserViewerKey, useViewerPresence } from "./shared";
+import { useShell, statusLabel, ShareButton, AppCard, GuideThumb, browserViewerKey, useViewerPresence, ViewerStat, LiveTimeStat, useNow } from "./shared";
 import Player from "./Player";
 import Chat from "./Chat";
 import { VideoAnalyticsInline } from "./VideoAnalytics";
@@ -31,6 +31,8 @@ export default function Watch({
         // Panel plegable: al ocultarlo aparece la tarjeta de la app (zorrito con QR).
         [collapsed, setCollapsed] = useState(() => { try { return localStorage.getItem("uebtv-panel-collapsed") === "1"; } catch { return false; } }),
         side = useRef(null), collapseButton = useRef(null), expandButton = useRef(null);
+    // Directo: el chat es protagonista (celular a pantalla, cine con chat a la derecha).
+    const liveRoom = e.status === "en_vivo" && !e.scheduled;
     const setPanelCollapsed = (value) => {
         setCollapsed(value);
         try { localStorage.setItem("uebtv-panel-collapsed", value ? "1" : "0"); } catch {}
@@ -43,18 +45,32 @@ export default function Watch({
     }), []);
     useEffect(() => {
         const resize = () => {
-            // En escritorio el panel mide lo mismo que el video, como en Twitch.
-            if (side.current) side.current.style.height = window.innerWidth > 960 && !theater ? `${player.current.offsetHeight}px` : "";
+            const el = side.current;
+            if (!el) return;
+            // Escritorio: el panel mide lo mismo que el video, como en Twitch (en
+            // directo también en modo cine, porque el chat sigue a la derecha).
+            if (window.innerWidth > 960 && (!theater || liveRoom)) el.style.height = `${player.current.offsetHeight}px`;
+            // Celular en directo: el chat ocupa el resto de la pantalla (video +
+            // datos + chat visibles a la vez, sin desplazar la página).
+            else if (window.innerWidth <= 760 && liveRoom && !collapsed) {
+                const top = el.getBoundingClientRect().top + window.scrollY;
+                el.style.height = `${Math.max(260, Math.round(window.innerHeight - top - 10))}px`;
+            } else el.style.height = "";
         };
         const observer = new ResizeObserver(resize);
         observer.observe(player.current);
+        // En el celular, los datos sobre el chat también pueden cambiar de alto.
+        const info = player.current?.parentElement?.querySelector(".ch-head");
+        if (info) observer.observe(info);
         window.addEventListener("resize", resize);
         resize();
+        const late = window.setTimeout(resize, 400);
         return () => {
             observer.disconnect();
+            window.clearTimeout(late);
             window.removeEventListener("resize", resize);
         };
-    }, [theater]);
+    }, [theater, liveRoom, collapsed]);
     useEffect(() => {
         if (e.scheduled) return;
         let stopped = false,
@@ -95,6 +111,7 @@ export default function Watch({
     }, [e.playbackUrl, e.status, initialReady, e.scheduled]);
     const liveViewers = useViewerPresence(e.viewersUrl, e.status === "en_vivo", shell.csrf);
     const viewerCount = liveViewers ?? e.viewers ?? 0;
+    const now = useNow(30000);
     function onVideoProgress(event) {
         const video = event.currentTarget;
         const progress = viewProgress.current;
@@ -135,7 +152,7 @@ export default function Watch({
     const chatTitle = isRecording ? "Comentarios" : "Chat en vivo";
     return (
         <div className="uebtv-watch-page watch-experience">
-            <div className={`wv ${theater ? "is-theater" : ""}`}>
+            <div className={`wv ${theater ? "is-theater" : ""} ${liveRoom ? "is-live-room" : ""}`}>
                 <div className="uebtv-watch-breadcrumb">
                     <a href={shell.catalog}>UEBTV</a>
                     <span>/</span>
@@ -143,20 +160,26 @@ export default function Watch({
                 </div>
                 <div className="wv-grid">
                     <div className="wv-player" ref={player}>
-                        <Player event={e} onScheduledState={setScheduledState} recordingRef={recordingVideo} onVideoProgress={onVideoProgress} theater={theater} onTheater={toggleTheater} />
+                        <Player event={e} viewers={showLiveViewers ? viewerCount : null} onScheduledState={setScheduledState} recordingRef={recordingVideo} onVideoProgress={onVideoProgress} theater={theater} onTheater={toggleTheater} />
                     </div>
                     <section className="wv-info uebtv-watch-main" aria-label="Información del video">
+                        <div className="ch-head">
+                        <div className="ch-head__text">
                         <h1 className="wv-title">{e.title}</h1>
                         <div className="wv-subline" role="group" aria-label="Información de la transmisión">
-                            <span className={`wv-state ${live ? "is-live" : ""}`}><KindIcon status={e.status} scheduled={Boolean(e.scheduled)} />{status}</span>
-                            {showLiveViewers && <span className="wv-count" aria-label={`${viewerCount} ${viewerCount === 1 ? "espectador conectado" : "espectadores conectados"}`} title={`${viewerCount} ${viewerCount === 1 ? "espectador conectado" : "espectadores conectados"}`}>
-                                <Icon d="M16 19v-1.3c0-2-1.8-3.7-4-3.7s-4 1.7-4 3.7V19m4-5a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" /><strong>{viewerCount}</strong><span className="wv-count__label">{viewerCount === 1 ? "espectador" : "espectadores"}</span>
-                            </span>}
+                            {/* En vivo, "EN VIVO" ya está en el video y en el avatar: aquí, los datos. */}
+                            {showLiveViewers ? <>
+                                <ViewerStat count={viewerCount} />
+                                <LiveTimeStat since={e.liveSince} now={now} />
+                            </> : <span className="wv-state"><KindIcon status={e.status} scheduled={Boolean(e.scheduled)} />{status}</span>}
                             {showVideoViews && <span className="wv-count" aria-label={`${viewCount} ${viewCount === 1 ? "visualización" : "visualizaciones"}`} title={`${viewCount} ${viewCount === 1 ? "visualización" : "visualizaciones"}`}>
                                 <Icon><path d="M2.5 12s3.5-5 9.5-5 9.5 5 9.5 5-3.5 5-9.5 5-9.5-5-9.5-5Z" /><circle cx="12" cy="12" r="2.5" /></Icon><strong>{viewCount}</strong><span className="wv-count__label">{viewCount === 1 ? "visualización" : "visualizaciones"}</span>
                             </span>}
                             <span className="wv-subline__item" title="Categoría"><Icon d="M4 4h7l9 9-7 7-9-9z M8.5 8.5h.01" />{e.category}</span>
-                            <span className="wv-subline__item" title="Fecha"><Icon><rect x="3.5" y="5" width="17" height="15" rx="2.5" /><path d="M8 3v4m8-4v4M3.5 10h17" /></Icon>{e.date}</span>
+                            {!showLiveViewers && <span className="wv-subline__item" title="Fecha"><Icon><rect x="3.5" y="5" width="17" height="15" rx="2.5" /><path d="M8 3v4m8-4v4M3.5 10h17" /></Icon>{e.date}</span>}
+                        </div>
+                        </div>
+                        {liveRoom && <span className="ch-head__share"><ShareButton title={e.title} className="wv-chip ch-head__share-btn" icon={<Icon><circle cx="18" cy="5" r="2" /><circle cx="6" cy="12" r="2" /><circle cx="18" cy="19" r="2" /><path d="m8 11 8-5m-8 7 8 5" /></Icon>} /></span>}
                         </div>
                         <div className="wv-actions" role="toolbar" aria-label="Acciones del video">
                             <ShareButton title={e.title} icon={<Icon><circle cx="18" cy="5" r="2" /><circle cx="6" cy="12" r="2" /><circle cx="18" cy="19" r="2" /><path d="m8 11 8-5m-8 7 8 5" /></Icon>} />
@@ -206,7 +229,6 @@ export default function Watch({
                                 }}
                                 isRecording={isRecording}
                                 canComment={e.status !== "finalizado" && scheduledState !== "ended"}
-                                viewers={showLiveViewers ? viewerCount : null}
                                 onDraft={(v) => (draft.current = v)}
                             />
                         </div>

@@ -47,4 +47,17 @@ http {
             proxy_set_header X-Forwarded-Proto $scheme;
         }
     }
+
+    # "Finalizar transmisión" corta la señal de OBS desde aquí (STREAMING_CONTROL_URL).
+    # Solo escucha en la propia computadora.
+    server {
+        listen 127.0.0.1:8091;
+        server_name _;
+
+        location /control {
+            allow 127.0.0.1;
+            deny all;
+            rtmp_control all;
+        }
+    }
 }

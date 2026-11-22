@@ -56,6 +56,7 @@ class AudienceNotificationsTest extends TestCase
         $job->handle();
         $this->assertDatabaseCount('notifications', 1);
         $this->actingAs($owner)->get(route('notifications.index'))->assertJsonPath('unread', 1);
+        $this->assertArrayHasKey('image', $this->actingAs($owner)->getJson(route('notifications.index'))->json('items.0'), 'Each notice carries its thumbnail (or null).');
         $id = DB::table('notifications')->value('id');
         $this->actingAs($muted)->patchJson(route('notifications.read', $id))->assertOk();
         $this->assertNull(DB::table('notifications')->where('id', $id)->value('read_at'));

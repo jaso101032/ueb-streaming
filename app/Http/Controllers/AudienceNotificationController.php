@@ -11,8 +11,19 @@ class AudienceNotificationController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
+        $items = $user->notifications()->latest()->limit(30)->get(['id', 'data', 'read_at', 'created_at']);
+        // Miniatura del evento de cada aviso (como en YouTube). El aviso guarda
+        // el enlace /eventos/{id}; de ahí sale el evento, sin cambiar los datos.
+        $eventIds = $items->map(fn ($n) => preg_match('#/eventos/(\d+)#', (string) ($n->data['url'] ?? ''), $m) ? (int) $m[1] : null)->filter()->unique();
+        $thumbs = \App\Models\Evento::whereIn('id', $eventIds)->pluck('miniatura', 'id');
+        $items = $items->map(function ($n) use ($thumbs) {
+            $id = preg_match('#/eventos/(\d+)#', (string) ($n->data['url'] ?? ''), $m) ? (int) $m[1] : null;
+            $row = $n->only(['id', 'data', 'read_at', 'created_at']);
+            $row['image'] = $id && ($thumbs[$id] ?? null) ? asset('storage/'.$thumbs[$id]) : null;
+            return $row;
+        });
         return response()->json([
-            'items' => $user->notifications()->latest()->limit(30)->get(['id', 'data', 'read_at', 'created_at']),
+            'items' => $items,
             'unread' => $user->unreadNotifications()->count(),
             'preferences' => ['live' => (bool) $user->notify_live, 'videos' => (bool) $user->notify_videos],
             'pushEndpoints' => DB::table('push_subscriptions')->where('user_id', $user->id)->pluck('endpoint'),
