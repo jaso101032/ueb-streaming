@@ -8,6 +8,10 @@ fi
 export DB_CONNECTION=sqlite DB_DATABASE="/tmp/uebtv-react-e2e-$$.sqlite"
 export LARAVEL_STORAGE_PATH="$(mktemp -d /tmp/uebtv-browser-storage-XXXXXX)"
 mkdir -p "$LARAVEL_STORAGE_PATH/app/private" "$LARAVEL_STORAGE_PATH/framework/views" "$LARAVEL_STORAGE_PATH/framework/sessions" "$LARAVEL_STORAGE_PATH/framework/cache/data" "$LARAVEL_STORAGE_PATH/logs"
+# Grabaciones también aisladas: nunca se usa la carpeta real de .env, y en CI
+# (sin .env) el medidor de almacenamiento funciona igual que en local.
+export STREAMING_RECORDINGS_ROOT="$LARAVEL_STORAGE_PATH/app/recordings"
+mkdir -p "$STREAMING_RECORDINGS_ROOT/raw" "$STREAMING_RECORDINGS_ROOT/vod"
 export SESSION_DRIVER=file SESSION_COOKIE=uebtv_e2e CACHE_STORE=array
 export APP_URL=http://127.0.0.1:8017 APP_ENV=testing
 cleanup() { [[ -z "${browser_server_pid:-}" ]] || kill "$browser_server_pid" 2>/dev/null || true; rm -f "$DB_DATABASE"; rm -rf -- "$LARAVEL_STORAGE_PATH"; }
