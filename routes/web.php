@@ -83,6 +83,12 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/medios', [MediaLibraryController::class, 'index'])->name('media.index');
     Route::get('/medios/programados/{evento}/video', [ScheduledVideoController::class, 'adminPreview'])->name('media.scheduled-preview');
     Route::get('/medios/publicidad/{ad}/video', [InstitutionalAdController::class, 'adminPreview'])->name('media.ad-preview');
+    Route::get('/medios/eventos/{evento}/descargar', [\App\Http\Controllers\Admin\MediaDownloadController::class, 'event'])->whereNumber('evento')->name('media.download');
+    Route::get('/medios/publicidad/{ad}/descargar', [\App\Http\Controllers\Admin\MediaDownloadController::class, 'ad'])->name('media.ad-download');
+    Route::put('/medios/videos/{evento}', [\App\Http\Controllers\ScheduledVideoController::class, 'updateVideo'])->middleware('throttle:20,1')->name('media.videos.update');
+    Route::post('/medios/videos', [\App\Http\Controllers\ScheduledVideoController::class, 'storeCatalog'])->middleware('throttle:10,1')->name('media.videos.store');
+    Route::get('/medios/liberar', [\App\Http\Controllers\Admin\StorageCleanupController::class, 'index'])->name('media.cleanup.list');
+    Route::post('/medios/liberar', [\App\Http\Controllers\Admin\StorageCleanupController::class, 'store'])->middleware('throttle:10,1')->name('media.cleanup');
     Route::get('/usuarios', [UserController::class, 'index'])->name('usuarios.index');
     Route::get('/eventos/{evento}/estadisticas', [VideoAnalyticsController::class, 'show'])->name('eventos.analytics');
     Route::post('/usuarios', [UserController::class, 'store'])->middleware('throttle:10,1')->name('usuarios.store');

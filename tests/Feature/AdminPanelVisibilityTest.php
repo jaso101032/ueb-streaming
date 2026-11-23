@@ -25,7 +25,8 @@ class AdminPanelVisibilityTest extends TestCase {
                 else $result->assertForbidden();
             }
             if ($role === 'operador') {
-                $this->assertSame(['Gestionar eventos', 'Emitir con OBS', 'Catálogo público'], array_column($shell['links'], 'label'));
+                $this->assertSame(['Eventos', 'Emitir con OBS'], array_column($shell['links'], 'label'));
+                $this->assertSame(route('eventos.index'), $shell['catalog'], 'The public site link stays at the bottom of the menu.');
                 $this->assertSame(route('streaming.control'), $shell['home']);
             }
         }

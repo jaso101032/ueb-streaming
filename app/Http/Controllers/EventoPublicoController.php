@@ -22,8 +22,11 @@ class EventoPublicoController extends Controller
             'q' => ['nullable', 'string', 'max:120'],
             'filtro' => ['nullable', Rule::in(['todos', 'en_vivo', 'anteriores', 'proximos'])],
             'facultad_id' => ['nullable', 'integer', 'exists:facultades,id'],
+            'carrera_id' => ['nullable', 'integer', 'exists:carreras,id'],
             'categoria_id' => ['nullable', 'integer', 'exists:categorias,id'],
         ], [
+            'carrera_id.integer' => 'Selecciona una carrera válida.',
+            'carrera_id.exists' => 'La carrera seleccionada no está disponible.',
             'q.string' => 'Ingresa un título válido para buscar.',
             'q.max' => 'La búsqueda no puede superar 120 caracteres.',
             'filtro.in' => 'Selecciona un estado válido.',
@@ -53,7 +56,7 @@ class EventoPublicoController extends Controller
             $search = str_replace(['!', '%', '_'], ['!!', '!%', '!_'], mb_strtolower($search));
             $query->whereRaw("LOWER(titulo) LIKE ? ESCAPE '!'", ['%'.$search.'%']);
         }
-        foreach (['facultad_id', 'categoria_id'] as $field) {
+        foreach (['facultad_id', 'carrera_id', 'categoria_id'] as $field) {
             if (! empty($filters[$field])) {
                 $query->where($field, $filters[$field]);
             }
@@ -68,7 +71,9 @@ class EventoPublicoController extends Controller
         if ($filter === 'en_vivo') {
             $query->where('estado', 'en_vivo');
         } elseif ($filter === 'anteriores') {
-            $query->where(fn ($events) => $events->whereIn('id', $endedIds)->orWhere(fn ($q) => $q->whereDoesntHave('scheduledVideo')->where(fn ($q) => $q->where('estado', 'finalizado')->orWhereNotNull('video_url'))));
+            $query->where(fn ($events) => $events->whereIn('id', $endedIds)
+                ->orWhereHas('scheduledVideo', fn ($q) => $q->where('on_channel', false))
+                ->orWhere(fn ($q) => $q->whereDoesntHave('scheduledVideo')->where(fn ($q) => $q->where('estado', 'finalizado')->orWhereNotNull('video_url'))));
         } elseif ($filter === 'proximos') {
             $query->where($upcomingQuery);
         }
@@ -77,8 +82,9 @@ class EventoPublicoController extends Controller
             ->orderBy('id')->paginate(12)->withQueryString();
         $categorias = Categoria::orderBy('nombre')->get(['id', 'nombre']);
         $facultades = Facultad::orderBy('nombre')->get(['id', 'nombre']);
+        $carreras = \App\Models\Carrera::orderBy('nombre')->get(['id', 'nombre', 'facultad_id']);
 
-        return view('eventos.index', compact('eventos', 'filter', 'filters', 'proximos', 'categorias', 'facultades'));
+        return view('eventos.index', compact('eventos', 'filter', 'filters', 'proximos', 'categorias', 'facultades', 'carreras'));
     }
 
     /**
@@ -134,16 +140,29 @@ class EventoPublicoController extends Controller
             ->whereKeyNot($evento->id)
             ->where('estado', '!=', 'cancelado')
             ->visibleTo($request->user());
+        // Lista "Más de…": los videos de la misma carrera (o, si no tiene, de la
+        // misma facultad), del más reciente al más antiguo.
+        $playlist = null;
+        $group = $evento->carrera ?? $evento->facultad;
+        if ($group) {
+            $field = $evento->carrera ? 'carrera_id' : 'facultad_id';
+            $items = $candidatos()->where($field, $group->id)->where('estado', 'finalizado')->latest('fecha_inicio')->take(12)->get();
+            if ($items->isNotEmpty()) {
+                $playlist = ['title' => 'Más de '.$group->nombre, 'items' => $items,
+                    'url' => route('eventos.index', array_filter(['filtro' => 'anteriores', $field => $group->id,
+                        'facultad_id' => $evento->carrera ? $evento->carrera->facultad_id : null]))];
+            }
+        }
         $eventosRelacionados = $candidatos()->where('estado', 'en_vivo')->latest('fecha_inicio')->take(4)->get()
             ->concat($candidatos()->where('estado', 'programado')->where('fecha_inicio', '>', now())->orderBy('fecha_inicio')->take(4)->get())
             ->concat($evento->categoria_id ? $candidatos()->where('categoria_id', $evento->categoria_id)->latest('fecha_inicio')->take(8)->get() : collect())
             ->concat($candidatos()->latest('fecha_inicio')->take(8)->get())
-            ->unique('id')->take(8)->values();
+            ->unique('id')->reject(fn ($e) => $playlist && $playlist['items']->contains('id', $e->id))->take(8)->values();
 
         $chatMessages = $feed->messages($evento);
         $canModerate = (bool) auth()->user()?->allowsOperatorAction('moderate_chat');
         $videoViews = DB::table('event_video_views')->where('evento_id', $evento->id)->count();
 
-        return view('eventos.show', compact('evento', 'eventosRelacionados', 'chatMessages', 'canModerate', 'videoViews'));
+        return view('eventos.show', compact('evento', 'eventosRelacionados', 'chatMessages', 'canModerate', 'videoViews', 'playlist'));
     }
 }

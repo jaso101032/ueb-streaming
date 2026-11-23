@@ -13,6 +13,8 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         // Dokploy terminates TLS at its reverse proxy; honor forwarded HTTPS headers.
         $middleware->trustProxies(at: '*');
+        // Cabeceras de seguridad (CSP, HSTS, Permissions-Policy…) en todas las páginas.
+        $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
 
         // Registrar el alias del middleware de roles
         $middleware->alias([
@@ -23,7 +25,9 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions) {
         $exceptions->render(function (\Illuminate\Http\Exceptions\PostTooLargeException $exception, \Illuminate\Http\Request $request) {
             $limits = \App\Support\UploadLimits::scheduled();
-            $message = 'La subida supera el límite del servidor. Máximo actual: '.$limits['maxMb'].' MB.';
+            $message = $limits['reason'] === 'space'
+                ? 'No hay espacio suficiente en el servidor para este video. Ahora caben hasta '.\App\Support\UploadLimits::human($limits['maxBytes']).'.'
+                : 'La subida supera el límite del servidor. Máximo actual: '.$limits['maxMb'].' MB.';
             if ($request->expectsJson()) return response()->json(['message' => $message], 413);
             return response()->view('errors.upload-too-large', ['props' => [
                 'maxMb' => $limits['maxMb'],

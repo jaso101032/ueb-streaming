@@ -28,8 +28,10 @@ export function Card({ event: e }) {
                 <p className="ct-card__meta">{[e.category, e.date].filter(Boolean).join(" · ")}</p>
                 {e.faculty && <p className="ct-card__faculty">{e.faculty}</p>}
                 {(e.analyticsUrl || (e.deleteUrl && (e.status === "finalizado" || e.scheduled))) && <div className="ct-card__tools">
-                    {e.analyticsUrl && <VideoAnalytics url={e.analyticsUrl} title={e.title} />}
-                    {e.deleteUrl && (e.status === "finalizado" || e.scheduled) && <Action url={e.deleteUrl} method="DELETE" confirm="¿Eliminar este evento del catálogo?" className="studio-delete">Eliminar evento</Action>}
+                    {e.analyticsUrl && <VideoAnalytics url={e.analyticsUrl} title={e.title} compact />}
+                    {e.deleteUrl && (e.status === "finalizado" || e.scheduled) && <Action url={e.deleteUrl} method="DELETE" confirm={`¿Eliminar «${e.title}» del catálogo? Se borrarán también su grabación y comentarios.`} className="studio-icon-action is-danger" ariaLabel={`Eliminar evento ${e.title}`} tooltip="Eliminar">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6m4-6v6" /><path d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3" /></svg>
+                    </Action>}
                 </div>}
             </div>
         </article>
@@ -108,10 +110,12 @@ export default function Catalog({
     filters,
     categories,
     faculties,
+    careers = [],
     isAdmin = false,
 }) {
     const shell = useShell();
-    const applied = ["facultad_id", "categoria_id"].filter((key) => filters[key]).length;
+    const applied = ["facultad_id", "carrera_id", "categoria_id"].filter((key) => filters[key]).length;
+    const facultyCareers = careers.filter((c) => String(c.facultad_id) === String(filters.facultad_id || ""));
     const [filtersOpen, setFiltersOpen] = useState(applied > 0);
     const form = useRef(null);
     const link = (value) => `${shell.catalog}?${new URLSearchParams({ ...filters, filtro: value })}`;
@@ -142,10 +146,16 @@ export default function Catalog({
                         </button>
                     </div>
                     <div id="ct-filters" className="ct-search__filters" hidden={!filtersOpen}>
-                        {[["facultad_id", "Facultad", faculties, "Todas las facultades"], ["categoria_id", "Categoría", categories, "Todas las categorías"]].map(([name, label, options, placeholder]) => (
+                        {[["facultad_id", "Facultad", faculties, "Todas las facultades"],
+                            ...(facultyCareers.length ? [["carrera_id", "Carrera", facultyCareers, "Todas las carreras"]] : []),
+                            ["categoria_id", "Categoría", categories, "Todas las categorías"]].map(([name, label, options, placeholder]) => (
                             <label key={name} className="ct-select">
                                 <span>{label}</span>
-                                <select name={name} defaultValue={filters[name] || ""} onChange={() => form.current?.requestSubmit()}>
+                                <select name={name} defaultValue={filters[name] || ""} onChange={() => {
+                                    // Al cambiar de facultad, la carrera anterior ya no aplica.
+                                    if (name === "facultad_id") { const career = form.current?.elements.namedItem("carrera_id"); if (career) career.value = ""; }
+                                    form.current?.requestSubmit();
+                                }}>
                                     <option value="">{placeholder}</option>
                                     {options.map((o) => <option key={o.id} value={o.id}>{o.nombre}</option>)}
                                 </select>

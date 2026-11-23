@@ -12,6 +12,8 @@ $props=['editing'=>$evento->exists,'action'=>$evento->exists?route('admin.evento
  'values'=>array_replace($values,session()->getOldInput()),'types'=>$tipos->values(),'categories'=>$categorias->map->only(['id','nombre'])->values(),
  'faculties'=>$facultades->map->only(['id','nombre'])->values(),'careers'=>$carreras->map->only(['id','nombre','facultad_id'])->values(),
  'image'=>$evento->miniatura?asset('storage/'.$evento->miniatura):null,'back'=>route('admin.eventos.index'),
+ 'scheduleUrl'=>auth()->user()?->role === 'admin' ? route('admin.scheduled.index').'#programar' : null,
+'catalogUploadUrl'=>auth()->user()?->role === 'admin' ? route('admin.media.index', ['subir' => 1]) : null,
  'recordingSettingsLocked'=>(bool)$evento->transmision?->iniciado_en,
  'canToggleChat'=>(bool)auth()->user()?->allowsOperatorAction('toggle_chat'),
  'visibilities'=>collect(\App\Models\Evento::VISIBILITIES)->map(fn($nombre,$id)=>['id'=>$id,'nombre'=>$nombre])->values(),

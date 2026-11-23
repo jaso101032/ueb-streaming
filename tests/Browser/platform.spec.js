@@ -377,7 +377,10 @@ test("public navigation menu is usable on mobile and desktop", async ({ page }) 
     await page.getByRole("button", { name: "Abrir menú" }).click();
     const menu = page.getByRole("navigation", { name: "Menú principal" });
     await expect(menu).toBeVisible();
-    await expect(menu.getByRole("link", { name: /Señal en vivo/ })).toHaveAttribute("href", /\/senal$/);
+    await expect(menu.getByRole("link", { name: /Señal 24\/7/ })).toHaveAttribute("href", /\/senal$/);
+    await expect(menu.getByRole("link", { name: /Señal 24\/7/ })).toHaveAttribute("aria-current", "page");
+    await expect(menu.getByText("Estás aquí")).toBeVisible();
+    await expect(menu.getByRole("button", { name: /Créditos/ })).toHaveCount(0);
     await expect(menu.getByRole("link", { name: /Explorar catálogo/ })).toHaveAttribute("href", /\/eventos$/);
     await expect(menu.getByRole("link", { name: "Crear cuenta" })).toHaveAttribute("href", /\/register$/);
     await expect(page.locator("body")).toHaveJSProperty("scrollWidth", 390);
@@ -577,7 +580,7 @@ test("access, profile, administration, event form preview and mobile navigation"
     await expect(page.locator("#password")).toHaveAttribute("type", "text");
     await page.screenshot({ path: "/tmp/uebtv-register.png", fullPage: true });
     await login(page);
-    await expect(page.getByRole("heading", { name: /Hola,/ })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Buenos días|Buenas tardes|Buenas noches/ })).toBeVisible();
     await expect(
         page.getByRole("link", { name: "Crear evento", exact: true }),
     ).toHaveCount(1);
@@ -614,11 +617,11 @@ test("access, profile, administration, event form preview and mobile navigation"
     ).toBeVisible();
     await page.goto("/streaming/control");
     await expect(
-        page.getByRole("heading", { name: "Emitir con OBS." }),
+        page.getByRole("heading", { name: "Emitir con OBS", exact: true }),
     ).toBeVisible();
     await page.goto("/admin/contenido-programado");
     await expect(
-        page.getByRole("heading", { name: "Contenido programado" }),
+        page.getByRole("heading", { name: "Parrilla 24/7" }),
     ).toBeVisible();
     await page.screenshot({ path: "/tmp/uebtv-scheduled.png", fullPage: true });
     await page.goto("/profile");
@@ -651,12 +654,12 @@ test("chat sends and moderates safely; regular user has no destructive controls"
     await expect(
         page.locator(".wv-msg").filter({ hasText: text }),
     ).toBeVisible();
-    page.on("dialog", (d) => d.accept());
     await page
         .locator(".wv-msg")
         .filter({ hasText: text })
         .getByRole("button")
         .click();
+    await page.getByRole("alertdialog").getByRole("button", { name: "Retirar" }).click();
     await expect(
         page.locator(".wv-msg").filter({ hasText: text }),
     ).toHaveCount(0);
@@ -1012,7 +1015,7 @@ test("React event form creates, updates and deletes through Laravel routes", asy
     await page.waitForURL(/streaming\/control\?evento=\d+/);
     await page.goto(`/admin/eventos/${new URL(page.url()).searchParams.get("evento")}`);
     await expect(
-        page.getByRole("heading", { name: "Evento de integración React." }),
+        page.getByRole("heading", { name: "Evento de integración React" }),
     ).toBeVisible();
     await page.getByRole("link", { name: "Editar evento" }).click();
     await page
@@ -1021,15 +1024,18 @@ test("React event form creates, updates and deletes through Laravel routes", asy
     await page.getByRole("button", { name: "Guardar cambios" }).click();
     await page.waitForURL(/admin\/eventos\/\d+$/);
     await expect(
-        page.getByRole("heading", { name: "Evento actualizado en React." }),
+        page.getByRole("heading", { name: "Evento actualizado en React" }),
     ).toBeVisible();
     await page.goto("/admin/eventos");
-    page.on("dialog", (d) => d.accept());
     await page
         .locator(".studio-management-row")
         .filter({ hasText: "Evento actualizado en React" })
         .getByRole("button", { name: "Eliminar evento Evento actualizado en React" })
         .click();
+    // Own confirmation window ("¿Estás seguro?"), red for deleting.
+    const confirm = page.getByRole("alertdialog", { name: "¿Estás seguro?" });
+    await expect(confirm).toHaveClass(/is-danger/);
+    await confirm.getByRole("button", { name: "Eliminar" }).click();
     await expect(
         page.getByRole("heading", { name: "Evento actualizado en React" }),
     ).toHaveCount(0);
@@ -1360,12 +1366,14 @@ test("admin sees separate programming and institutional advertising forms on mob
     await login(page);
     await page.goto("/admin/contenido-programado");
     const quickNav = page.getByRole("navigation", { name: "Navegación rápida de la parrilla" });
-    await expect(quickNav.getByRole("button", { name: /Nueva programación/ })).toHaveAttribute("aria-pressed", "true");
-    await expect(quickNav.getByRole("button", { name: /Eventos programados/ })).toBeVisible();
-    const adsTab = quickNav.getByRole("button", { name: /Anuncios institucionales/ });
+    // The agenda is the first view; programming opens in a side panel.
+    await expect(quickNav.getByRole("button", { name: /Agenda/ })).toHaveAttribute("aria-pressed", "true");
+    await expect(quickNav.getByRole("button", { name: /Todos los videos/ })).toBeVisible();
+    await expect(page.getByLabel("Título de la emisión")).toBeHidden();
+    await expect(page.locator(".sp-gap").first()).toContainText("Libre");
+    const adsTab = quickNav.getByRole("button", { name: /Publicidad/ });
     await adsTab.click();
     await expect(adsTab).toHaveAttribute("aria-pressed", "true");
-    await expect(page.getByLabel("Título de la emisión")).toHaveCount(0);
     await expect(page.getByRole("heading", { name: "Publicidad institucional" })).toBeVisible();
     await expect(page.getByLabel("Nombre del anuncio")).toBeVisible();
     await expect(page.getByLabel("Archivo de video")).toBeVisible();
@@ -1380,7 +1388,7 @@ test("advertising upload shows progress and a recoverable server error", async (
     await login(page);
     await page.goto("/admin/contenido-programado");
     await page.getByRole("navigation", { name: "Navegación rápida de la parrilla" })
-        .getByRole("button", { name: /Anuncios institucionales/ }).click();
+        .getByRole("button", { name: /Publicidad/ }).click();
     await page.getByLabel("Nombre del anuncio").fill("Campaña institucional");
     await page.getByLabel("Archivo de video").setInputFiles({
         name: "campana.mp4", mimeType: "video/mp4", buffer: Buffer.alloc(1024),
@@ -1417,8 +1425,10 @@ test("scheduled upload accepts a real MP4 larger than the old 8 MB POST limit", 
 }) => {
     await login(page);
     await page.goto("/admin/contenido-programado");
+    await page.getByRole("button", { name: "Programar video" }).click();
+    await expect(page.getByRole("dialog", { name: "Programar video" })).toBeVisible();
     await expect(
-        page.getByText("MP4, MOV, MKV, WebM, AVI, WMV, MPEG · Hasta 500 MB"),
+        page.getByText(/Sin límite de tamaño/),
     ).toBeVisible();
     await page
         .getByLabel("Título de la emisión")
@@ -1449,7 +1459,7 @@ test("scheduled upload accepts a real MP4 larger than the old 8 MB POST limit", 
         ),
     ).toBeVisible();
     await page.getByRole("navigation", { name: "Navegación rápida de la parrilla" })
-        .getByRole("button", { name: /Eventos programados/ }).click();
+        .getByRole("button", { name: /Todos los videos/ }).click();
     await expect(
         page
             .locator(".schedule-event")
@@ -1467,6 +1477,8 @@ test("scheduled upload accepts a real MP4 larger than the old 8 MB POST limit", 
 test("event form explains each usage license and records the authorization", async ({ page }) => {
     await login(page);
     await page.goto("/admin/eventos/create");
+    // License, authorization and recording options live under "Opciones avanzadas".
+    await page.getByText("Opciones avanzadas").click();
     const license = page.getByLabel("Licencia de uso del video");
     await expect(license).toHaveValue("institucional");
     await expect(page.locator(".uebtv-license-help")).toContainText("Elige esta opción si no estás seguro");
@@ -1620,7 +1632,7 @@ test("advertising list keeps the ad name readable and has no subtitles block", a
     await login(page);
     await page.goto("/admin/contenido-programado");
     await page.getByRole("navigation", { name: "Navegación rápida de la parrilla" })
-        .getByRole("button", { name: /Anuncios institucionales/ }).click();
+        .getByRole("button", { name: /Publicidad/ }).click();
     const item = page.locator(".ad-studio-item").filter({ hasText: "UEB music" });
     // Advertising never carries subtitles.
     await expect(item.locator(".subtitle-form")).toHaveCount(0);
@@ -1637,7 +1649,7 @@ test("advertising list keeps the ad name readable and has no subtitles block", a
     await expect(page.locator("body")).toHaveJSProperty("scrollWidth", 390);
 });
 
-test("credits move out of the way of the side panel and stay reachable from the menu", async ({ page }) => {
+test("credits move out of the way of the side panel and stay reachable from the floating label", async ({ page }) => {
     // Short window: the bottom of the comments panel lands under the floating label.
     await page.setViewportSize({ width: 1440, height: 790 });
     await page.goto("/eventos/1");
@@ -1648,10 +1660,8 @@ test("credits move out of the way of the side panel and stay reachable from the 
     await page.locator(".wv-more").scrollIntoViewIfNeeded();
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
     await expect(page.locator("body")).not.toHaveClass(/uebtv-credits-yield/);
-    // Always available from the ☰ menu, with the team names.
-    await page.evaluate(() => window.scrollTo(0, 0));
-    await page.getByRole("button", { name: "Abrir menú" }).click();
-    await page.getByRole("button", { name: /Créditos/ }).click();
+    // Available from the floating label, with the team names.
+    await page.locator(".uebtv-credits-button").click();
     const credits = page.getByRole("region", { name: "Créditos de UEBTV" });
     await expect(credits).toBeVisible();
     await expect(credits).toContainText("Javier Solis");

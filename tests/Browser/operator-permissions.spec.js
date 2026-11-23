@@ -8,9 +8,10 @@ test("admin grants limited operator access from the responsive form", async ({ p
     await page.getByLabel("Contraseña", { exact: true }).fill("Browser123!");
     await page.getByRole("button", { name: "Entrar a UEBTV" }).click();
     await page.waitForURL(/admin\/dashboard/);
-    await page.getByRole("link", { name: "Gestionar usuarios" }).click();
-    await expect(page.getByRole("heading", { name: "Gestión de usuarios." })).toBeVisible();
+    await page.getByRole("link", { name: "Usuarios", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Usuarios", exact: true })).toBeVisible();
 
+    await page.getByRole("button", { name: "+ Nuevo usuario" }).click();
     const create = page.locator(".users-create");
     await create.getByLabel("Rol").selectOption("operador");
     await expect(create.getByText("Permisos del operador")).toBeVisible();

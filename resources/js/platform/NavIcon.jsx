@@ -7,6 +7,14 @@ const paths = [
     "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18 M12 7v5l4 2",
     "M3 4h18v16H3z M3 16l5-5 4 4 3-3 6 6 M15 8h2",
     "M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2 M10 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8 M20 8v6 M23 11h-6",
+    // 7 biblioteca (caja de archivos)
+    "M3.5 7.5 12 3l8.5 4.5v9L12 21l-8.5-4.5z M3.5 7.5 12 12l8.5-4.5 M12 12v9",
+    // 8 auditoría (escudo con check)
+    "M12 3l7.5 3v5.5c0 4.5-3.2 8.2-7.5 9.5-4.3-1.3-7.5-5-7.5-9.5V6z M8.5 12l2.5 2.5 4.5-5",
+    // 9 perfil (persona en círculo)
+    "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M12 12.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6z M6.5 18.5a6 6 0 0 1 11 0",
+    // 10 sitio público (ventana con flecha)
+    "M14 4h6v6 M20 4l-9 9 M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5",
 ];
 export default function NavIcon({ index }) {
     return (

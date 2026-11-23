@@ -21,6 +21,6 @@ if php -r '$socket = @fsockopen("127.0.0.1", 8000, $errno, $error, 1); if ($sock
 fi
 
 cd public
-php -d upload_max_filesize=500M -d post_max_size=512M -d max_input_time=600 -d max_execution_time=600 -S 0.0.0.0:8000 -t . ../vendor/laravel/framework/src/Illuminate/Foundation/resources/server.php &
+php -d upload_max_filesize=20G -d post_max_size=20G -d max_input_time=14400 -d max_execution_time=14400 -S 0.0.0.0:8000 -t . ../vendor/laravel/framework/src/Illuminate/Foundation/resources/server.php &
 video_server_pid=$!
 wait "$video_server_pid"

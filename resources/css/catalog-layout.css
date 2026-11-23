@@ -58,9 +58,9 @@ html[data-theme="dark"] .ct-search__submit { color:#06203d; }
 /* Filtros */
 .ct-search__filters { display:flex; flex-wrap:wrap; align-items:flex-end; gap:10px 12px; margin-top:12px; }
 .ct-search__filters[hidden] { display:none; }
-.ct-select { display:grid; gap:4px; min-width:min(100%, 240px); color:var(--wv-muted); font-size:12px; font-weight:700; }
-.ct-select select { height:40px; padding:0 34px 0 12px; border:1px solid var(--wv-border); border-radius:12px; background-color:var(--wv-surface); color:var(--wv-text); font-weight:500; font-size:14px; line-height:1; font-family:inherit; }
-.ct-clear { align-self:center; margin-top:16px; color:var(--wv-accent); font-size:13px; font-weight:700; }
+.ct-select { display:grid; flex:1 1 220px; gap:4px; min-width:0; max-width:340px; color:var(--wv-muted); font-size:12px; font-weight:700; }
+.ct-select select { width:100%; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; height:40px; padding:0 34px 0 12px; border:1px solid var(--wv-border); border-radius:12px; background-color:var(--wv-surface); color:var(--wv-text); font-weight:500; font-size:14px; line-height:1; font-family:inherit; }
+.ct-clear { flex:0 0 auto; align-self:center; margin-top:16px; color:var(--wv-accent); font-size:13px; font-weight:700; }
 
 /* Pestañas y título de resultados */
 .ct-toolbar { display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; gap:12px 20px; margin-bottom:16px; }
@@ -146,3 +146,12 @@ html[data-theme="dark"] .ct-search__submit { color:#06203d; }
 @media (prefers-reduced-motion:reduce) { .ct-card__thumb { transition:none; } .ct-card__status i { animation:none; } }
 /* Evita que el navegador del celular agrande el texto por su cuenta. */
 html { -webkit-text-size-adjust:100%; text-size-adjust:100%; }
+
+/* Filtros en el teléfono: la facultad (nombres largos) ocupa todo el ancho;
+   carrera y categoría van debajo, lado a lado, sin desbordar la pantalla. */
+@media (max-width:640px) {
+    .ct-search__filters:not([hidden]) { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); align-items:end; gap:10px; }
+    .ct-select { max-width:none; }
+    .ct-select:first-child { grid-column:1 / -1; }
+    .ct-clear { grid-column:1 / -1; justify-self:end; margin-top:0; }
+}

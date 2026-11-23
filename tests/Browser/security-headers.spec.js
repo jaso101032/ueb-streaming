@@ -1,0 +1,25 @@
+import { test, expect } from "@playwright/test";
+test("security headers (CSP) never block any page, video or dialog", async ({ page }) => {
+    test.setTimeout(180000);
+    const violations = [];
+    await page.addInitScript(() => document.addEventListener("securitypolicyviolation", (e) => console.log("CSPV " + e.violatedDirective + " " + e.blockedURI)));
+    page.on("console", (m) => { if (m.text().startsWith("CSPV") || /Content Security Policy/i.test(m.text())) violations.push(page.url() + " :: " + m.text()); });
+    const visit = async (url) => { await page.goto(url); await page.waitForTimeout(1500); };
+    for (const url of ["/", "/senal", "/eventos", "/eventos/1", "/login", "/register"]) await visit(url);
+    const res = await page.goto("/eventos");
+    const h = res.headers();
+    expect(h["content-security-policy"]).toContain("default-src 'self'");
+    expect(h["permissions-policy"]).toContain("camera=()");
+    await page.goto("/eventos/1");
+    await page.locator("video").first().evaluate((v) => v.play().catch(() => {}));
+    await page.waitForTimeout(2000);
+    await page.goto("/login");
+    await page.getByLabel("Correo electrónico", { exact: true }).fill("admin@ui.test");
+    await page.getByLabel("Contraseña", { exact: true }).fill("Browser123!");
+    await page.getByRole("button", { name: "Entrar a UEBTV" }).click();
+    await page.waitForURL(/admin\/dashboard/);
+    for (const url of ["/admin/dashboard", "/admin/eventos", "/admin/eventos/1", "/admin/eventos/create", "/streaming/control", "/admin/contenido-programado", "/admin/medios", "/admin/medios?liberar=1", "/admin/medios?subir=1", "/admin/marca-de-agua", "/admin/usuarios", "/admin/auditoria", "/profile", "/mis-notificaciones", "/senal", "/eventos/1"]) await visit(url);
+    await page.getByRole("button", { name: /Notificaciones/ }).first().click().catch(() => {});
+    await page.waitForTimeout(800);
+    expect(violations).toEqual([]);
+});

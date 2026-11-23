@@ -18,6 +18,35 @@ function formatStorage(bytes, unitIndex) {
     return `${new Intl.NumberFormat("es-EC", { minimumFractionDigits: 0, maximumFractionDigits: unitIndex === 0 ? 0 : 2 }).format(value)} ${units[unitIndex]}`;
 }
 
+const gb = (bytes) => `${(Math.max(0, bytes) / 1024 ** 3).toLocaleString("es-EC", { maximumFractionDigits: 1 })} GB`;
+
+/**
+ * Aviso de espacio en todo el panel. Amarillo con poco espacio (se puede
+ * ocultar durante la sesión) y rojo sin espacio (no se oculta).
+ */
+function StorageAlert({ storage }) {
+    const level = storage?.available ? storage.level : "ok";
+    const key = `uebtv-storage-alert-${level}`;
+    const [hidden, setHidden] = useState(() => {
+        try { return level === "low" && window.sessionStorage.getItem(key) === "1"; } catch { return false; }
+    });
+    if (level === "ok" || hidden) return null;
+    const critical = level === "critical";
+    const hide = () => { try { window.sessionStorage.setItem(key, "1"); } catch { /* sin almacenamiento */ } setHidden(true); };
+    return (
+        <div className={`storage-alert is-${level}`} role={critical ? "alert" : "status"}>
+            <span className="storage-alert__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3 2.5 20h19z" /><path d="M12 10v4m0 3v.1" /></svg></span>
+            <p>{critical
+                ? <><strong>Sin espacio en el servidor.</strong> Quedan {gb(storage.freeBytes)}: no se pueden subir videos y las grabaciones en vivo podrían cortarse.</>
+                : <><strong>Queda poco espacio:</strong> {gb(storage.freeBytes)} libres de {gb(storage.totalBytes)}. Pronto no se podrán subir videos largos.</>}</p>
+            <div className="storage-alert__actions">
+                <a className="storage-alert__go" href={storage.freeUrl}>Liberar espacio</a>
+                {!critical && <button type="button" className="storage-alert__close" onClick={hide} aria-label="Ocultar aviso de espacio" title="Ocultar por ahora">×</button>}
+            </div>
+        </div>
+    );
+}
+
 function StorageMeter({ storage }) {
     if (!storage?.available) {
         return (
@@ -49,7 +78,7 @@ function StorageMeter({ storage }) {
             </div>
             <p className="studio-storage__note">Medios UEBTV: {formatStorage(storage.mediaUsedBytes ?? 0, unitIndex)}{storage.basis === "filesystem" ? " · total físico del volumen" : ""}</p>
             {storage.physicalLimited && <p className="studio-storage__note">El espacio físico disponible es menor que el cupo restante.</p>}
-            {lowSpace && <p className="studio-storage__warning" role="alert">Espacio bajo: revisa el almacenamiento antes de subir o grabar más contenido.</p>}
+            {lowSpace && <a className="studio-storage__warning" href={storage.freeUrl}>Espacio bajo · Liberar espacio →</a>}
         </section>
     );
 }
@@ -203,26 +232,20 @@ export default function Shell({ shell, children }) {
                     {!shell.operator && menu && (
                         <nav ref={menuRef} id="studio-guest-menu" className="studio-guest-menu" aria-label="Menú principal">
                             <p className="studio-guest-menu__eyebrow">EXPLORA UEBTV</p>
-                            <a href={shell.channel} aria-current={currentPath === channelPath ? "page" : undefined}>
-                                <span className="studio-guest-menu__icon" aria-hidden="true"><NavIcon index={2} /></span>
-                                <span className="studio-guest-menu__copy"><strong>Señal en vivo</strong><small>Directos y programación 24/7</small></span>
-                                <span className="studio-guest-menu__arrow" aria-hidden="true">↗</span>
-                            </a>
-                            <a href={shell.catalog} aria-current={currentPath.startsWith(catalogPath) ? "page" : undefined}>
-                                <span className="studio-guest-menu__icon" aria-hidden="true"><NavIcon index={3} /></span>
-                                <span className="studio-guest-menu__copy"><strong>Explorar catálogo</strong><small>Eventos y videos de la UEB</small></span>
-                                <span className="studio-guest-menu__arrow" aria-hidden="true">↗</span>
-                            </a>
-                            <button type="button" className="studio-guest-menu__credits" onClick={() => { setMenu(false); setCreditsOpen(true); }}>
-                                <span className="studio-guest-menu__icon" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 14.6 8.3 20.5 9.1 16.2 13.2 17.2 19 12 16.2 6.8 19 7.8 13.2 3.5 9.1 9.4 8.3 12 3Z" /></svg></span>
-                                <span className="studio-guest-menu__copy"><strong>Créditos</strong><small>Equipo que desarrolló UEBTV</small></span>
-                            </button>
+                            {[[shell.channel, currentPath === channelPath, 2, "Señal 24/7", "Directos, programas y publicidad"],
+                                [shell.catalog, currentPath.startsWith(catalogPath), 3, "Explorar catálogo", "Eventos y videos de la UEB"]].map(([href, here, icon, title, help]) => (
+                                <a key={href} href={href} aria-current={here ? "page" : undefined}>
+                                    <span className="studio-guest-menu__icon" aria-hidden="true"><NavIcon index={icon} /></span>
+                                    <span className="studio-guest-menu__copy"><strong>{title}</strong><small>{help}</small></span>
+                                    {here ? <span className="studio-guest-menu__here">Estás aquí</span> : <span className="studio-guest-menu__arrow" aria-hidden="true">›</span>}
+                                </a>
+                            ))}
                             <div className="studio-guest-menu__account">
                                 <span>{shell.user ? "TU CUENTA" : "ÚNETE A LA COMUNIDAD"}</span>
                                 <a href={shell.user ? shell.profile : shell.register}>
-                                    {shell.user ? "Mi perfil" : "Crear cuenta"}<span aria-hidden="true">↗</span>
+                                    {shell.user ? "Mi perfil" : "Crear cuenta"}<span aria-hidden="true">›</span>
                                 </a>
-                                {shell.user && <Action url={shell.logout} className="studio-menu-signout" ariaLabel="Cerrar sesión desde el menú">Cerrar sesión <span aria-hidden="true">↗</span></Action>}
+                                {shell.user && <Action url={shell.logout} className="studio-menu-signout" ariaLabel="Cerrar sesión desde el menú">Cerrar sesión</Action>}
                             </div>
                         </nav>
                     )}
@@ -243,29 +266,32 @@ export default function Shell({ shell, children }) {
                         >
                             <span aria-hidden="true">＋</span>Crear evento
                         </a>
-                        <nav aria-label="Navegación principal">
-                            {shell.links.map((l, i) => (
-                                <a
-                                    key={l.url}
-                                    href={l.url}
-                                    aria-current={l.active ? "page" : undefined}
-                                >
-                                    <span
-                                        className="studio-sidebar-icon"
-                                        aria-hidden="true"
-                                    >
-                                        <NavIcon index={l.icon ?? i} />
-                                    </span>
-                                    {l.label}
-                                </a>
+                        <nav aria-label="Navegación principal" className="studio-sidebar-nav">
+                            {Object.entries(shell.links.reduce((groups, l) => { (groups[l.group || "Panel"] ||= []).push(l); return groups; }, {})).map(([group, items]) => (
+                                <div className="studio-sidebar-group" key={group}>
+                                    <p className="studio-sidebar-group__title">{group}</p>
+                                    {items.map((l, i) => (
+                                        <a key={l.url} href={l.url} aria-current={l.active ? "page" : undefined}>
+                                            <span className="studio-sidebar-icon" aria-hidden="true"><NavIcon index={l.icon ?? i} /></span>
+                                            {l.label}
+                                        </a>
+                                    ))}
+                                </div>
                             ))}
-                            <a href={shell.profile} aria-current={currentPath === new URL(shell.profile, "http://localhost").pathname ? "page" : undefined}>
-                                <span className="studio-sidebar-icon" aria-hidden="true"><NavIcon index={6} /></span>
-                                Mi perfil
-                            </a>
+                            <div className="studio-sidebar-group studio-sidebar-group--account">
+                                <a href={shell.profile} aria-current={currentPath === new URL(shell.profile, "http://localhost").pathname ? "page" : undefined}>
+                                    <span className="studio-sidebar-icon" aria-hidden="true"><NavIcon index={9} /></span>
+                                    Mi perfil
+                                </a>
+                                <a href={shell.catalog} target="_blank" rel="noopener" className="studio-sidebar-public">
+                                    <span className="studio-sidebar-icon" aria-hidden="true"><NavIcon index={10} /></span>
+                                    Ver sitio público
+                                    <small>Lo que ve la comunidad</small>
+                                </a>
+                            </div>
                         </nav>
                         {shell.user?.role === "admin" && <StorageMeter storage={shell.storage} />}
-                        <Action url={shell.logout} className="studio-sidebar-signout" ariaLabel="Cerrar sesión desde el menú">Cerrar sesión <span aria-hidden="true">↗</span></Action>
+                        <Action url={shell.logout} className="studio-sidebar-signout" ariaLabel="Cerrar sesión desde el menú">Cerrar sesión</Action>
                         <div className="studio-sidebar-footer">
                             <UniversityMark className="university-mark--sidebar" />
                         </div>
@@ -279,6 +305,7 @@ export default function Shell({ shell, children }) {
                     }
                 >
                     <main id="contenido" className="flex-grow" tabIndex="-1">
+                        {shell.user?.role === "admin" && <StorageAlert storage={shell.storage} />}
                         {children}
                     </main>
                 </div>

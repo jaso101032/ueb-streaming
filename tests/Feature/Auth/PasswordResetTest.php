@@ -110,11 +110,17 @@ class PasswordResetTest extends TestCase
         $this->post('/forgot-password', ['email' => $user->email]);
 
         Notification::assertSentTo($user, ResetPassword::class, function ($notification) use ($user) {
+            // A weak password is rejected, exactly as when registering.
+            $this->post('/reset-password', [
+                'token' => $notification->token, 'email' => $user->email,
+                'password' => 'password', 'password_confirmation' => 'password',
+            ])->assertSessionHasErrors('password');
+
             $response = $this->post('/reset-password', [
                 'token' => $notification->token,
                 'email' => $user->email,
-                'password' => 'password',
-                'password_confirmation' => 'password',
+                'password' => 'Nueva#Clave2026',
+                'password_confirmation' => 'Nueva#Clave2026',
             ]);
 
             $response

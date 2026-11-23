@@ -11,7 +11,7 @@
     --wv-surface:#ffffff; --wv-surface-2:#eef4fb; --wv-border:#c9d8ea; --wv-text:#0b2240; --wv-muted:#4d6380;
     --wv-accent:#1557ab; --wv-accent-soft:#dce9fa; --wv-live:#d61f3a; --wv-live-bg:#d61f3a; --wv-chip:#e3edf9; --wv-chip-hover:#d2e2f5;
     --wv-chip-text:#11407a; --wv-chip-border:#c3d6ee; --wv-shadow:0 1px 2px #0b22400f, 0 10px 28px -18px #0b224059;
-    --wv-name-light:38%; --wv-avatar-light:44%;
+    --wv-name-light:26%; --wv-avatar-light:44%;
     /* Escala tipográfica común (catálogo, video y señal). De mayor a menor:
        título de página → título del video → sección → tarjeta → texto → datos. */
     --fs-page:clamp(26px, 2.4vw, 32px); --fs-title:clamp(18px, 1.7vw, 22px); --fs-section:17px;
@@ -25,7 +25,7 @@
 html[data-theme="dark"] :is(.wv, .cv, .ct, .share-layer) {
     --wv-surface:#0f2038; --wv-surface-2:#0b192d; --wv-border:#223d5e; --wv-text:#eaf3ff; --wv-muted:#9fb4cc;
     --wv-accent:#7ab6ff; --wv-accent-soft:#16365a; --wv-live:#ff4d63; --wv-live-bg:#cf1d36; --wv-chip:#17304f; --wv-chip-hover:#1f3d63;
-    --wv-name-light:72%; --wv-avatar-light:40%;
+    --wv-name-light:74%; --wv-avatar-light:40%;
     --wv-chip-text:var(--wv-text); --wv-chip-border:transparent; --wv-shadow:none;
 }
 .wv .uebtv-watch-breadcrumb { margin-bottom:14px; }
@@ -41,7 +41,8 @@ html[data-theme="dark"] :is(.wv, .cv, .ct, .share-layer) {
 .wv-player { grid-area:player; }
 .wv-info { grid-area:info; }
 .wv-side { grid-area:panel; }
-.wv-grid > .wv-more { grid-area:more; margin-top:12px; }
+.wv-grid > .wv-more, .wv-grid > .wv-more-group { grid-area:more; margin-top:12px; min-width:0; }
+.wv-more-group > .wv-more:first-child { margin-top:0; }
 /* Modo cine: el video ocupa todo el ancho; debajo, a la izquierda la información
    y "Más para ver", y a la derecha el panel (como YouTube), sin huecos. */
 .wv.is-theater .wv-grid { grid-template-areas:"player player" "info panel" "more panel"; grid-template-rows:auto auto 1fr; }
@@ -627,10 +628,6 @@ html .cv .wv-side.is-quiet .channel-agenda > .cv-panel__empty { padding:14px 12p
 .uebtv-credits-widget { transition:opacity .22s ease, transform .22s ease; }
 body.uebtv-credits-yield .uebtv-credits-widget:not(:has(.uebtv-credits-panel)) { opacity:0; transform:translateY(14px); pointer-events:none; }
 @media (prefers-reduced-motion:reduce) { .uebtv-credits-widget { transition:none; } }
-/* Créditos dentro del menú ☰ (siempre disponible). */
-.studio-guest-menu > .studio-guest-menu__credits { display:flex; align-items:center; gap:12px; width:100%; min-height:67px; padding:10px; border:1px solid transparent; border-radius:11px; background:transparent; color:#eff6ff; font:inherit; text-align:left; cursor:pointer; }
-.studio-guest-menu > .studio-guest-menu__credits:hover, .studio-guest-menu > .studio-guest-menu__credits:focus-visible { border-color:#5483b6; background:#183d65; outline:none; }
-.studio-guest-menu__credits .studio-guest-menu__icon svg { width:20px; height:20px; fill:#ffd36b; }
 /* Celular: con dos acciones, "Compartir la señal" queda solo con su ícono. */
 .share__label { white-space:nowrap; }
 @media (max-width:640px) {
@@ -710,7 +707,7 @@ html.uebtv-tv-mode .uebtv-player-live-badges .uebtv-player-live, html.uebtv-tv-m
 .wv-msg { position:relative; display:flex; align-items:flex-start; gap:9px; padding:4px 8px; border-radius:8px; }
 .wv-msg__avatar { flex:0 0 24px; width:24px; height:24px; margin-top:1px; font-size:11px; }
 .wv-msg__line { flex:1 1 auto; min-width:0; margin:0; color:var(--wv-text); font-size:14px; line-height:1.45; overflow-wrap:anywhere; }
-.wv-msg__name { margin-right:6px; color:hsl(var(--hue) 72% var(--wv-name-light)); font-size:13.5px; font-weight:800; }
+.wv-msg__name { margin-right:6px; color:hsl(var(--hue) 65% var(--wv-name-light)); font-size:13.5px; font-weight:800; }
 .wv-msg__line .wv-msg__text { display:inline; margin:0; font-size:inherit; line-height:inherit; }
 .wv-msg__side { display:flex; flex:0 0 auto; align-items:center; gap:4px; margin-top:2px; }
 .wv-msg__side time { color:var(--wv-muted); font-size:11px; opacity:0; transition:opacity .15s; }
@@ -718,8 +715,8 @@ html.uebtv-tv-mode .uebtv-player-live-badges .uebtv-player-live, html.uebtv-tv-m
 .wv-msg__side .wv-msg__remove { margin-left:0; }
 @media (hover:none) { .wv-msg__side time { display:none; } }
 /* Tonos del chat. */
-.wv, .cv { --wv-name-light:36%; }
-html[data-theme="dark"] :is(.wv, .cv) { --wv-name-light:70%; }
+.wv, .cv { --wv-name-light:26%; }
+html[data-theme="dark"] :is(.wv, .cv) { --wv-name-light:74%; }
 .wv-panel .wv-chat__list { background:var(--wv-surface); }
 html[data-theme="dark"] .wv-panel .wv-chat__list { background:#0b1a2f; }
 html[data-theme="dark"] .wv-msg:hover { background:#ffffff0d; }
@@ -839,3 +836,9 @@ html[data-theme="dark"] .nt-push { color:#06203d; }
 .nt-hint { margin:14px 0 0; color:var(--nt-muted); font-size:12px; line-height:1.5; }
 @media (max-width:640px) { .nt-thumb { width:96px; } }
 @media (prefers-reduced-motion:reduce) { .nt-switch input, .nt-switch input::after { transition:none; } }
+
+/* Lista «Más de…» (misma carrera o facultad). */
+.wv-playlist .wv-more__heading h2 { display:inline-flex; align-items:center; gap:8px; }
+.wv-playlist__icon { display:grid; place-items:center; width:30px; height:30px; border-radius:9px; background:color-mix(in srgb, var(--wv-accent, #1557ab) 14%, transparent); color:var(--wv-accent, #1557ab); }
+.wv-playlist__icon svg { width:18px; height:18px; }
+.wv-playlist .wv-more__heading h2 b { padding:1px 8px; border-radius:999px; background:color-mix(in srgb, var(--wv-text) 10%, transparent); font-size:12px; font-weight:800; }

@@ -37,7 +37,7 @@ class RegisteredUserController extends Controller
                 'required',
                 'string',
                 'confirmed',
-                Rules\Password::min(8)->letters()->mixedCase()->numbers()->symbols(),
+                Rules\Password::defaults(),
                 'regex:/[\p{S}\p{P}]/u',
             ],
         ], [

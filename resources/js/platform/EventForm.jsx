@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Token, Feedback, Field } from "./shared";
+import { Token, Feedback, Field, PageHeader } from "./shared";
 export default function EventForm({
     editing,
     action,
@@ -14,6 +14,8 @@ export default function EventForm({
     visibilities = [],
     licenses = [],
     canToggleChat = false,
+    scheduleUrl = null,
+    catalogUploadUrl = null,
 }) {
     const [v, setV] = useState(values),
         [file, setFile] = useState(null),
@@ -69,21 +71,32 @@ export default function EventForm({
         </Field>
     );
     return (
-        <div className="uebtv-form-page uebtv-event-editor">
+        <div className="uebtv-form-page uebtv-event-editor pg">
             <div className="uebtv-form-container">
-                <a href={back} className="uebtv-form-back">
-                    ← Volver a eventos
-                </a>
-                <section className="uebtv-form-heading">
-                    <div>
-                        <p className="studio-eyebrow">
-                            PROGRAMACIÓN INSTITUCIONAL
-                        </p>
-                        <h1>{editing ? "Editar evento" : "Crear evento"}</h1>
-                        <p>Dale un espacio a tu próxima gran idea.</p>
-                    </div>
-                </section>
+                <PageHeader
+                    crumbs={[["Eventos", back], [editing ? "Editar evento" : "Crear evento"]]}
+                    eyebrow="Transmitir"
+                    title={editing ? "Editar evento" : "Crear evento"}
+                    description={editing ? "Cambia los datos del evento; la clave de OBS se conserva." : "Completa los datos del evento. Al guardar recibirás la clave para transmitir con OBS."}
+                />
                 <Feedback />
+                {!editing && <div className="ev-type" role="group" aria-label="Tipo de evento">
+                    <div className="ev-type__card is-active" aria-current="true">
+                        <span className="ev-type__icon is-live" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="2.2" /><path d="M7.8 7.8a6 6 0 0 0 0 8.4m8.4-8.4a6 6 0 0 1 0 8.4M5 5a10 10 0 0 0 0 14m14-14a10 10 0 0 1 0 14" /></svg></span>
+                        <span><strong>Transmisión en vivo</strong><small>Se emite con OBS. Al guardar recibes la clave.</small></span>
+                        <b className="ev-type__check" aria-hidden="true">✓</b>
+                    </div>
+                    {scheduleUrl && <a className="ev-type__card" href={scheduleUrl}>
+                        <span className="ev-type__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3.5" y="4" width="17" height="16" rx="2.5" /><path d="m10 9 5 3-5 3z" /></svg></span>
+                        <span><strong>Video para la Parrilla 24/7</strong><small>Sube un video y elige cuándo sale en la señal.</small></span>
+                        <b className="ev-type__arrow" aria-hidden="true">→</b>
+                    </a>}
+                    {catalogUploadUrl && <a className="ev-type__card" href={catalogUploadUrl}>
+                        <span className="ev-type__icon is-catalog" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="14" rx="2" /><path d="M8 5v14m8-14v14M3.5 9.5H8m8 0h4.5m-17 5H8m8 0h4.5" /></svg></span>
+                        <span><strong>Video para el catálogo</strong><small>Sube un video para verlo a demanda, sin pasar por el canal.</small></span>
+                        <b className="ev-type__arrow" aria-hidden="true">→</b>
+                    </a>}
+                </div>}
                 {!categories.length && (
                     <p role="alert" className="uebtv-form-errors">
                         Todavía no hay categorías disponibles. Configura el
@@ -201,35 +214,6 @@ export default function EventForm({
                                     </select>
                                     <small>Público: cualquier persona y el canal 24/7. Interno: solo cuentas con sesión. Restringido: solo administradores y operadores. Aplica al directo y a la grabación.</small>
                                 </Field>
-                                <Field wide name="licencia" label="Licencia de uso del video">
-                                    <select {...bind("licencia")}>
-                                        {(licenses || []).map((o) => (
-                                            <option key={o.id} value={o.id}>{o.nombre}</option>
-                                        ))}
-                                    </select>
-                                    <small className="uebtv-license-help" aria-live="polite">
-                                        {(licenses.find((o) => o.id === (v.licencia || "institucional")) || {}).ayuda}
-                                    </small>
-                                    <details className="uebtv-license-guide">
-                                        <summary>¿Qué significa cada licencia?</summary>
-                                        <dl>
-                                            {(licenses || []).map((o) => (
-                                                <div key={o.id}><dt>{o.nombre}</dt><dd>{o.ayuda}</dd></div>
-                                            ))}
-                                        </dl>
-                                        <p>La licencia la decide la autoridad o unidad que organiza el evento; aquí solo se registra. El público la verá en la ficha del video.</p>
-                                    </details>
-                                </Field>
-                                <Field wide name="autorizacion_referencia" label={v.licencia === "otra" ? "Referencia de autorización (obligatoria)" : "Referencia de autorización (opcional)"}>
-                                    <input {...bind("autorizacion_referencia")} maxLength="255" required={v.licencia === "otra"} placeholder="Ej.: Oficio N.º 123-FACAGEI-2026 o acta de autorización del 10/11/2026" />
-                                    <small>Documento que respalda la difusión. Solo lo ven administradores y operadores.</small>
-                                </Field>
-                                <div className="uebtv-form-field uebtv-form-field--wide">
-                                    <label id="requiere_aprobacion_titulo">Publicación de la grabación</label>
-                                    <input type="hidden" name="requiere_aprobacion" value="0" />
-                                    <label className="uebtv-event-chat-check" htmlFor="requiere_aprobacion"><input id="requiere_aprobacion" type="checkbox" name="requiere_aprobacion" value="1" defaultChecked={Boolean(Number(v.requiere_aprobacion)) || v.requiere_aprobacion === true} /> Revisar la grabación antes de publicarla</label>
-                                    <small>Si no la marcas, la grabación se publica automáticamente al terminar. Un administrador siempre puede retirarla.</small>
-                                </div>
                                 {canToggleChat && <div className="uebtv-form-field uebtv-form-field--wide">
                                     <label id="chat_enabled_titulo">Comentarios durante el directo</label>
                                     <input type="hidden" name="chat_enabled" value="0" />
@@ -242,8 +226,8 @@ export default function EventForm({
                             <div className="uebtv-form-section__title">
                                 <span>02</span>
                                 <div>
-                                    <h2>Imagen y video</h2>
-                                    <p>Una portada que invite a participar.</p>
+                                    <h2>Portada</h2>
+                                    <p>La imagen que verá la comunidad en el catálogo y en la sala.</p>
                                 </div>
                             </div>
                             <div className="uebtv-form-fields">
@@ -280,6 +264,44 @@ export default function EventForm({
                                         4096 píxeles.
                                     </small>
                                 </Field>
+                            </div>
+                        </section>
+                        {/* Lo que casi nunca se cambia, plegado para que el formulario sea corto. */}
+                        <details className="uebtv-form-section ev-advanced" ref={(el) => { if (el && !el.dataset.init) { el.dataset.init = "1"; if (values.licencia === "otra") el.open = true; } }}>
+                            <summary className="ev-advanced__summary">
+                                <span>03</span>
+                                <div><h2>Opciones avanzadas</h2><p>Licencia, autorización, publicación de la grabación y calidad. Los valores por defecto sirven en la mayoría de casos.</p></div>
+                            </summary>
+                            <div className="uebtv-form-fields">
+                                <Field wide name="licencia" label="Licencia de uso del video">
+                                    <select {...bind("licencia")}>
+                                        {(licenses || []).map((o) => (
+                                            <option key={o.id} value={o.id}>{o.nombre}</option>
+                                        ))}
+                                    </select>
+                                    <small className="uebtv-license-help" aria-live="polite">
+                                        {(licenses.find((o) => o.id === (v.licencia || "institucional")) || {}).ayuda}
+                                    </small>
+                                    <details className="uebtv-license-guide">
+                                        <summary>¿Qué significa cada licencia?</summary>
+                                        <dl>
+                                            {(licenses || []).map((o) => (
+                                                <div key={o.id}><dt>{o.nombre}</dt><dd>{o.ayuda}</dd></div>
+                                            ))}
+                                        </dl>
+                                        <p>La licencia la decide la autoridad o unidad que organiza el evento; aquí solo se registra. El público la verá en la ficha del video.</p>
+                                    </details>
+                                </Field>
+                                <Field wide name="autorizacion_referencia" label={v.licencia === "otra" ? "Referencia de autorización (obligatoria)" : "Referencia de autorización (opcional)"}>
+                                    <input {...bind("autorizacion_referencia")} maxLength="255" required={v.licencia === "otra"} placeholder="Ej.: Oficio N.º 123-FACAGEI-2026 o acta de autorización del 10/11/2026" />
+                                    <small>Documento que respalda la difusión. Solo lo ven administradores y operadores.</small>
+                                </Field>
+                                <div className="uebtv-form-field uebtv-form-field--wide">
+                                    <label id="requiere_aprobacion_titulo">Publicación de la grabación</label>
+                                    <input type="hidden" name="requiere_aprobacion" value="0" />
+                                    <label className="uebtv-event-chat-check" htmlFor="requiere_aprobacion"><input id="requiere_aprobacion" type="checkbox" name="requiere_aprobacion" value="1" defaultChecked={Boolean(Number(v.requiere_aprobacion)) || v.requiere_aprobacion === true} /> Revisar la grabación antes de publicarla</label>
+                                    <small>Si no la marcas, la grabación se publica automáticamente al terminar. Un administrador siempre puede retirarla.</small>
+                                </div>
                                 <Field
                                     wide
                                     name="video_url"
@@ -305,7 +327,7 @@ export default function EventForm({
                                     <small>{recordingSettingsLocked ? "No se puede cambiar después de iniciar la transmisión." : "Solo afecta al MP4 archivado; no cambia el directo ni aumenta los FPS de origen."}</small>
                                 </Field>
                             </div>
-                        </section>
+                        </details>
                     </div>
                     <aside
                         className="event-editor-sidebar"

@@ -15,6 +15,10 @@ class ReactPage
     public static function event(Evento $e, bool $manage = false): array
     {
         $scheduled = $e->scheduledVideo;
+        // Un video del catálogo se reproduce como cualquier video a demanda.
+        $catalogVideo = $scheduled?->isCatalogOnly() ? $scheduled : null;
+        if ($catalogVideo) $scheduled = null;
+        $uploaded = $scheduled ?? $catalogVideo;
         $recording = $e->transmision;
         $staff = in_array(auth()->user()?->role, ['admin', 'operador'], true);
         $data = ['id' => $e->id, 'title' => $e->titulo, 'description' => $e->descripcion, 'status' => $e->estado,
@@ -24,11 +28,13 @@ class ReactPage
             'image' => $e->miniatura ? asset('storage/'.$e->miniatura) : null, 'url' => route('eventos.show', $e),
             'scheduled' => $scheduled ? ['stateUrl' => route('scheduled.state', $e), 'mediaUrl' => route('scheduled.media', $e), 'state' => $scheduled->playback()['state'],
                 'adaptiveUrl' => self::adaptiveUrl($e, $scheduled)] : null,
-            'videoUrl' => ($recordingPlayable = $recording?->recordingPath() && $e->estado === 'finalizado' && ($recording->isPublished() || $staff)) ? route('eventos.recording', $e) : $e->video_url,
-            'adaptiveUrl' => ! $scheduled && $recordingPlayable ? self::adaptiveUrl($e, $recording) : null,
+            'videoUrl' => $catalogVideo ? ($catalogVideo->processing_status === 'ready' ? route('scheduled.media', $e) : null)
+                : (($recordingPlayable = $recording?->recordingPath() && $e->estado === 'finalizado' && ($recording->isPublished() || $staff)) ? route('eventos.recording', $e) : $e->video_url),
+            'adaptiveUrl' => $catalogVideo ? self::adaptiveUrl($e, $catalogVideo) : (! $scheduled && ($recordingPlayable ?? false) ? self::adaptiveUrl($e, $recording) : null),
+            'catalogVideo' => $catalogVideo ? ['status' => $catalogVideo->processing_status, 'progress' => $catalogVideo->processing_progress] : null,
             'visibility' => $e->visibilidad ?? 'publico',
             'license' => Evento::LICENSES[$e->licencia ?? 'institucional']['short'] ?? Evento::LICENSES['institucional']['short'],
-            'subtitlesUrl' => ($scheduled ? $scheduled->subtitles_path : $recording?->subtitles_path) ? route('eventos.subtitles', $e, false) : null,
+            'subtitlesUrl' => (($scheduled ?? $catalogVideo) ? ($scheduled ?? $catalogVideo)->subtitles_path : $recording?->subtitles_path) ? route('eventos.subtitles', $e, false) : null,
             // Estas consultas deben mantener el mismo origen desde el que se
             // abrió la sala. Así funcionan tanto en 127.0.0.1 como desde un
             // teléfono conectado mediante el proxy local del puerto 8080.
@@ -47,12 +53,12 @@ class ReactPage
         if ($manage) {
             $canEdit = (bool) auth()->user()?->allowsOperatorAction('events');
             $canStream = (bool) auth()->user()?->allowsOperatorAction('stream');
-            $data += ['editUrl' => $canEdit && ! $scheduled ? route('admin.eventos.edit', $e) : null, 'detailUrl' => $canEdit ? route('admin.eventos.show', $e) : null,
+            $data += ['editUrl' => $canEdit && ! $e->scheduledVideo ? route('admin.eventos.edit', $e) : null, 'detailUrl' => $canEdit ? route('admin.eventos.show', $e) : null,
                 'deleteUrl' => auth()->user()?->can('delete-event') ? route('admin.eventos.destroy', $e) : null,
                 'finishUrl' => $canStream && $recording && ! $recording->finalizado_en && ! in_array($e->estado, ['finalizado', 'cancelado']) ? route('streaming.finalizar', $e) : null,
                 'retryUrl' => auth()->user()?->role === 'admin' && $recording?->recording_status === 'failed' ? route('streaming.recording.retry', $e) : null,
-                'downloadUrl' => auth()->user()?->role === 'admin' && $recording?->recordingPath() ? route('admin.recording.download', $e) : null,
-                'generateUrl' => $canStream && ! $scheduled && ! $recording?->iniciado_en && ! in_array($e->estado, ['finalizado', 'cancelado']) ? route('streaming.generar.clave', $e) : null,
+                'downloadUrl' => auth()->user()?->role === 'admin' && \App\Http\Controllers\Admin\MediaDownloadController::eventFile($e) ? route('admin.media.download', $e->id) : null,
+                'generateUrl' => $canStream && ! $e->scheduledVideo && ! $recording?->iniciado_en && ! in_array($e->estado, ['finalizado', 'cancelado']) ? route('streaming.generar.clave', $e) : null,
                 'streamKey' => $canStream ? $recording?->stream_key : null, 'server' => $canStream ? (config('streaming.rtmp_url') ?: 'rtmp://'.request()->getHost().':1935/live') : null, 'statusUrl' => $canStream ? route('streaming.estado', $e) : null];
             if (auth()->user()?->role === 'admin') {
                 $ready = (bool) $recording?->recordingPath();
@@ -61,15 +67,21 @@ class ReactPage
                     'reviewedBy' => $recording->revisor?->name, 'reviewedAt' => $recording->publicacion_revisada_en?->format('d/m/Y · H:i'),
                     'approveUrl' => $ready && $recording->publicacion !== 'aprobada' ? route('admin.recording.approve', $e) : null,
                     'withdrawUrl' => $ready && $recording->publicacion === 'aprobada' ? route('admin.recording.withdraw', $e) : null] : null;
-                $media = $scheduled ? ($scheduled->processing_status === 'ready' ? $scheduled : null) : ($recording?->recordingPath() ? $recording : null);
+                $media = $uploaded ? ($uploaded->processing_status === 'ready' ? $uploaded : null) : ($recording?->recordingPath() ? $recording : null);
                 $data['subtitles'] = $media ? \App\Support\Subtitles::adminState($media, ['uploadUrl' => route('admin.subtitles.store', $e),
                     'removeUrl' => route('admin.subtitles.destroy', $e), 'generateUrl' => route('admin.subtitles.generate', $e),
                     'previewUrl' => route('eventos.subtitles', $e, false)]) : null;
-                $stored = $scheduled ? ($scheduled->processing_status === 'ready' ? $scheduled : null) : ($recording?->recordingPath() ? $recording : null);
+                $stored = $uploaded ? ($uploaded->processing_status === 'ready' ? $uploaded : null) : ($recording?->recordingPath() ? $recording : null);
                 $data['renditions'] = $stored && config('streaming.renditions.enabled') ? ['status' => $stored->renditions_status ?? 'pending',
                     'progress' => $stored->renditions_progress, 'error' => $stored->renditions_error,
                     'levels' => collect($stored->renditions_levels ?? [])->pluck('name')->values()] : null;
                 $data['recordingMetadata'] = $recording?->displayRecordingMetadata();
+                // Vista previa para el equipo (también si la grabación aún no está publicada).
+                $data['previewUrl'] = $uploaded
+                    ? ($uploaded->processing_status === 'ready' ? route('admin.media.scheduled-preview', $e) : null)
+                    : ($recordingPlayable ? route('eventos.recording', $e) : null);
+                $data['scheduledFile'] = $uploaded ? ['duration' => $uploaded->duration, 'bytes' => $uploaded->optimized_bytes,
+                    'status' => $uploaded->processing_status, 'progress' => $uploaded->processing_progress, 'error' => $uploaded->processing_error] : null;
                 $data['recordingFpsLimit'] = $recording?->recording_fps_limit;
             }
         }
@@ -85,6 +97,26 @@ class ReactPage
             ? route('eventos.renditions', [$e, 'master.m3u8'], false) : null;
     }
 
+    /** Opciones para clasificar un video: categorías, facultades y carreras. */
+    public static function videoOptions(): array
+    {
+        return ['categories' => \App\Models\Categoria::orderBy('nombre')->get(['id', 'nombre']),
+            'faculties' => \App\Models\Facultad::orderBy('nombre')->get(['id', 'nombre']),
+            'careers' => \App\Models\Carrera::orderBy('nombre')->get(['id', 'nombre', 'facultad_id'])];
+    }
+
+    /** Datos para editar un video subido (parrilla o catálogo). */
+    public static function videoEdit(Evento $e): ?array
+    {
+        $video = $e->scheduledVideo;
+        if (! $video || auth()->user()?->role !== 'admin') return null;
+
+        return ['action' => route('admin.media.videos.update', $e), 'mode' => $video->isCatalogOnly() ? 'catalog' : 'channel',
+            'values' => ['titulo' => $e->titulo, 'descripcion' => $e->descripcion, 'categoria_id' => $e->categoria_id,
+                'facultad_id' => $e->facultad_id, 'carrera_id' => $e->carrera_id, 'visibilidad' => $e->visibilidad ?? 'publico',
+                'image' => $e->miniatura ? asset('storage/'.$e->miniatura) : null]] + self::videoOptions();
+    }
+
     public static function shell(): array
     {
         $user = auth()->user();
@@ -92,27 +124,21 @@ class ReactPage
         $operator = in_array($user?->role, ['admin', 'operador'], true);
         $canEvents = (bool) $user?->allowsOperatorAction('events');
         $canStream = (bool) $user?->allowsOperatorAction('stream');
+        // Menú agrupado: Transmitir (lo del día a día), Contenido y Administración.
+        // El catálogo público ya no está aquí: es la vista de la comunidad y va
+        // abajo como "Ver sitio público".
         $links = [];
+        $link = fn ($group, $label, $route, $pattern, $icon) => ['group' => $group, 'label' => $label, 'url' => route($route),
+            'active' => request()->routeIs($pattern) && ! request()->routeIs('admin.eventos.create'), 'icon' => $icon];
+        if ($admin) $links[] = $link('Transmitir', 'Resumen', 'admin.dashboard', 'admin.dashboard', 0);
+        if ($operator && $canEvents) $links[] = $link('Transmitir', 'Eventos', 'admin.eventos.index', 'admin.eventos.*', 1);
+        if ($operator && $canStream) $links[] = $link('Transmitir', 'Emitir con OBS', 'streaming.control', 'streaming.*', 2);
         if ($admin) {
-            $links[] = ['label' => 'Resumen', 'url' => route('admin.dashboard'), 'active' => request()->routeIs('admin.dashboard'), 'icon' => 0];
-        }
-        if ($operator) {
-            foreach ([
-                ['Gestionar eventos', 'admin.eventos.index', 'admin.eventos.*', 1],
-                ['Emitir con OBS', 'streaming.control', 'streaming.*', 2],
-                ['Catálogo público', 'eventos.index', 'eventos.*', 3],
-            ] as [$label, $url, $pattern, $icon]) {
-                if ($label === 'Gestionar eventos' && ! $canEvents) continue;
-                if ($label === 'Emitir con OBS' && ! $canStream) continue;
-                $links[] = ['label' => $label, 'url' => route($url), 'active' => request()->routeIs($pattern) && ! request()->routeIs('admin.eventos.create'), 'icon' => $icon];
-            }
-        }
-        if ($admin) {
-            $links[] = ['label' => 'Biblioteca de medios', 'url' => route('admin.media.index'), 'active' => request()->routeIs('admin.media.*'), 'icon' => 3];
-            $links[] = ['label' => 'Parrilla 24/7', 'url' => route('admin.scheduled.index'), 'active' => request()->routeIs('admin.scheduled.*'), 'icon' => 4];
-            $links[] = ['label' => 'Marca de agua', 'url' => route('admin.watermark.edit'), 'active' => request()->routeIs('admin.watermark.*'), 'icon' => 5];
-            $links[] = ['label' => 'Gestionar usuarios', 'url' => route('admin.usuarios.index'), 'active' => request()->routeIs('admin.usuarios.*'), 'icon' => 6];
-            $links[] = ['label' => 'Auditoría', 'url' => route('admin.audit.index'), 'active' => request()->routeIs('admin.audit.*'), 'icon' => 6];
+            $links[] = $link('Transmitir', 'Parrilla 24/7', 'admin.scheduled.index', 'admin.scheduled.*', 4);
+            $links[] = $link('Contenido', 'Biblioteca de medios', 'admin.media.index', 'admin.media.*', 7);
+            $links[] = $link('Contenido', 'Marca de agua', 'admin.watermark.edit', 'admin.watermark.*', 5);
+            $links[] = $link('Administración', 'Usuarios', 'admin.usuarios.index', 'admin.usuarios.*', 6);
+            $links[] = $link('Administración', 'Auditoría', 'admin.audit.index', 'admin.audit.*', 8);
         }
 
         return ['user' => $user?->only(['name', 'email', 'role']), 'links' => $links, 'operator' => $operator, 'panelLabel' => $admin ? 'CENTRO DE PRODUCCIÓN' : 'CENTRO DE OPERACIÓN', 'createUrl' => $canEvents ? route('admin.eventos.create') : null,

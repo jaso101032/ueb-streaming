@@ -259,7 +259,7 @@ class EventoManagementTest extends TestCase
         $this->actingAs($this->admin);
         $this->assertSame(route('admin.eventos.destroy', $evento), $this->reactProps($this->get(route('eventos.index')))['events'][0]['deleteUrl']);
         $this->delete(route('admin.eventos.destroy', $evento))->assertRedirect(route('admin.eventos.index'));
-        $this->assertSoftDeleted('eventos', ['id' => $evento->id]);
+        $this->assertDatabaseMissing('eventos', ['id' => $evento->id]);
         $this->get(route('eventos.show', $evento))->assertNotFound();
         $this->get(route('eventos.recording', $evento))->assertNotFound();
         $this->get(route('eventos.index'))->assertDontSee($evento->titulo);

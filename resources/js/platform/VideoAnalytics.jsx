@@ -22,7 +22,7 @@ function TrendChart({ points }) {
 
     return <div className="video-analytics-chart-wrap">
         <div className={`video-analytics-chart-summary${active ? " is-selected" : ""}`} aria-live="polite"><strong>{active ? number.format(active.views) : number.format(points.reduce((sum, point) => sum + point.views, 0))}</strong><span>{active ? `visitas · ${active.label}` : "visitas registradas en el período"}</span><i>{active ? "DÍA SELECCIONADO" : "TOTAL DEL PERÍODO"}</i></div>
-        <svg className="video-analytics-chart" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Curva de visualizaciones por día">
+        <svg className="video-analytics-chart" viewBox={`0 0 ${width} ${height}`} role="group" aria-label="Curva de visualizaciones por día. Usa Tab para recorrer cada día.">
             <defs><linearGradient id="video-analytics-area" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor="#2878c4" stopOpacity=".19" /><stop offset="100%" stopColor="#2878c4" stopOpacity=".015" /></linearGradient></defs>
             {yTicks.map((value) => {
                 const y = top + (height - top - bottom) * (1 - value / max);
@@ -120,7 +120,7 @@ function printAnalyticsReport(title, days) {
     window.print();
 }
 
-export default function VideoAnalytics({ url, title }) {
+export default function VideoAnalytics({ url, title, compact = false }) {
     const [days, setDays] = useState(30), [data, setData] = useState(null), [loading, setLoading] = useState(false), [error, setError] = useState(""), [open, setOpen] = useState(false);
     const trigger = useRef(null), close = useRef(null), dialog = useRef(null);
     useEffect(() => {
@@ -162,9 +162,9 @@ export default function VideoAnalytics({ url, title }) {
     const exportPdf = () => printAnalyticsReport(title, days);
 
     return <>
-        <button ref={trigger} type="button" className="video-analytics-trigger" onClick={() => setOpen(true)} aria-haspopup="dialog" aria-expanded={open}>
+        <button ref={trigger} type="button" className={compact ? "studio-icon-action" : "video-analytics-trigger"} onClick={() => setOpen(true)} aria-haspopup="dialog" aria-expanded={open} aria-label={compact ? "Ver estadísticas" : undefined}>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5m0 14h17M8 15l4-4 3 2 5-6" /><circle cx="8" cy="15" r="1" /><circle cx="12" cy="11" r="1" /><circle cx="15" cy="13" r="1" /><circle cx="20" cy="7" r="1" /></svg>
-            Ver estadísticas
+            {compact ? <span className="studio-action-tooltip" role="tooltip">Estadísticas</span> : "Ver estadísticas"}
         </button>
         {open && createPortal(<>
         <div className="video-analytics-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setOpen(false); }}>

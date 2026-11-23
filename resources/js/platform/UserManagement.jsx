@@ -1,5 +1,5 @@
 import React from "react";
-import { Action, Feedback, Field, Heading, Pagination, Token } from "./shared";
+import { Action, Feedback, Field, PageHeader, Pagination, Token, useShell } from "./shared";
 
 const roleNames = { admin: "Administrador", operador: "Operador", usuario: "Usuario" };
 const permissionNames = {
@@ -57,14 +57,16 @@ function UserEdit({ user, roles, actions }) {
 
 export default function UserManagement({ users, pagination, filters, roles, storeUrl, operatorActions }) {
     const [newRole, setNewRole] = React.useState("usuario");
+    const shell = useShell();
+    // El formulario de crear se abre solo al pedirlo (o si volvió con errores).
+    const [creating, setCreating] = React.useState((shell.errors || []).length > 0);
     return (
-        <div className="studio-page users-page">
-            <Heading eyebrow="ADMINISTRACIÓN" title="Gestión de usuarios">
-                Crea cuentas, asigna permisos y mantén actualizado el acceso a UEBTV.
-            </Heading>
+        <div className="studio-page users-page pg">
+            <PageHeader eyebrow="Administración" title="Usuarios" description="Crea cuentas, asigna permisos y mantén actualizado el acceso a UEBTV."
+                actions={<button type="button" className={`pg-btn ${creating ? "" : "is-primary"}`} onClick={() => setCreating((v) => !v)} aria-expanded={creating} aria-controls="users-create">{creating ? "Cerrar formulario" : "+ Nuevo usuario"}</button>} />
             <Feedback />
-            <section className="studio-panel users-create">
-                <div className="studio-panel-heading"><h2>Crear usuario</h2><span>Contraseña inicial segura</span></div>
+            <section id="users-create" className="studio-panel users-create" hidden={!creating}>
+                <div className="studio-panel-heading"><h2>Nuevo usuario</h2><span>La cuenta queda verificada y lista para entrar</span></div>
                 <form method="POST" action={storeUrl} className="users-form">
                     <Token />
                     <Field name="name" label="Nombre completo"><input id="name" name="name" autoComplete="name" required maxLength="255" /></Field>
@@ -90,7 +92,7 @@ export default function UserManagement({ users, pagination, filters, roles, stor
                         <div className="users-avatar" aria-hidden="true">{user.name.slice(0, 1).toUpperCase()}</div>
                         <div className="users-identity"><h3>{user.name}{user.isCurrent && <small>Tu cuenta</small>}</h3><p>{user.email}</p></div>
                         <span className={`users-role users-role--${user.role}`}>{roleNames[user.role] || user.role}</span>
-                        <span className="users-verified">{user.verified ? "Verificada" : "Sin verificar"}</span>
+                        <span className={`users-verified ${user.verified ? "" : "is-pending"}`}>{user.verified ? "Verificada" : "Sin verificar"}</span>
                         <div className="users-actions"><UserEdit user={user} roles={roles} actions={operatorActions} />
                             {!user.isCurrent && !user.hasEvents && !user.hasMessages
                                 ? <Action url={user.deleteUrl} method="DELETE" confirm={`¿Eliminar la cuenta de ${user.name}?`} className="studio-delete users-delete-icon" ariaLabel={`Eliminar cuenta de ${user.name}`}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6m4-6v6M6 7l1 13h10l1-13M9 7V4h6v3" /></svg><span className="users-action-tooltip" role="tooltip">Eliminar</span></Action>

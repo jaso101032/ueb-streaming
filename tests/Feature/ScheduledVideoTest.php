@@ -160,4 +160,31 @@ class ScheduledVideoTest extends TestCase {
         $this->assertSame('pending', $broken->fresh()->processing_status);
     }
 
+
+    public function test_videos_have_no_fixed_size_cap_and_are_rejected_only_without_free_space(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $category = Categoria::firstOrCreate(['slug' => 'general'], ['nombre' => 'General']);
+        $form = fn (UploadedFile $video) => ['titulo' => 'Video grande', 'categoria_id' => $category->id,
+            'fecha_inicio' => now()->addDay()->format('Y-m-d\\TH:i'), 'video' => $video];
+        try {
+            // 4 GB libres: un video de 600 MB (antes rechazado por el tope de 500 MB) ya no
+            // choca con ningún límite de tamaño; solo se revisa que sea un video legible.
+            \App\Support\UploadLimits::$fakeFreeBytes = 4 * 1024 ** 3;
+            $this->assertGreaterThan(500 * 1024 ** 2, \App\Support\UploadLimits::spaceForVideo());
+            $big = UploadedFile::fake()->create('grande.mp4', 600 * 1024, 'video/mp4');
+            $this->actingAs($admin)->post(route('admin.scheduled.store'), $form($big))
+                ->assertSessionHasErrors(['video' => 'No se pudo leer el video. Usa MP4, MOV, MKV, WebM, AVI, WMV o MPEG, de hasta 12 horas.']);
+            // Sin espacio: aviso claro y no se guarda nada.
+            \App\Support\UploadLimits::$fakeFreeBytes = 2 * 1024 ** 3 + 100 * 1024 ** 2;
+            $this->actingAs($admin)->post(route('admin.scheduled.store'), $form($big))
+                ->assertSessionHasErrors('video');
+            $this->assertStringContainsString('No hay espacio suficiente', session('errors')->first('video'));
+            \App\Support\UploadLimits::$fakeFreeBytes = 1024 ** 3;
+            $this->assertTrue(\App\Support\UploadLimits::scheduled()['noSpace']);
+            $this->assertSame(0, Evento::count());
+        } finally {
+            \App\Support\UploadLimits::$fakeFreeBytes = null;
+        }
+    }
 }

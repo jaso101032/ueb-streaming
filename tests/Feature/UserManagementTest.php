@@ -22,7 +22,7 @@ class UserManagementTest extends TestCase
             $response = $this->get('/senal')->assertOk();
             preg_match('/data-shell="([^"]*)"/', $response->getContent(), $match);
             $shell = json_decode(html_entity_decode($match[1], ENT_QUOTES), true);
-            $this->assertNotContains('Gestionar usuarios', array_column($shell['links'], 'label'));
+            $this->assertNotContains('Usuarios', array_column($shell['links'], 'label'));
         }
 
         $admin = User::factory()->create(['role' => 'admin']);
@@ -30,7 +30,7 @@ class UserManagementTest extends TestCase
         $response = $this->get('/senal')->assertOk();
         preg_match('/data-shell="([^"]*)"/', $response->getContent(), $match);
         $shell = json_decode(html_entity_decode($match[1], ENT_QUOTES), true);
-        $this->assertContains('Gestionar usuarios', array_column($shell['links'], 'label'));
+        $this->assertContains('Usuarios', array_column($shell['links'], 'label'));
     }
 
     public function test_legacy_user_role_is_presented_as_usuario(): void

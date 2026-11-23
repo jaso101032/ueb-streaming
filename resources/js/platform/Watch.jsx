@@ -11,6 +11,7 @@ export default function Watch({
     messages,
     canModerate,
     related,
+    playlist = null,
     guide = [],
 }) {
     const shell = useShell(),
@@ -246,29 +247,43 @@ export default function Watch({
                         <AppCard titleId="wv-app-title" />
                     </div>
                     </div>
+                    <div className="wv-more-group">
+                    {/* Lista de la misma carrera o facultad: se agrupa como una playlist. */}
+                    {playlist?.items?.length > 0 && <section className="wv-more wv-playlist" aria-labelledby="wv-playlist-title">
+                        <div className="wv-more__heading">
+                            <h2 id="wv-playlist-title"><span className="wv-playlist__icon" aria-hidden="true"><Icon d="M4 6h11M4 11h11M4 16h7m6-3 4 2.5-4 2.5z" /></span>{playlist.title}<b>{playlist.items.length}</b></h2>
+                            <a href={playlist.url}>Ver todos ↗</a>
+                        </div>
+                        <div className="wv-more__list">{playlist.items.map((r) => <MoreCard key={r.id} item={r} logo={shell.logo} />)}</div>
+                    </section>}
                     <section className="wv-more" aria-labelledby="wv-more-title">
                         <div className="wv-more__heading">
                             <h2 id="wv-more-title">Más para ver</h2>
                             <a href={shell.catalog}>Ver todo el catálogo ↗</a>
                         </div>
                         {related.length ? <div className="wv-more__list">
-                            {related.map((r) => (
-                                <a className="wv-card" href={r.url} key={r.id}>
-                                    <span className="wv-card__thumb" style={r.image ? { backgroundImage: `url(${JSON.stringify(r.image)})` } : undefined}>
-                                        {!r.image && <img src={shell.logo} alt="" className="wv-card__logo" />}
-                                        <span className={`wv-card__tag ${r.status === "en_vivo" ? "is-live" : ""}`}><KindIcon status={r.status} scheduled={Boolean(r.scheduled)} />{statusLabel(r)}</span>
-                                    </span>
-                                    <span className="wv-card__body">
-                                        <strong>{r.title}</strong>
-                                        <small>{r.category} · {r.date}</small>
-                                    </span>
-                                </a>
-                            ))}
+                            {related.map((r) => <MoreCard key={r.id} item={r} logo={shell.logo} />)}
                         </div> : <p className="wv-more__empty">Pronto encontrarás más contenidos de nuestra comunidad.</p>}
                     </section>
+                    </div>
                 </div>
             </div>
         </div>
+    );
+}
+
+function MoreCard({ item: r, logo }) {
+    return (
+        <a className="wv-card" href={r.url}>
+            <span className="wv-card__thumb" style={r.image ? { backgroundImage: `url(${JSON.stringify(r.image)})` } : undefined}>
+                {!r.image && <img src={logo} alt="" className="wv-card__logo" />}
+                <span className={`wv-card__tag ${r.status === "en_vivo" ? "is-live" : ""}`}><KindIcon status={r.status} scheduled={Boolean(r.scheduled)} />{statusLabel(r)}</span>
+            </span>
+            <span className="wv-card__body">
+                <strong>{r.title}</strong>
+                <small>{r.category} · {r.date}</small>
+            </span>
+        </a>
     );
 }
 

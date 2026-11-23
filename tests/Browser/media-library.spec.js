@@ -10,10 +10,15 @@ test("admin media library filters render on desktop and mobile", async ({ page }
     await page.waitForURL(/admin\/dashboard/);
     await page.getByRole("link", { name: "Biblioteca de medios" }).click();
     await expect(page.getByRole("heading", { name: "Biblioteca de medios" })).toBeVisible();
-    await page.getByLabel("Origen").selectOption("recording");
-    await page.getByRole("button", { name: "Aplicar filtros" }).click();
+    // It explains it is not the public catalog and links to it.
+    await expect(page.locator(".ml-public")).toHaveAttribute("href", /\/eventos$/);
+    // File types are tabs that keep the other filters.
+    await page.getByRole("navigation", { name: "Tipo de archivo" }).getByRole("link", { name: /Grabaciones/ }).click();
     await expect(page).toHaveURL(/kind=recording/);
-    await expect(page.getByLabel("Origen")).toHaveValue("recording");
+    await expect(page.getByRole("link", { name: /Grabaciones/ })).toHaveAttribute("aria-current", "page");
+    await page.getByLabel("Buscar por título").fill("x");
+    await page.getByRole("button", { name: "Aplicar filtros" }).click();
+    await expect(page).toHaveURL(/kind=recording.*q=x|q=x.*kind=recording/);
 
     await page.setViewportSize({ width: 390, height: 844 });
     await expect(page.getByRole("heading", { name: "Biblioteca de medios" })).toBeVisible();

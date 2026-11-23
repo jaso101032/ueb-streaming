@@ -15,8 +15,9 @@ class InstitutionalAdController extends Controller
     {
         $data = $request->validate([
             'ad_title' => 'required|string|max:255',
-            'ad_video' => 'required|file|mimes:mp4,mov,avi,mkv,webm,wmv,asf,mpeg,mpg,m4v|max:512000',
+            'ad_video' => 'required|file|mimes:mp4,mov,avi,mkv,webm,wmv,asf,mpeg,mpg,m4v',
         ]);
+        \App\Support\UploadLimits::ensureRoomFor($request->file('ad_video'), 'ad_video');
         try {
             $duration = app(ScheduledVideoProcessor::class)->probe($request->file('ad_video')->getRealPath())['duration'];
         } catch (\Throwable $e) {

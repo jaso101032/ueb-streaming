@@ -79,6 +79,10 @@ class Evento extends Model
     /** Indica si la persona puede ver este evento según su clasificación. */
     public function isVisibleTo(?User $user): bool
     {
+        // Un video del catálogo que aún se prepara solo lo ve el equipo.
+        if (! in_array($user?->role, ['admin', 'operador'], true) && $this->scheduledVideo?->isCatalogOnly()
+            && $this->scheduledVideo->processing_status !== 'ready') return false;
+
         return match ($this->visibilidad ?? 'publico') {
             'publico' => true,
             'interno' => $user !== null,
@@ -90,7 +94,9 @@ class Evento extends Model
     {
         if (in_array($user?->role, ['admin', 'operador'], true)) return $query;
 
-        return $query->whereIn($query->qualifyColumn('visibilidad'), $user ? ['publico', 'interno'] : ['publico']);
+        return $query->whereIn($query->qualifyColumn('visibilidad'), $user ? ['publico', 'interno'] : ['publico'])
+            // Los videos del catálogo aparecen cuando terminan de prepararse.
+            ->whereDoesntHave('scheduledVideo', fn ($q) => $q->where('on_channel', false)->where('processing_status', '!=', 'ready'));
     }
 
     public function scheduledVideo()

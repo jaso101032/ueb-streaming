@@ -9,7 +9,7 @@ test("admin watermark is validated, previewed, persisted and restored on desktop
     await page.getByRole("button", { name: "Entrar a UEBTV" }).click();
     await page.waitForURL(/admin\/dashboard/);
     await page.getByRole("link", { name: "Marca de agua", exact: true }).click();
-    await expect(page.getByRole("heading", { name: "Marca de agua." })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Marca de agua", exact: true })).toBeVisible();
     const upload = page.getByLabel("Nueva imagen PNG");
     const save = page.getByRole("button", { name: "Guardar marca de agua", exact: true });
     await expect(save).toBeDisabled();
@@ -64,8 +64,8 @@ test("admin watermark is validated, previewed, persisted and restored on desktop
     expect(bounds.height).toBeLessThanOrEqual(64);
 
     await page.goto("/admin/marca-de-agua");
-    page.once("dialog", (dialog) => dialog.accept());
     await page.getByRole("button", { name: "Restaurar logo oficial", exact: true }).click();
+    await page.getByRole("alertdialog").getByRole("button", { name: "Restaurar" }).click();
     await expect(page.getByText("Se restauró la marca de agua oficial de UEBTV.")).toBeVisible();
     await expect(page.locator(".watermark-previews img").first()).toHaveAttribute("src", /images\/brand\/uebtv-logo-final.png$/);
     expect(errors).toEqual([]);

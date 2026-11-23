@@ -1,5 +1,5 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { useShell } from "./shared";
+import { useShell, askConfirm } from "./shared";
 export default function Chat({
     endpoint,
     initial,
@@ -197,7 +197,7 @@ export default function Chat({
         }
     }
     async function remove(m) {
-        if (!window.confirm("¿Retirar este mensaje para todos?")) return;
+        if (!(await askConfirm("¿Retirar este mensaje para todos?"))) return;
         setRemoving(m.id);
         setError("");
         try {

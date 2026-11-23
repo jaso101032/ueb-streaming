@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useLayoutEffect, useRef, useId } from "react";
 import { createPortal } from "react-dom";
+import { createRoot } from "react-dom/client";
 export const Context = createContext({});
 export const useShell = () => useContext(Context);
 export function Token({ method }) {
@@ -11,6 +12,56 @@ export function Token({ method }) {
         </>
     );
 }
+/** Botón de confirmar según la acción: "¿Eliminar…?" → "Eliminar". */
+function confirmVerb(message) {
+    const verb = String(message).replace(/^¿/, "").split(/\s+/)[0] || "";
+    return /^(Eliminar|Quitar|Retirar|Finalizar|Restaurar|Desactivar|Cerrar)$/i.test(verb) ? verb.charAt(0).toUpperCase() + verb.slice(1).toLowerCase() : "Confirmar";
+}
+
+/**
+ * Ventana de confirmación propia (en lugar del aviso del navegador). Devuelve
+ * una promesa con true si la persona confirma. Las acciones que borran o
+ * retiran algo se muestran en rojo.
+ */
+export function askConfirm(message, { confirmLabel, danger } = {}) {
+    const label = confirmLabel || confirmVerb(message);
+    const isDanger = danger ?? /^(Eliminar|Quitar|Retirar|Finalizar|Desactivar)$/.test(label);
+    return new Promise((resolve) => {
+        const host = document.createElement("div");
+        document.body.appendChild(host);
+        const root = createRoot(host);
+        const previous = document.activeElement;
+        const done = (value) => { root.unmount(); host.remove(); previous?.focus?.({ preventScroll: true }); resolve(value); };
+        function Dialog() {
+            const ok = useRef(null);
+            useEffect(() => {
+                ok.current?.focus();
+                const key = (event) => { if (event.key === "Escape") done(false); };
+                document.addEventListener("keydown", key);
+                return () => document.removeEventListener("keydown", key);
+            }, []);
+            return (
+                <div className="cf-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) done(false); }}>
+                    <div className={`cf ${isDanger ? "is-danger" : ""}`} role="alertdialog" aria-modal="true" aria-labelledby="cf-title" aria-describedby="cf-text">
+                        <span className="cf__icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24">{isDanger
+                                ? <><path d="M4 7h16M10 11v6m4-6v6" /><path d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3" /></>
+                                : <><circle cx="12" cy="12" r="9" /><path d="M12 8v5m0 3v.1" /></>}</svg>
+                        </span>
+                        <h2 id="cf-title">¿Estás seguro?</h2>
+                        <p id="cf-text">{message}</p>
+                        <div className="cf__actions">
+                            <button type="button" className="cf-cancel" onClick={() => done(false)}>Cancelar</button>
+                            <button ref={ok} type="button" className="cf-confirm" onClick={() => done(true)}>{label}</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+        root.render(<Dialog />);
+    });
+}
+
 export function Action({
     url,
     children,
@@ -18,8 +69,10 @@ export function Action({
     confirm,
     className = "studio-button",
     ariaLabel,
+    tooltip,
 }) {
     const [busy, setBusy] = useState(false);
+    const form = useRef(null), confirmed = useRef(false);
     useEffect(() => {
         const reset = () => setBusy(false);
         window.addEventListener("pageshow", reset);
@@ -27,11 +80,15 @@ export function Action({
     }, []);
     return (
         <form
+            ref={form}
             method="POST"
             action={url}
-            onSubmit={(e) => {
-                if (confirm && !window.confirm(confirm)) {
+            onSubmit={async (e) => {
+                if (confirm && !confirmed.current) {
                     e.preventDefault();
+                    if (!(await askConfirm(confirm))) return;
+                    confirmed.current = true;
+                    form.current?.requestSubmit();
                     return;
                 }
                 setBusy(true);
@@ -39,7 +96,8 @@ export function Action({
         >
             <Token method={method} />
             <button className={className} aria-label={ariaLabel} disabled={busy}>
-                {busy ? "Procesando…" : children}
+                {busy && !tooltip ? "Procesando…" : children}
+                {tooltip && <span className="studio-action-tooltip" role="tooltip">{tooltip}</span>}
             </button>
         </form>
     );
@@ -84,7 +142,9 @@ export function Pagination({ pagination: p }) {
     );
 }
 export const statusLabel = (e) =>
-    e.scheduled
+    e.catalogVideo
+        ? ({ ready: "Video", failed: "Video no disponible" }[e.catalogVideo.status] || "Preparando video")
+        : e.scheduled
         ? {
               processing: "Preparando video",
               failed: "Video no disponible",
@@ -420,5 +480,30 @@ export function LiveTimeStat({ since, now }) {
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d={CLOCK_ICON} /></svg>
             <span>En directo hace {value}</span>
         </span>
+    );
+}
+
+/**
+ * Cabecera común del panel: migas de pan, etiqueta, título (sin punto),
+ * descripción corta y las acciones de la página a la derecha.
+ */
+export function PageHeader({ eyebrow, title, description, crumbs = [], actions }) {
+    return (
+        <header className="ph">
+            {crumbs.length > 0 && <nav className="ph-crumbs" aria-label="Ruta">
+                {crumbs.map(([label, href], i) => <React.Fragment key={label}>
+                    {href ? <a href={href}>{label}</a> : <span aria-current="page">{label}</span>}
+                    {i < crumbs.length - 1 && <span className="ph-crumbs__sep" aria-hidden="true">›</span>}
+                </React.Fragment>)}
+            </nav>}
+            <div className="ph-row">
+                <div className="ph-text">
+                    {eyebrow && <p className="ph-eyebrow">{eyebrow}</p>}
+                    <h1>{title}</h1>
+                    {description && <p className="ph-desc">{description}</p>}
+                </div>
+                {actions && <div className="ph-actions">{actions}</div>}
+            </div>
+        </header>
     );
 }

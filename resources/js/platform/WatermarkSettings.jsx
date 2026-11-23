@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Action, Feedback, Heading, Token } from "./shared";
+import { Action, Feedback, PageHeader, Token } from "./shared";
 import PlayerWatermark from "./PlayerWatermark";
 
 const POSITIONS = [
@@ -37,10 +37,8 @@ export default function WatermarkSettings({ watermark, updateUrl, positionUrl, r
         setFile(candidate);
     };
 
-    return <div className="studio-page watermark-settings">
-        <Heading eyebrow="IDENTIDAD DEL CANAL" title="Marca de agua">
-            Personaliza la imagen y elige en qué esquina aparece dentro del reproductor.
-        </Heading>
+    return <div className="studio-page watermark-settings pg">
+        <PageHeader eyebrow="Contenido" title="Marca de agua" description="El logo que aparece sobre todos los videos y en qué esquina del reproductor." />
         <Feedback />
         <div className="watermark-settings-grid">
             <section className="studio-panel react-panel" aria-labelledby="watermark-form-title">
@@ -61,6 +59,7 @@ export default function WatermarkSettings({ watermark, updateUrl, positionUrl, r
                         </div>
                     </fieldset>
                     <button className="studio-button" disabled={position === (watermark.position || "top-right") || busy}>{busy ? "Guardando…" : "Guardar posición"}</button>
+                    {position === (watermark.position || "top-right") && <p className="watermark-state-hint">Esta es la esquina actual. Elige otra para poder guardar.</p>}
                 </form>
                 <form action={updateUrl} method="POST" encType="multipart/form-data" className="watermark-form" onSubmit={(event) => {
                     if (!file || error) { event.preventDefault(); return; }
@@ -72,6 +71,7 @@ export default function WatermarkSettings({ watermark, updateUrl, positionUrl, r
                     <p id="watermark-upload-help">Máximo 2 MB. La transparencia se comprueba en el servidor antes de guardar.</p>
                     {error && <p className="uebtv-form-errors" role="alert">{error}</p>}
                     <button className="studio-button" disabled={!file || !!error || busy}>{busy ? "Guardando…" : "Guardar marca de agua"}</button>
+                    {!file && !error && <p className="watermark-state-hint">Elige una imagen PNG para activar este botón.</p>}
                 </form>
                 {watermark.custom && <div className="watermark-reset">
                     <Action url={resetUrl} method="DELETE" className="studio-button-soft" confirm="¿Restaurar el logo oficial de UEBTV en los reproductores?">Restaurar logo oficial</Action>

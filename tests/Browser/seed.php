@@ -35,3 +35,16 @@ $chatEvent = Evento::create(['titulo' => 'Encuentro de la comunidad', 'slug' => 
 // to check the advertising list layout with its subtitles block.
 InstitutionalAd::create(['title' => 'UEB music', 'path' => 'institutional-ads/ueb-music.mp4', 'duration' => 175,
     'processing_status' => 'ready', 'ready_at' => now(), 'is_active' => false]);
+// "Liberar espacio": an old disabled ad and a deleted programme whose files
+// still use disk. Files live only in the isolated browser storage folder.
+$disk = Illuminate\Support\Facades\Storage::disk('local');
+$disk->put('institutional-ads/old-campaign.mp4', str_repeat('a', 3 * 1024 * 1024));
+$oldAd = InstitutionalAd::create(['title' => 'Campaña de matrículas 2025', 'path' => 'institutional-ads/old-campaign.mp4', 'duration' => 30,
+    'processing_status' => 'ready', 'ready_at' => now()->subDays(60), 'is_active' => false]);
+$oldAd->forceFill(['created_at' => now()->subDays(60)])->saveQuietly();
+$disk->put('scheduled-videos/old-programme.mp4', str_repeat('s', 5 * 1024 * 1024));
+$oldProgramme = Evento::create(['titulo' => 'Programa retirado de prueba', 'slug' => 'programa-retirado', 'estado' => 'finalizado',
+    'categoria_id' => $category->id, 'organizador_id' => $admin->id, 'tipo_evento' => 'Conferencias', 'fecha_inicio' => now()->subDays(40)]);
+$oldProgramme->scheduledVideo()->create(['path' => 'scheduled-videos/old-programme.mp4', 'processing_status' => 'ready', 'duration' => 30, 'ready_at' => now()->subDays(41)]);
+$oldProgramme->forceFill(['created_at' => now()->subDays(41)])->saveQuietly();
+$oldProgramme->delete();

@@ -19,7 +19,7 @@ class ScheduledVideoController extends Controller
 {
     public function index()
     {
-        return view('admin.scheduled.index', ['events' => Evento::whereHas('scheduledVideo')->with('scheduledVideo')->latest()->paginate(12),
+        return view('admin.scheduled.index', ['events' => Evento::whereHas('scheduledVideo', fn ($q) => $q->where('on_channel', true))->with(['scheduledVideo', 'categoria'])->latest()->paginate(12),
             'ads' => InstitutionalAd::latest()->get(), 'categories' => Categoria::orderBy('nombre')->get(),
             'timeline' => ($timeline = app(ChannelSchedule::class)->timeline()), 'summary' => app(ChannelSchedule::class)->summary($timeline, true)]);
     }
@@ -27,7 +27,7 @@ class ScheduledVideoController extends Controller
     public function progress(Request $request)
     {
         $page = max(1, (int) $request->query('page', 1));
-        $events = Evento::whereHas('scheduledVideo')->with('scheduledVideo')->latest()->paginate(12, ['*'], 'page', $page);
+        $events = Evento::whereHas('scheduledVideo', fn ($q) => $q->where('on_channel', true))->with('scheduledVideo')->latest()->paginate(12, ['*'], 'page', $page);
 
         return response()->json([
             'events' => $events->mapWithKeys(fn ($event) => [$event->id => [
@@ -45,13 +45,69 @@ class ScheduledVideoController extends Controller
 
     public function store(Request $request)
     {
-        $data = $request->validate([
+        $data = $request->validate(self::uploadRules() + [
+            'fecha_inicio' => 'required|date_format:Y-m-d\TH:i|after:now',
+        ]);
+        $event = $this->createFromUpload($request, $data, fn ($duration) => [
+            'fecha_inicio' => $data['fecha_inicio'],
+            'fecha_fin' => Carbon::parse($data['fecha_inicio'])->addSeconds((int) ceil($duration)),
+            'tipo_evento' => 'Emisión pregrabada', 'estado' => 'programado',
+        ], true);
+
+        Audit::record('programacion.creada', $event);
+
+        return $this->uploaded($request, 'Video recibido. Se está preparando para la emisión; aparecerá en la programación cuando esté listo.', route('admin.scheduled.index'));
+    }
+
+    /**
+     * Video solo para el catálogo: misma conversión, calidades y subtítulos,
+     * pero no se emite en el canal. Aparece en el catálogo cuando está listo.
+     */
+    public function storeCatalog(Request $request)
+    {
+        $data = $request->validate(self::uploadRules() + [
+            'visibilidad' => ['required', \Illuminate\Validation\Rule::in(array_keys(Evento::VISIBILITIES))],
+        ]);
+        $event = $this->createFromUpload($request, $data, fn ($duration) => [
+            'fecha_inicio' => now(), 'fecha_fin' => now()->addSeconds((int) ceil($duration)),
+            'tipo_evento' => 'Video', 'estado' => 'finalizado', 'visibilidad' => $data['visibilidad'],
+        ], false);
+
+        Audit::record('video.subido', $event);
+
+        return $this->uploaded($request, 'Video recibido. Se está preparando; aparecerá en el catálogo en unos minutos, cuando termine la conversión.', route('admin.media.index'));
+    }
+
+    private static function uploadRules(): array
+    {
+        return self::detailRules() + [
+            'video' => 'required|file|mimes:mp4,mov,avi,mkv,webm,wmv,asf,mpeg,mpg,m4v',
+        ];
+    }
+
+    /** Datos del video: título, descripción, categoría, facultad/carrera (opcionales) y portada. */
+    private static function detailRules(): array
+    {
+        return [
             'titulo' => 'required|string|max:255', 'descripcion' => 'nullable|string|max:20000',
             'categoria_id' => 'required|exists:categorias,id',
-            'fecha_inicio' => 'required|date_format:Y-m-d\TH:i|after:now',
-            'video' => 'required|file|mimes:mp4,mov,avi,mkv,webm,wmv,asf,mpeg,mpg,m4v|max:512000',
+            'facultad_id' => 'nullable|integer|exists:facultades,id',
+            // La carrera debe pertenecer a la facultad elegida.
+            'carrera_id' => ['nullable', 'integer', 'exists:carreras,id', function ($attribute, $value, $fail) {
+                $faculty = request()->input('facultad_id');
+                if ($value && (! $faculty || ! \App\Models\Carrera::whereKey($value)->where('facultad_id', $faculty)->exists())) {
+                    $fail('La carrera elegida no pertenece a esa facultad.');
+                }
+            }],
             'miniatura' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048', 'dimensions:max_width=4096,max_height=4096'],
-        ]);
+        ];
+    }
+
+    /** Guarda el archivo y crea el evento con su video pendiente de conversión. */
+    private function createFromUpload(Request $request, array $data, \Closure $eventAttributes, bool $onChannel): Evento
+    {
+        // Sin tope fijo de tamaño: solo se rechaza si no hay espacio libre.
+        \App\Support\UploadLimits::ensureRoomFor($request->file('video'), 'video');
         try {
             $duration = app(ScheduledVideoProcessor::class)->probe($request->file('video')->getRealPath())['duration'];
         } catch (\Throwable $e) {
@@ -65,13 +121,13 @@ class ScheduledVideoController extends Controller
                 $thumbnailPath = $request->file('miniatura')->store('eventos/miniaturas', 'public');
                 abort_unless($thumbnailPath, 500, 'No se pudo guardar la imagen de portada.');
             }
-            $event = DB::transaction(function () use ($data, $duration, $path, $thumbnailPath, $request) {
-                $event = Evento::create(['titulo' => $data['titulo'], 'descripcion' => $data['descripcion'] ?? null,
-                    'categoria_id' => $data['categoria_id'], 'fecha_inicio' => $data['fecha_inicio'],
-                    'fecha_fin' => Carbon::parse($data['fecha_inicio'])->addSeconds((int) ceil($duration)),
-                    'tipo_evento' => 'Emisión pregrabada', 'estado' => 'programado', 'miniatura' => $thumbnailPath, 'organizador_id' => $request->user()->id,
+
+            return DB::transaction(function () use ($data, $duration, $path, $thumbnailPath, $request, $eventAttributes, $onChannel) {
+                $event = Evento::create($eventAttributes($duration) + ['titulo' => $data['titulo'], 'descripcion' => $data['descripcion'] ?? null,
+                    'categoria_id' => $data['categoria_id'], 'facultad_id' => $data['facultad_id'] ?? null, 'carrera_id' => $data['carrera_id'] ?? null, 'miniatura' => $thumbnailPath, 'organizador_id' => $request->user()->id,
                     'slug' => Str::uuid()->toString()]);
-                $event->scheduledVideo()->create(['path' => $path, 'duration' => $duration, 'source_path' => $path, 'source_bytes' => $request->file('video')->getSize(), 'processing_status' => 'pending']);
+                $event->scheduledVideo()->create(['on_channel' => $onChannel, 'path' => $path, 'duration' => $duration, 'source_path' => $path,
+                    'source_bytes' => $request->file('video')->getSize(), 'processing_status' => 'pending']);
 
                 return $event;
             });
@@ -82,15 +138,48 @@ class ScheduledVideoController extends Controller
             }
             throw $e;
         }
+    }
 
-        Audit::record('programacion.creada', $event);
-        $message = 'Video recibido. Se está preparando para la emisión; aparecerá en la programación cuando esté listo.';
+    /**
+     * Editar un video subido (de la parrilla o del catálogo): datos, portada y,
+     * si es del catálogo, quién puede verlo. El archivo de video no cambia.
+     */
+    public function updateVideo(Request $request, Evento $evento)
+    {
+        $video = $evento->scheduledVideo;
+        abort_unless($video, 404);
+        $rules = self::detailRules() + ['quitar_miniatura' => 'nullable|boolean'];
+        if ($video->isCatalogOnly()) $rules['visibilidad'] = ['required', \Illuminate\Validation\Rule::in(array_keys(Evento::VISIBILITIES))];
+        $data = $request->validate($rules);
+
+        $old = $evento->miniatura;
+        $thumbnail = $old;
+        if ($request->hasFile('miniatura')) {
+            $thumbnail = $request->file('miniatura')->store('eventos/miniaturas', 'public');
+            abort_unless($thumbnail, 500, 'No se pudo guardar la imagen de portada.');
+        } elseif ($request->boolean('quitar_miniatura')) {
+            $thumbnail = null;
+        }
+        $evento->update(['titulo' => $data['titulo'], 'descripcion' => $data['descripcion'] ?? null, 'categoria_id' => $data['categoria_id'],
+            'facultad_id' => $data['facultad_id'] ?? null, 'carrera_id' => $data['carrera_id'] ?? null, 'miniatura' => $thumbnail]
+            + ($video->isCatalogOnly() ? ['visibilidad' => $data['visibilidad']] : []));
+        if ($old && $old !== $thumbnail && Evento::withTrashed()->where('miniatura', $old)->doesntExist()) {
+            Storage::disk('public')->delete($old);
+        }
+        Audit::record('video.actualizado', $evento);
+
+        return $this->uploaded($request, 'Cambios guardados.', route('admin.eventos.show', $evento));
+    }
+
+    private function uploaded(Request $request, string $message, string $redirect)
+    {
         if ($request->expectsJson()) {
             $request->session()->flash('success', $message);
-            return response()->json(['message' => $message, 'redirect' => route('admin.scheduled.index')], 201);
+
+            return response()->json(['message' => $message, 'redirect' => $redirect], 201);
         }
 
-        return to_route('admin.scheduled.index')->with('success', $message);
+        return redirect($redirect)->with('success', $message);
     }
 
     public function retry(Evento $evento)

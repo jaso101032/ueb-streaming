@@ -47,7 +47,7 @@ class VideoAnalyticsController extends Controller
             })
             ->select('eventos.id', 'eventos.titulo')
             ->selectRaw('COUNT(event_video_views.id) as views')
-            ->selectRaw("CASE WHEN eventos.estado = 'en_vivo' THEN 'En vivo' WHEN EXISTS (SELECT 1 FROM scheduled_videos WHERE scheduled_videos.evento_id = eventos.id) THEN 'Programado' WHEN eventos.video_url IS NOT NULL THEN 'Biblioteca' ELSE 'Grabación' END as type")
+            ->selectRaw("CASE WHEN eventos.estado = 'en_vivo' THEN 'En vivo' WHEN EXISTS (SELECT 1 FROM scheduled_videos WHERE scheduled_videos.evento_id = eventos.id AND NOT scheduled_videos.on_channel) THEN 'Catálogo' WHEN EXISTS (SELECT 1 FROM scheduled_videos WHERE scheduled_videos.evento_id = eventos.id) THEN 'Programado' WHEN eventos.video_url IS NOT NULL THEN 'Biblioteca' ELSE 'Grabación' END as type")
             ->groupBy('eventos.id', 'eventos.titulo', 'eventos.estado', 'eventos.video_url')
             ->get()
             ->map(function ($row) {

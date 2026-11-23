@@ -1,6 +1,7 @@
 import { durationLabel } from "../platform/Channel";
 import { Action, useShell } from "../platform/shared";
 import React, { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 function Icon({ name = "play", size = 22 }) {
     const paths = {
@@ -137,6 +138,23 @@ function ConversionProgress({ status, percent }) {
     </div>;
 }
 
+const human = (bytes) => bytes >= 1024 ** 3 ? `${(bytes / 1024 ** 3).toLocaleString("es-EC", { maximumFractionDigits: 1 })} GB` : `${Math.round(bytes / 1048576).toLocaleString("es-EC")} MB`;
+/** Por qué no se puede subir un archivo de este tamaño (o "" si cabe). */
+const sizeError = (file, limits) => !file || file.size <= limits.maxBytes ? ""
+    : limits.reason === "space"
+        ? `No hay espacio suficiente en el servidor para este video (${human(file.size)}). Ahora caben hasta ${human(limits.maxBytes)}.`
+        : `El video (${human(file.size)}) supera el límite configurado en el servidor (${human(limits.maxBytes)}).`;
+/** Aviso visible cuando ya no queda espacio para subir videos. */
+function SpaceNotice({ limits }) {
+    if (!limits.noSpace) return null;
+    return <p className="sp-space-alert" role="alert"><strong>El servidor no tiene espacio libre para nuevos videos.</strong> Borra lo que ya no hace falta para poder subir. <FreeSpaceLink limits={limits} /></p>;
+}
+/** Acceso directo a "Liberar espacio" (Biblioteca de medios). */
+function FreeSpaceLink({ limits }) {
+    return limits.freeUrl ? <a className="sp-free-link" href={limits.freeUrl}>Liberar espacio →</a> : null;
+}
+const isSpaceError = (message) => /^No hay espacio suficiente/.test(message || "");
+
 function InstitutionalAds({ action, csrf, ads, old, uploadLimits }) {
     const [title, setTitle] = useState(old.ad_title || "");
     const [fileError, setFileError] = useState("");
@@ -146,7 +164,7 @@ function InstitutionalAds({ action, csrf, ads, old, uploadLimits }) {
         const file = event.target.files[0];
         const error = file && (!/\.(mp4|m4v|mov|mkv|webm|avi|wmv|mpeg|mpg)$/i.test(file.name)
             ? "Selecciona MP4, MOV, MKV, WebM, AVI, WMV o MPEG."
-            : file.size > uploadLimits.maxBytes ? `El video supera el límite de ${uploadLimits.maxMb} MB.` : "");
+            : sizeError(file, uploadLimits));
         event.target.setCustomValidity(error || "");
         setFileError(error || "");
         reset();
@@ -167,10 +185,10 @@ function InstitutionalAds({ action, csrf, ads, old, uploadLimits }) {
                     <Field id="ad-video" label="Archivo de video">
                         <input id="ad-video" name="ad_video" type="file" accept=".mp4,.m4v,.mov,.mkv,.webm,.avi,.wmv,.mpeg,.mpg" required onChange={choose} aria-describedby="ad-file-help ad-file-error" />
                     </Field>
-                    <p id="ad-file-help" className="schedule-help">Hasta {uploadLimits.maxMb} MB. El archivo se optimiza antes de emitirse y se repetirá con los otros anuncios durante los huecos.</p>
-                    {fileError && <p id="ad-file-error" className="schedule-file-error" role="alert">{fileError}</p>}
+                    <p id="ad-file-help" className="schedule-help">{uploadLimits.freeBytes != null ? `Espacio disponible: ${human(uploadLimits.maxBytes)}. ` : ""}El archivo se optimiza antes de emitirse y se repetirá con los otros anuncios durante los huecos.</p>
+                    {fileError && <p id="ad-file-error" className="schedule-file-error" role="alert">{fileError}{isSpaceError(fileError) && <> <FreeSpaceLink limits={uploadLimits} /></>}</p>}
                 </Section>
-                <div className="schedule-submit"><UploadProgress upload={upload} /><button type="submit" className="studio-button" disabled={submitting}>{submitting ? "Subiendo…" : "Subir publicidad"}<Icon name="upload" size={17} /></button></div>
+                <div className="schedule-submit"><SpaceNotice limits={uploadLimits} /><UploadProgress upload={upload} /><button type="submit" className="studio-button" disabled={submitting || uploadLimits.noSpace}>{submitting ? "Subiendo…" : "Subir publicidad"}<Icon name="upload" size={17} /></button></div>
             </form>
             <div className="studio-panel ad-studio-list">
                 <div className="studio-panel-heading"><div><p className="studio-eyebrow">BIBLIOTECA INSTITUCIONAL</p><h3>Anuncios disponibles</h3></div><strong>{ads.length}</strong></div>
@@ -188,60 +206,242 @@ function InstitutionalAds({ action, csrf, ads, old, uploadLimits }) {
     </section>;
 }
 
-export default function ScheduledStudio({
-    action,
-    adAction,
-    ads = [],
-    progressUrl,
-    csrf,
-    timezone,
-    categories,
-    events,
-    pagination,
-    old,
-    errors,
-    success,
-    summary,
-    channelUrl,
-    uploadLimits,
-}) {
-    const shell = useShell();
-    const [title, setTitle] = useState(old.titulo || "");
-    const [date, setDate] = useState(old.fecha_inicio || "");
-    const [category, setCategory] = useState(old.categoria_id || "");
+/* ───────────── Utilidades de fecha (zona horaria del canal) ───────────── */
+const fmtDur = (seconds) => {
+    const m = Math.max(1, Math.round((Number(seconds) || 0) / 60));
+    return m < 60 ? `${m} min` : `${Math.floor(m / 60)} h${m % 60 ? ` ${String(m % 60).padStart(2, "0")} min` : ""}`;
+};
+const partsIn = (date, timeZone) => Object.fromEntries(new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" })
+    .formatToParts(date).filter((p) => p.type !== "literal").map((p) => [p.type, p.value]));
+/** Valor para <input type="datetime-local"> en la zona del canal. */
+const toInput = (date, timeZone) => { const p = partsIn(date, timeZone); return `${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}`; };
+const dayKey = (date, timeZone) => { const p = partsIn(date, timeZone); return `${p.year}-${p.month}-${p.day}`; };
+const clock = (date, timeZone) => new Date(date).toLocaleTimeString("es-EC", { timeZone, hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
+function dayLabel(key, timeZone) {
+    const today = dayKey(new Date(), timeZone), tomorrow = dayKey(new Date(Date.now() + 864e5), timeZone);
+    if (key === today) return "Hoy";
+    if (key === tomorrow) return "Mañana";
+    const [y, m, d] = key.split("-").map(Number);
+    return new Date(Date.UTC(y, m - 1, d, 12)).toLocaleDateString("es-EC", { timeZone: "UTC", weekday: "long", day: "numeric", month: "long" });
+}
+
+function SIcon({ name }) {
+    const paths = {
+        plus: <path d="M12 5v14m-7-7h14" />,
+        calendar: <><rect x="3.5" y="5" width="17" height="15" rx="2.5" /><path d="M8 3v4m8-4v4M3.5 10h17" /></>,
+        list: <path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01" />,
+        megaphone: <path d="M4 10v4h3l7 4V6l-7 4H4Zm13-1.5a4 4 0 0 1 0 7" />,
+        tv: <><rect x="3" y="6" width="18" height="12" rx="2" /><path d="M8 3l4 3 4-3" /></>,
+        clock: <><circle cx="12" cy="12" r="8.5" /><path d="M12 7.5V12l3 2" /></>,
+        spin: <path d="M20 11a8 8 0 1 0-2.3 5.7M20 5v6h-6" />,
+        eye: <><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z" /><circle cx="12" cy="12" r="3" /></>,
+        gear: <><circle cx="12" cy="12" r="3" /><path d="M12 3v2m0 14v2M3 12h2m14 0h2M5.6 5.6l1.4 1.4m10 10 1.4 1.4m0-12.8-1.4 1.4m-10 10-1.4 1.4" /></>,
+        trash: <><path d="M4 7h16M10 11v6m4-6v6" /><path d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3" /></>,
+        upload: <path d="M12 16V4m-5 5 5-5 5 5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" />,
+        close: <path d="M6 6l12 12M18 6 6 18" />,
+        out: <path d="M7 17 17 7M9 7h8v8" />,
+        retry: <path d="M20 11a8 8 0 1 0-2.3 5.7M20 5v6h-6" />,
+        image: <><rect x="3.5" y="4.5" width="17" height="15" rx="2.5" /><circle cx="9" cy="10" r="1.8" /><path d="m20.5 16-5-5L6 19.5" /></>,
+        film: <><rect x="3.5" y="4" width="17" height="16" rx="2.5" /><path d="M7.5 4v16m9-16v16M3.5 9h4m9 0h4m-17 6h4m9 0h4" /></>,
+        alert: <><path d="M12 3 2.5 20h19z" /><path d="M12 10v4m0 3v.1" /></>,
+    };
+    return <svg className="sp-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">{paths[name]}</svg>;
+}
+const Thumb = ({ image }) => <span className={`sp-thumb ${image ? "has-image" : ""}`} style={image ? { backgroundImage: `url(${JSON.stringify(image)})` } : undefined} aria-hidden="true">{!image && <img src="/images/brand/ueb-wordmark.png" alt="" />}</span>;
+
+/* ───────────── Panel "Programar video" ───────────── */
+const VISIBILITY = [
+    ["publico", "Público", "Cualquier persona, sin iniciar sesión."],
+    ["interno", "Comunidad UEB", "Solo personas con sesión iniciada."],
+    ["restringido", "Solo el equipo", "Administradores y operadores."],
+];
+
+/**
+ * Formulario de subida. mode="channel": video para la Parrilla 24/7 (elige
+ * cuándo sale al aire). mode="catalog": video solo para el catálogo (elige
+ * quién puede verlo y queda disponible cuando termina de prepararse).
+ */
+export function ProgramDrawer({ open, onClose, action, csrf, categories, faculties = [], careers = [], timezone, uploadLimits = {}, old = {}, start, setStart, endsAt, mode = "channel", editing = null }) {
+    // editing: { values } para cambiar los datos de un video ya subido (el archivo no cambia).
+    const catalog = mode === "catalog";
+    const initial = editing?.values || old;
+    const [visibility, setVisibility] = useState(initial.visibilidad || "publico");
+    const [title, setTitle] = useState(initial.titulo || "");
+    const [category, setCategory] = useState(initial.categoria_id ? String(initial.categoria_id) : "");
+    const [faculty, setFaculty] = useState(initial.facultad_id ? String(initial.facultad_id) : "");
+    const [career, setCareer] = useState(initial.carrera_id ? String(initial.carrera_id) : "");
+    const facultyCareers = careers.filter((c) => String(c.facultad_id) === faculty);
+    const [keptImage, setKeptImage] = useState(editing?.values?.image || "");
     const [file, setFile] = useState(null);
-    const [preview, setPreview] = useState("");
-    const [thumbnail, setThumbnail] = useState(null);
-    const [thumbnailPreview, setThumbnailPreview] = useState("");
-    const [thumbnailError, setThumbnailError] = useState("");
-    const thumbnailInput = useRef(null);
-    const [duration, setDuration] = useState(0);
     const [fileError, setFileError] = useState("");
+    const [duration, setDuration] = useState(0);
+    const [thumb, setThumb] = useState(null);
+    const [thumbError, setThumbError] = useState("");
+    const [thumbUrl, setThumbUrl] = useState("");
+    const thumbInput = useRef(null);
+    useEffect(() => {
+        if (!thumb) { setThumbUrl(""); return undefined; }
+        const url = URL.createObjectURL(thumb);
+        setThumbUrl(url);
+        return () => URL.revokeObjectURL(url);
+    }, [thumb]);
+    const removeThumb = () => { if (thumbInput.current) thumbInput.current.value = ""; setThumb(null); setThumbError(""); setKeptImage(""); };
+    const coverUrl = thumbUrl || keptImage;
+    const [drag, setDrag] = useState(false);
+    const videoInput = useRef(null), titleInput = useRef(null), panel = useRef(null);
     const { upload, submit, reset } = useVideoUpload();
     const submitting = upload.phase === "uploading" || upload.phase === "verifying";
+    useEffect(() => {
+        if (!open) return undefined;
+        window.setTimeout(() => panel.current?.querySelector("button, input")?.focus({ preventScroll: true }), 60);
+        const key = (event) => { if (event.key === "Escape" && !submitting) onClose(); };
+        document.addEventListener("keydown", key);
+        return () => document.removeEventListener("keydown", key);
+    }, [open, submitting, onClose]);
+    const pickVideo = (selected) => {
+        setDuration(0);
+        const error = selected && (!/\.(mp4|m4v|mov|mkv|webm|avi|wmv|mpeg|mpg)$/i.test(selected.name)
+            ? "Selecciona MP4, MOV, MKV, WebM, AVI, WMV o MPEG."
+            : sizeError(selected, uploadLimits));
+        videoInput.current?.setCustomValidity(error || "");
+        setFileError(error || "");
+        setFile(error ? null : selected || null);
+        if (selected && !error && !title.trim()) setTitle(selected.name.replace(/\.[^.]+$/, "").replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim());
+        if (selected && !error) {
+            const url = URL.createObjectURL(selected);
+            const probe = document.createElement("video");
+            probe.preload = "metadata";
+            probe.onloadedmetadata = () => { if (Number.isFinite(probe.duration)) setDuration(Math.ceil(probe.duration)); URL.revokeObjectURL(url); };
+            probe.onerror = () => URL.revokeObjectURL(url);
+            probe.src = url;
+        }
+        reset();
+    };
+    const pickThumb = (event) => {
+        const selected = event.target.files[0];
+        const error = selected && (!/\.(jpe?g|png|webp)$/i.test(selected.name) ? "Selecciona una imagen JPG, PNG o WebP."
+            : selected.size > 2 * 1024 * 1024 ? "La imagen de portada no puede superar los 2 MB." : "");
+        event.target.setCustomValidity(error || "");
+        setThumbError(error || "");
+        setThumb(error ? null : selected || null);
+    };
+    const soon = (minutes) => toInput(new Date(Date.now() + minutes * 60000), timezone);
+    const afterLast = () => {
+        const base = Math.max(Date.now() + 2 * 60000, endsAt ? new Date(endsAt).getTime() : 0);
+        return toInput(new Date(Math.ceil(base / 60000) * 60000), timezone);
+    };
+    const tomorrow8 = () => `${dayKey(new Date(Date.now() + 864e5), timezone)}T08:00`;
+    const quick = [["after", "Al terminar lo programado", afterLast], ["soon", "En 15 minutos", () => soon(15)], ["tomorrow", "Mañana 08:00", tomorrow8]];
+    // Fuera de la página (su animación de entrada crea un contexto que
+    // dejaría el panel debajo de la cabecera y más alto que la pantalla).
+    return createPortal(
+        <div className="sp-portal">
+            <div className={`sp-scrim ${open ? "is-open" : ""}`} onClick={() => { if (!submitting) onClose(); }} aria-hidden="true" />
+            <div className="sp-drawer-wrap">
+            <section ref={panel} className={`sp-drawer ${open ? "is-open" : ""}`} role="dialog" aria-modal="true" aria-labelledby="sp-drawer-title" aria-hidden={!open} inert={!open}>
+                <header className="sp-drawer__head">
+                    <div><p className="sp-eyebrow">{catalog ? "Catálogo" : "Parrilla 24/7"}</p><h2 id="sp-drawer-title">{editing ? "Editar video" : catalog ? "Subir video al catálogo" : "Programar video"}</h2></div>
+                    <button type="button" className="sp-icon-btn" onClick={onClose} disabled={submitting} aria-label="Cerrar"><SIcon name="close" /></button>
+                </header>
+                <form id="schedule-program-form" className="sp-form" method="POST" action={action} encType="multipart/form-data" onSubmit={submit} aria-busy={submitting}>
+                    <input type="hidden" name="_token" value={csrf} />
+                    {editing && <input type="hidden" name="_method" value="PUT" />}
+                    {editing && !keptImage && !thumb && editing.values?.image && <input type="hidden" name="quitar_miniatura" value="1" />}
+                    {!editing && <>
+                    <div className="sp-step"><span>1</span><h3>Video</h3></div>
+                    <label htmlFor="video" className={`sp-drop ${drag ? "is-drag" : ""} ${file ? "has-file" : ""}`}
+                        onDragOver={(e) => { e.preventDefault(); setDrag(true); }} onDragLeave={() => setDrag(false)}
+                        onDrop={(e) => { e.preventDefault(); setDrag(false); const f = e.dataTransfer.files?.[0]; if (f && videoInput.current) { const dt = new DataTransfer(); dt.items.add(f); videoInput.current.files = dt.files; pickVideo(f); } }}>
+                        <span className="sp-drop__icon"><SIcon name={file ? "film" : "upload"} /></span>
+                        {file ? <span className="sp-drop__text"><strong>{file.name}</strong><small>{(file.size / 1048576).toFixed(1)} MB{duration ? ` · ${fmtDur(duration)}` : ""} · Toca para cambiar</small></span>
+                            : <span className="sp-drop__text"><strong>Arrastra el video aquí o haz clic para elegirlo</strong><small>MP4, MOV, MKV, WebM, AVI, WMV o MPEG · Sin límite de tamaño{uploadLimits.freeBytes != null ? ` · Espacio disponible: ${human(uploadLimits.maxBytes)}` : ""}</small></span>}
+                        <input ref={videoInput} id="video" name="video" type="file" accept=".mp4,.m4v,.mov,.mkv,.webm,.avi,.wmv,.mpeg,.mpg" required className="ct-sr" onChange={(e) => pickVideo(e.target.files[0])} aria-describedby="sp-video-error" />
+                    </label>
+                    {fileError && <p id="sp-video-error" className="sp-error" role="alert">{fileError}{isSpaceError(fileError) && <> <FreeSpaceLink limits={uploadLimits} /></>}</p>}
+                    <SpaceNotice limits={uploadLimits} />
+                    {uploadLimits.serverLimited && uploadLimits.reason === "server" && <p className="sp-hint">La configuración de este servidor acepta hasta {human(uploadLimits.maxBytes)} por video.</p>}
+                    </>}
+
+                    <div className="sp-step"><span>{editing ? 1 : 2}</span><h3>Datos</h3></div>
+                    <label className="sp-field"><span>{catalog ? "Título del video" : "Título de la emisión"}</span><input ref={titleInput} id="title" name="titulo" required maxLength={255} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ej. Conferencia: Innovación en la UEB" /></label>
+                    <label className="sp-field"><span>Categoría</span><select id="category" name="categoria_id" required value={category} onChange={(e) => setCategory(e.target.value)}><option value="">Selecciona una categoría</option>{categories.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}</select></label>
+                    {faculties.length > 0 && <div className="sp-pair">
+                        <label className="sp-field"><span>Facultad <small>(opcional)</small></span><select name="facultad_id" value={faculty} onChange={(e) => { setFaculty(e.target.value); setCareer(""); }}><option value="">Toda la institución</option>{faculties.map((f) => <option key={f.id} value={f.id}>{f.nombre}</option>)}</select></label>
+                        <label className="sp-field"><span>Carrera <small>(opcional)</small></span><select name="carrera_id" value={career} onChange={(e) => setCareer(e.target.value)} disabled={!faculty}><option value="">{faculty ? "Toda la facultad" : "Elige primero la facultad"}</option>{facultyCareers.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}</select></label>
+                    </div>}
+                    {faculties.length > 0 && <p className="sp-hint sp-hint--tight">Con facultad y carrera, el video se agrupa con los demás de esa carrera en el catálogo y en «Más de…».</p>}
+                    <div className="sp-field">
+                        <span>Portada <small>(opcional)</small></span>
+                        {/* Vista previa tal como se verá en el catálogo (16:9). */}
+                        <div className={`sp-cover ${coverUrl ? "has-image" : ""}`}>
+                            <span className="sp-cover__img" style={coverUrl ? { backgroundImage: `url(${JSON.stringify(coverUrl)})` } : undefined} aria-hidden="true">
+                                {!coverUrl && <img src="/images/brand/ueb-wordmark.png" alt="" />}
+                                <span className="sp-cover__tag">{coverUrl ? (thumb ? "Así se verá" : "Portada actual") : "Portada genérica"}</span>
+                            </span>
+                            <span className="sp-cover__side">
+                                <strong>{thumb ? thumb.name : keptImage ? "Portada actual" : "Sin portada"}</strong>
+                                <small>{thumb ? `${(thumb.size / 1024 / 1024).toFixed(2)} MB` : keptImage ? "Puedes cambiarla o quitarla." : "Se usará el logo de la UEB. JPG, PNG o WebP, hasta 2 MB."}</small>
+                                <span className="sp-cover__actions">
+                                    <label htmlFor="thumbnail" className="sp-btn"><SIcon name="image" />{thumb || keptImage ? "Cambiar" : "Elegir imagen"}</label>
+                                    {(thumb || keptImage) && <button type="button" className="sp-btn is-danger" onClick={removeThumb}><SIcon name="trash" />Quitar</button>}
+                                </span>
+                            </span>
+                            <input ref={thumbInput} id="thumbnail" name="miniatura" type="file" accept=".jpg,.jpeg,.png,.webp" className="ct-sr" onChange={pickThumb} aria-label="Imagen de portada" />
+                        </div>
+                        {thumbError && <p className="sp-error" role="alert">{thumbError}</p>}
+                    </div>
+                    <details className="sp-more" open={Boolean(initial.descripcion) || undefined}>
+                        <summary>Descripción <small>(opcional)</small></summary>
+                        <label className="sp-field"><span>Descripción</span><textarea id="description" name="descripcion" rows={3} maxLength={20000} defaultValue={initial.descripcion || ""} placeholder="Cuéntale a tu audiencia qué va a encontrar…" /></label>
+                    </details>
+
+                    {editing && !catalog ? null : catalog ? <>
+                        <div className="sp-step"><span>{editing ? 2 : 3}</span><h3>¿Quién puede verlo?</h3></div>
+                        <div className="sp-vis" role="radiogroup" aria-label="Quién puede ver el video">
+                            {VISIBILITY.map(([value, label, help]) => <label key={value} className={`sp-vis__opt ${visibility === value ? "is-active" : ""}`}>
+                                <input type="radio" name="visibilidad" value={value} checked={visibility === value} onChange={() => setVisibility(value)} />
+                                <span><strong>{label}</strong><small>{help}</small></span>
+                            </label>)}
+                        </div>
+                        {!editing && <p className="sp-hint">No se emite en el canal 24/7. Aparece en el catálogo en cuanto termina de prepararse; las calidades (1080p a 360p) y los subtítulos se agregan solos después.</p>}
+                    </> : <>
+                        <div className="sp-step"><span>3</span><h3>¿Cuándo sale al aire?</h3></div>
+                        <div className="sp-quick" role="group" aria-label="Horarios rápidos">
+                            {quick.map(([key, label, value]) => { const v = value(); return <button type="button" key={key} className={start === v ? "is-active" : ""} onClick={() => setStart(v)}>{label}</button>; })}
+                        </div>
+                        <label className="sp-field"><span>Fecha y hora de inicio</span><input id="start" type="datetime-local" name="fecha_inicio" required value={start} min={soon(1)} onChange={(e) => setStart(e.target.value)} /></label>
+                        <p className="sp-hint">Zona horaria: {timezone}. Si a esa hora hay otro video, este espera su turno; un directo siempre tiene prioridad.</p>
+                    </>}
+
+                    <footer className="sp-drawer__foot">
+                        <UploadProgress upload={upload} />
+                        <div className="sp-drawer__buttons">
+                            <button type="button" className="sp-btn" onClick={onClose} disabled={submitting}>Cancelar</button>
+                            <button type="submit" className="sp-btn is-primary" disabled={submitting || (!editing && uploadLimits.noSpace)}>{submitting ? (editing ? "Guardando…" : "Subiendo…") : editing ? "Guardar cambios" : catalog ? "Subir video" : "Subir y programar emisión"}</button>
+                        </div>
+                    </footer>
+                </form>
+            </section>
+            </div>
+        </div>,
+        document.body,
+    );
+}
+
+export default function ScheduledStudio({
+    action, adAction, ads = [], progressUrl, csrf, timezone, categories, events, pagination, old, errors, success,
+    summary, channelUrl, uploadLimits, agenda = [], adsReady = 0, faculties = [], careers = [],
+}) {
     const [eventRows, setEventRows] = useState(events);
     const [adRows, setAdRows] = useState(ads);
-    const [activePanel, setActivePanel] = useState("form");
+    const initialTab = typeof window !== "undefined" && window.location.hash === "#schedule-ads" ? "ads" : "agenda";
+    const [tab, setTab] = useState(initialTab);
+    const [drawer, setDrawer] = useState((errors.length > 0 && !!old.titulo) || (typeof window !== "undefined" && window.location.hash === "#programar"));
+    const [start, setStart] = useState(old.fecha_inicio || "");
+    const [, tick] = useState(0);
+    useEffect(() => { const t = window.setInterval(() => tick((n) => n + 1), 30000); return () => window.clearInterval(t); }, []);
     const hasConversions = eventRows.some((event) => ["pending", "processing"].includes(event.state))
         || adRows.some((ad) => ["pending", "processing"].includes(ad.status));
-    useEffect(() => {
-        if (!file) {
-            setPreview("");
-            return;
-        }
-        const url = URL.createObjectURL(file);
-        setPreview(url);
-        return () => URL.revokeObjectURL(url);
-    }, [file]);
-    useEffect(() => {
-        if (!thumbnail) {
-            setThumbnailPreview("");
-            return;
-        }
-        const url = URL.createObjectURL(thumbnail);
-        setThumbnailPreview(url);
-        return () => URL.revokeObjectURL(url);
-    }, [thumbnail]);
     useEffect(() => {
         if (!hasConversions || !progressUrl) return;
         const controller = new AbortController();
@@ -254,522 +454,153 @@ export default function ScheduledStudio({
                 setEventRows((rows) => rows.map((event) => {
                     const current = data.events?.[event.id];
                     if (!current) return event;
-                    const state = current.status === "ready"
-                        ? (["pending", "processing", "failed"].includes(event.state) ? "ready" : event.state)
-                        : current.status;
+                    const state = current.status === "ready" ? (["pending", "processing", "failed"].includes(event.state) ? "ready" : event.state) : current.status;
                     return { ...event, state, progress: current.progress, error: current.error };
                 }));
-                setAdRows((rows) => rows.map((ad) => data.ads?.[ad.id]
-                    ? { ...ad, status: data.ads[ad.id].status, progress: data.ads[ad.id].progress, error: data.ads[ad.id].error }
-                    : ad));
-            } catch (error) { if (error.name !== "AbortError") { /* Retry on next poll. */ } }
+                setAdRows((rows) => rows.map((ad) => data.ads?.[ad.id] ? { ...ad, status: data.ads[ad.id].status, progress: data.ads[ad.id].progress, error: data.ads[ad.id].error } : ad));
+            } catch (error) { if (error.name !== "AbortError") { /* Se reintenta en la siguiente consulta. */ } }
         };
         refresh();
         const timer = window.setInterval(refresh, 5000);
         return () => { controller.abort(); window.clearInterval(timer); };
     }, [hasConversions, progressUrl]);
-    const choose = (event) => {
-        const selected = event.target.files[0];
-        setDuration(0);
-        const error =
-            selected &&
-            (!/\.(mp4|m4v|mov|mkv|webm|avi|wmv|mpeg|mpg)$/i.test(selected.name)
-                ? "Selecciona MP4, MOV, MKV, WebM, AVI, WMV o MPEG."
-                : selected.size > uploadLimits.maxBytes
-                  ? `El video supera el límite de ${uploadLimits.maxMb} MB de este servidor.`
-                  : "");
-        event.target.setCustomValidity(error || "");
-        setFileError(error || "");
-        setFile(error ? null : selected || null);
-        reset();
-    };
-    const complete = [!!title.trim() && !!category, !!date, !!file].filter(
-        Boolean,
-    ).length;
-    const chooseThumbnail = (event) => {
-        const selected = event.target.files[0];
-        const error = selected && (!/\.(jpe?g|png|webp)$/i.test(selected.name)
-            ? "Selecciona una imagen JPG, PNG o WebP."
-            : selected.size > 2 * 1024 * 1024
-              ? "La imagen de portada no puede superar los 2 MB."
-              : "");
-        event.target.setCustomValidity(error || "");
-        setThumbnailError(error || "");
-        setThumbnail(error ? null : selected || null);
-    };
-    const coverageEnd = summary.endsAt
-        ? new Date(summary.endsAt).toLocaleString("es-EC", { dateStyle: "short", timeStyle: "short" })
-        : null;
-    const firstGap = summary.firstGapAt
-        ? new Date(summary.firstGapAt).toLocaleString("es-EC", { dateStyle: "short", timeStyle: "short" })
-        : null;
+    const openDrawer = (at) => { if (at) setStart(at); setDrawer(true); };
+
+    // Agenda con huecos libres entre emisiones.
+    const now = Date.now();
+    const rows = [];
+    let cursor = now;
+    for (const item of agenda) {
+        const s = new Date(item.startsAt).getTime(), e = new Date(item.endsAt).getTime();
+        if (e <= now) continue;
+        if (s - cursor > 60000) rows.push({ type: "gap", from: cursor, to: s });
+        rows.push({ type: "item", item, from: s });
+        cursor = Math.max(cursor, e);
+    }
+    rows.push({ type: "gap", from: cursor, to: null });
+    const days = [];
+    for (const row of rows) {
+        const key = dayKey(new Date(Math.max(row.from, now)), timezone);
+        let day = days.find((d) => d.key === key);
+        if (!day) days.push(day = { key, rows: [] });
+        day.rows.push(row);
+    }
+    const onAir = agenda.find((i) => i.state === "playing" || i.state === "paused");
+    const preparing = eventRows.filter((e) => ["pending", "processing", "failed"].includes(e.state));
+    const endsAtText = summary.endsAt && new Date(summary.endsAt).getTime() > now
+        ? `${dayLabel(dayKey(new Date(summary.endsAt), timezone), timezone)} · ${clock(summary.endsAt, timezone)}` : "Nada programado";
+    const gapStartValue = (from) => toInput(new Date(Math.ceil(Math.max(from, now + 2 * 60000) / 60000) * 60000), timezone);
+
     return (
-        <div className="studio-page schedule-page schedule-react">
-            <div className="studio-heading">
+        <div className="studio-page schedule-page sp">
+            <header className="sp-head">
                 <div>
-                    <p className="studio-eyebrow">TU SEÑAL, A TU TIEMPO</p>
-                    <h1>
-                        Contenido programado
-                        <span className="studio-heading-dot">.</span>
-                    </h1>
-                    <p>
-                        Prepara tu contenido hoy. Compártelo con todos en el
-                        momento indicado.
-                    </p>
+                    <p className="sp-eyebrow">Programación del canal</p>
+                    <h1>Parrilla 24/7</h1>
+                    <p className="sp-lead">Sube videos y elige cuándo salen al aire. Los huecos se cubren con publicidad institucional.</p>
                 </div>
-                <span className="schedule-pill">
-                    <Icon name="clock" size={14} /> Emisiones pregrabadas
-                </span>
-            </div>
-            <nav className="schedule-quick-nav" aria-label="Navegación rápida de la parrilla">
-                <button type="button" aria-pressed={activePanel === "form"} onClick={() => setActivePanel("form")}><Icon name="plus" size={17} /> Nueva programación</button>
-                <button type="button" aria-pressed={activePanel === "events"} onClick={() => setActivePanel("events")}><Icon name="clock" size={17} /> Eventos programados <span className="schedule-quick-nav-count">{pagination.total}</span></button>
-                <button type="button" aria-pressed={activePanel === "ads"} onClick={() => setActivePanel("ads")}><span className="schedule-quick-nav-ad" aria-hidden="true">P</span> Anuncios institucionales <span className="schedule-quick-nav-count">{adRows.length}</span></button>
-                <button type="button" onClick={() => document.getElementById("schedule-summary")?.scrollIntoView({ behavior: "smooth", block: "start" })}><Icon name="chart" size={17} /> Resumen de la señal</button>
+                <div className="sp-head__actions">
+                    <a className="sp-btn" href={channelUrl} target="_blank" rel="noopener"><SIcon name="out" />Ver la señal</a>
+                    <button type="button" className="sp-btn is-primary" onClick={() => openDrawer()}><SIcon name="plus" />Programar video</button>
+                </div>
+            </header>
+            {success && <p className="studio-alert" role="status">{success}</p>}
+            {errors.length > 0 && <div className="uebtv-form-errors" role="alert">{errors.map((error, i) => <p key={i}>{error}</p>)}</div>}
+
+            <section className="sp-status" aria-label="Estado de la señal">
+                <div className={`sp-stat ${onAir ? "is-live" : ""}`}>
+                    <span className="sp-stat__icon"><SIcon name="tv" /></span>
+                    <span><small>Al aire ahora</small><strong>{onAir ? onAir.title : adsReady ? "Publicidad institucional" : "Sin emisión"}</strong>{onAir && <em>{onAir.state === "paused" ? "En pausa por un directo" : `Termina a las ${clock(onAir.endsAt, timezone)}`}</em>}</span>
+                </div>
+                <div className="sp-stat"><span className="sp-stat__icon"><SIcon name="calendar" /></span><span><small>Programado hasta</small><strong>{endsAtText}</strong></span></div>
+                <div className={`sp-stat ${preparing.some((e) => e.state === "failed") ? "is-bad" : ""}`}><span className="sp-stat__icon"><SIcon name="spin" /></span><span><small>En preparación</small><strong>{preparing.length ? `${preparing.length} ${preparing.length === 1 ? "video" : "videos"}` : "Ninguno"}</strong></span></div>
+                <div className="sp-stat"><span className="sp-stat__icon"><SIcon name="megaphone" /></span><span><small>Publicidad activa</small><strong>{adsReady ? `${adsReady} ${adsReady === 1 ? "anuncio" : "anuncios"}` : "Ninguna"}</strong></span></div>
+            </section>
+
+            <nav className="sp-tabs" aria-label="Navegación rápida de la parrilla">
+                <button type="button" aria-pressed={tab === "agenda"} onClick={() => setTab("agenda")}><SIcon name="calendar" />Agenda</button>
+                <button type="button" aria-pressed={tab === "events"} onClick={() => setTab("events")}><SIcon name="list" />Todos los videos <b>{pagination.total}</b></button>
+                <button type="button" aria-pressed={tab === "ads"} onClick={() => setTab("ads")}><SIcon name="megaphone" />Publicidad <b>{adRows.length}</b></button>
             </nav>
-            {success && (
-                <p className="studio-alert" role="status">
-                    {success}
-                </p>
-            )}
-            {errors.length > 0 && (
-                <div className="uebtv-form-errors" role="alert">
-                    {errors.map((error, i) => (
-                        <p key={i}>{error}</p>
-                    ))}
-                </div>
-            )}
-            <div
-                id="schedule-summary"
-                className="schedule-totals"
-                aria-label="Duración de la programación"
-            >
-                <article>
-                    <small>CONTENIDO LISTO</small>
-                    <strong>{durationLabel(summary.totalSeconds)}</strong>
-                    <p>
-                        {summary.count} videos disponibles, de todas las
-                        páginas.
-                    </p>
-                </article>
-                <article>
-                    <small>POR EMITIR</small>
-                    <strong>{durationLabel(summary.remainingSeconds)}</strong>
-                    <p>
-                        Tiempo de video pendiente; no incluye directos ni
-                        esperas.
-                    </p>
-                </article>
-                <article className={firstGap && !summary.hasAdFallback ? "has-coverage-gap" : ""}>
-                    <small>COBERTURA PREVISTA · PRÓXIMAS 24 H</small>
-                    <strong>{firstGap && !summary.hasAdFallback ? `Hueco: ${firstGap}` : summary.hasAdFallback ? "Continuidad con anuncios" : "Sin huecos previstos"}</strong>
-                    <p>{summary.hasAdFallback
-                        ? `La publicidad institucional activa cubre los huecos; los videos llegan hasta ${coverageEnd || "la hora programada"}.`
-                        : firstGap
-                          ? "Sin publicidad activa, la señal quedará en espera desde esta hora si no hay un directo."
-                          : `Los videos cubren las próximas 24 horas. Último fin: ${coverageEnd}.`}</p>
-                </article>
-            </div>
-            <div
-                className="schedule-progress"
-                aria-label={`${complete} de 3 secciones completadas`}
-            >
-                <span>Preparación de la emisión</span>
-                <div>
-                    {[[!!title.trim() && !!category, "Contenido"], [!!date, "Horario"], [!!file, "Video"]].map(([done, label], i) => (
-                        <span key={label} className={done ? "is-complete" : ""}>
-                            <i>{done ? <Icon name="check" size={13} /> : i + 1}</i>{label}
-                        </span>
-                    ))}
-                </div>
-                <small>{complete} / 3</small>
-            </div>
-            {activePanel === "form" && uploadLimits.serverLimited && (
-                <p className="studio-alert" role="status">
-                    El servidor permite actualmente {uploadLimits.maxMb} MB por
-                    video. Para cargar hasta 500 MB, amplía upload_max_filesize
-                    y post_max_size y reinicia el servidor PHP.
-                </p>
-            )}
-            {activePanel === "form" && <div className="schedule-layout">
-                <form
-                    id="schedule-program-form"
-                    className="schedule-form"
-                    method="POST"
-                    action={action}
-                    encType="multipart/form-data"
-                    onSubmit={submit}
-                    aria-busy={submitting}
-                >
-                    <input type="hidden" name="_token" value={csrf} />
-                    <Section
-                        number="01"
-                        title="Dale identidad a tu emisión"
-                        subtitle="Así conocerá tu contenido la comunidad."
-                    >
-                        <Field id="title" label="Título de la emisión">
-                            <input
-                                id="title"
-                                name="titulo"
-                                required
-                                maxLength={255}
-                                value={title}
-                                onChange={(e) => setTitle(e.target.value)}
-                                placeholder="Un título que invite a descubrir"
-                            />
-                        </Field>
-                        <Field id="description" label="Descripción" optional>
-                            <textarea
-                                id="description"
-                                name="descripcion"
-                                rows={4}
-                                maxLength={20000}
-                                defaultValue={old.descripcion || ""}
-                                placeholder="Cuéntale a tu audiencia qué va a encontrar…"
-                            />
-                        </Field>
-                        <Field id="category" label="Categoría">
-                            <select
-                                id="category"
-                                name="categoria_id"
-                                required
-                                value={category}
-                                onChange={(e) => setCategory(e.target.value)}
-                            >
-                                <option value="">
-                                    Selecciona una categoría
-                                </option>
-                                {categories.map((c) => (
-                                    <option key={c.id} value={c.id}>
-                                        {c.nombre}
-                                    </option>
-                                ))}
-                            </select>
-                        </Field>
-                    </Section>
-                    <Section
-                        number="02"
-                        title="Elige el momento"
-                        subtitle="Hora mínima de inicio. Si hay otra emisión, el video espera su turno."
-                    >
-                        <Field id="start" label="Fecha y hora de inicio">
-                            <input
-                                id="start"
-                                type="datetime-local"
-                                name="fecha_inicio"
-                                required
-                                value={date}
-                                onChange={(e) => setDate(e.target.value)}
-                                aria-describedby="schedule-zone"
-                            />
-                            <small id="schedule-zone" className="schedule-zone">
-                                Zona horaria: <strong>{timezone}</strong>.
-                                Introduce la hora en esta zona.
-                            </small>
-                        </Field>
-                    </Section>
-                    <Section
-                        number="03"
-                        title="Agrega tu video"
-                        subtitle="Convertiremos tu archivo a un video optimizado para la web."
-                    >
-                        <div className="schedule-thumbnail-field">
-                            <label htmlFor="schedule-thumbnail">Imagen de portada del catálogo <span>Opcional</span></label>
-                            <p>Esta imagen aparecerá en la tarjeta del video, como portada de los eventos en vivo.</p>
-                            <input
-                                ref={thumbnailInput}
-                                id="schedule-thumbnail"
-                                type="file"
-                                name="miniatura"
-                                accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
-                                onChange={chooseThumbnail}
-                                aria-describedby="schedule-thumbnail-help schedule-thumbnail-error"
-                            />
-                            <small id="schedule-thumbnail-help">JPG, PNG o WebP · Máximo 2 MB</small>
-                            {thumbnail && <div className="schedule-thumbnail-selected" role="status">
-                                <img src={thumbnailPreview} alt="Vista previa de la portada elegida" />
-                                <span>{thumbnail.name}</span>
-                                <button type="button" onClick={() => {
-                                    setThumbnail(null);
-                                    setThumbnailError("");
-                                    if (thumbnailInput.current) {
-                                        thumbnailInput.current.value = "";
-                                        thumbnailInput.current.setCustomValidity("");
-                                    }
-                                }}>Quitar</button>
-                            </div>}
-                            <p id="schedule-thumbnail-error" className="schedule-file-error" role="alert">{thumbnailError}</p>
-                        </div>
-                        <div
-                            className={`schedule-upload ${file ? "has-file" : ""}`}
-                        >
-                            <span className="schedule-upload-icon">
-                                <Icon
-                                    name={file ? "check" : "upload"}
-                                    size={27}
-                                />
+
+            {tab === "agenda" && <div className="sp-agenda">
+                {preparing.length > 0 && <section className="sp-day" aria-labelledby="sp-prep-title">
+                    <h2 id="sp-prep-title" className="sp-day__title">En preparación <small>aparecerán en la agenda cuando estén listos</small></h2>
+                    <ul className="sp-list">
+                        {preparing.map((e) => <li key={e.id} className={`sp-row is-prep ${e.state === "failed" ? "is-bad" : ""}`}>
+                            <span className="sp-row__time"><SIcon name={e.state === "failed" ? "alert" : "spin"} /></span>
+                            <Thumb image={e.image} />
+                            <span className="sp-row__text"><strong>{e.title}</strong>
+                                {e.state === "failed" ? <small className="sp-bad">{e.error || "No se pudo convertir el video."}</small>
+                                    : <span className="sp-bar"><span style={{ width: `${e.state === "processing" ? e.progress || 0 : 0}%` }} /><small>{e.state === "processing" ? `Convirtiendo · ${e.progress || 0} %` : "En cola para convertir"}</small></span>}
                             </span>
-                            <label htmlFor="video">
-                                {file
-                                    ? "Tu video está seleccionado"
-                                    : "Selecciona el video de tu próxima emisión"}
-                            </label>
-                            <p>
-                                MP4, MOV, MKV, WebM, AVI, WMV, MPEG · Hasta{" "}
-                                {uploadLimits.maxMb} MB
-                            </p>
-                            <input
-                                id="video"
-                                type="file"
-                                name="video"
-                                accept=".mp4,.m4v,.mov,.mkv,.webm,.avi,.wmv,.mpeg,.mpg"
-                                required
-                                aria-describedby="upload-help file-error"
-                                onChange={choose}
-                            />
-                            {file && (
-                                <p className="schedule-file" role="status">
-                                    <span>{file.name}</span>
-                                    <strong>
-                                        {(file.size / 1048576).toFixed(1)} MB
-                                    </strong>
-                                </p>
-                            )}
-                        </div>
-                        <p
-                            id="file-error"
-                            role="alert"
-                            className="schedule-file-error"
-                        >
-                            {fileError}
-                        </p>
-                        <p id="upload-help" className="schedule-help">
-                            El tamaño permitido también depende del servidor.
-                            Mantén esta página abierta hasta que termine la
-                            subida.
-                        </p>
-                    </Section>
-                    <div className="schedule-submit">
-                        <p role="status">
-                            {submitting ? (
-                                "No cierres esta página hasta completar la subida."
-                            ) : (
-                                <>
-                                    Tu contenido se mostrará como{" "}
-                                    <strong>pregrabado</strong>.
-                                </>
-                            )}
-                        </p>
-                        <UploadProgress upload={upload} />
-                        <button
-                            className="studio-button"
-                            type="submit"
-                            disabled={submitting}
-                        >
-                            {submitting
-                                ? "Subiendo…"
-                                : "Subir y programar emisión"}
-                            <Icon name="arrow" size={17} />
-                        </button>
-                    </div>
-                </form>
-                <aside
-                    className="schedule-preview"
-                    aria-label="Vista previa de la programación"
-                >
-                    {preview ? (
-                        <div className="schedule-local-preview">
-                            <video
-                                key={preview}
-                                src={preview}
-                                controls
-                                preload="metadata"
-                                aria-label="Vista previa del video seleccionado"
-                                onLoadedMetadata={(e) =>
-                                    setDuration(
-                                        Number.isFinite(
-                                            e.currentTarget.duration,
-                                        )
-                                            ? Math.ceil(
-                                                  e.currentTarget.duration,
-                                              )
-                                            : 0,
-                                    )
-                                }
-                            />
-                            <span>VISTA PREVIA LOCAL</span>
-                            <p className="schedule-help">
-                                Si el navegador no muestra este formato, podrás
-                                reproducirlo después de convertirlo.
-                            </p>
-                        </div>
-                    ) : (
-                        <div className={`schedule-preview-art ${thumbnailPreview ? "has-cover" : ""}`}>
-                            {thumbnailPreview ? <img className="schedule-preview-cover" src={thumbnailPreview} alt="" aria-hidden="true" /> : <img
-                                className="schedule-preview-logo"
-                                src={shell.logo}
-                                alt="Universidad Estatal de Bolívar"
-                                width="190"
-                                height="40"
-                            />}
-                            <span className="schedule-preview-play">
-                                <Icon />
-                            </span>
-                            <span className="schedule-preview-tag">
-                                {thumbnailPreview ? "PORTADA DEL CATÁLOGO" : "PREGRABADO · SINCRONIZADO"}
-                            </span>
-                        </div>
-                    )}
-                    <div className="schedule-preview-body">
-                        <p className="studio-eyebrow">TU PRÓXIMA EMISIÓN</p>
-                        <h2>
-                            {title.trim() || "Una nueva historia por compartir"}
-                        </h2>
-                        {category && (
-                            <span className="schedule-category">
-                                {
-                                    categories.find(
-                                        (c) =>
-                                            String(c.id) === String(category),
-                                    )?.nombre
-                                }
-                            </span>
-                        )}
-                        <p className="schedule-preview-date">
-                            <Icon name="clock" size={15} />
-                            <span>
-                                {date
-                                    ? date.replace("T", " · ")
-                                    : "Fecha y hora por definir"}
-                            </span>
-                        </p>
-                        <small>{timezone}</small>
-                        {duration > 0 && (
-                            <p className="schedule-help">
-                                Duración estimada:{" "}
-                                <strong>{durationLabel(duration)}</strong>. Se
-                                verifica al guardar.
-                            </p>
-                        )}
-                    </div>
-                    <div className="schedule-guide">
-                        <h3>Así lo verá tu audiencia</h3>
-                        <ol>
-                            {[
-                                [
-                                    "Antes del estreno",
-                                    "La sala anuncia la fecha de inicio.",
-                                ],
-                                [
-                                    "El directo tiene prioridad",
-                                    "El video se pausa y continúa desde ese punto al terminar el directo.",
-                                ],
-                                [
-                                    "Disponible después",
-                                    "Al finalizar, se puede ver desde el inicio.",
-                                ],
-                            ].map(([heading, text], i) => (
-                                <li key={heading}>
-                                    <span>{i + 1}</span>
-                                    <div>
-                                        <strong>{heading}</strong>
-                                        <p>{text}</p>
-                                    </div>
-                                </li>
-                            ))}
-                        </ol>
-                    </div>
-                </aside>
+                            <span className="sp-row__state">{e.state === "failed" ? <span className="sp-badge is-failed">Error</span> : <span className={`sp-badge is-${e.state}`}>{e.state === "processing" ? "Convirtiendo" : "En cola"}</span>}</span>
+                            <span className="sp-row__actions">{e.state === "failed" && <Action url={e.retryUrl} className="studio-icon-action" ariaLabel={`Reintentar ${e.title}`} tooltip="Reintentar"><SIcon name="retry" /></Action>}</span>
+                        </li>)}
+                    </ul>
+                </section>}
+                {days.map((day) => <section className="sp-day" key={day.key} aria-label={dayLabel(day.key, timezone)}>
+                    <h2 className="sp-day__title">{dayLabel(day.key, timezone)}</h2>
+                    <ul className="sp-list">
+                        {day.rows.map((row, i) => row.type === "item" ? (
+                            <li key={`i-${row.item.id}`} className={`sp-row ${row.item.state !== "upcoming" ? "is-live" : ""}`}>
+                                <span className="sp-row__time"><strong>{clock(row.item.startsAt, timezone)}</strong><small>{clock(row.item.endsAt, timezone)}</small></span>
+                                <Thumb image={row.item.image} />
+                                <span className="sp-row__text">
+                                    <strong>{row.item.title}</strong>
+                                    <small>{[row.item.category, fmtDur(row.item.duration)].filter(Boolean).join(" · ")}</small>
+                                </span>
+                                <span className="sp-row__state">{row.item.state === "playing" ? <span className="sp-badge is-live"><i />AL AIRE</span> : row.item.state === "paused" ? <span className="sp-badge is-paused">EN PAUSA</span> : <span className="sp-badge">Programado</span>}</span>
+                                <span className="sp-row__actions">
+                                    <a className="studio-icon-action" href={row.item.url} target="_blank" rel="noopener" aria-label={`Ver la sala de ${row.item.title}`}><SIcon name="eye" /><span className="studio-action-tooltip" role="tooltip">Ver sala</span></a>
+                                    <a className="studio-icon-action" href={row.item.adminUrl} aria-label={`Detalles de ${row.item.title}`}><SIcon name="gear" /><span className="studio-action-tooltip" role="tooltip">Detalles</span></a>
+                                    <Action url={row.item.deleteUrl} method="DELETE" className="studio-icon-action is-danger" ariaLabel={`Eliminar ${row.item.title}`} tooltip="Eliminar" confirm={`¿Eliminar «${row.item.title}» de la parrilla? Se quitará también del catálogo.`}><SIcon name="trash" /></Action>
+                                </span>
+                            </li>
+                        ) : (
+                            <li key={`g-${i}`} className="sp-gap">
+                                <span className="sp-row__time"><strong>{clock(new Date(Math.max(row.from, now)), timezone)}</strong>{row.to && <small>{clock(row.to, timezone)}</small>}</span>
+                                <span className="sp-gap__text">
+                                    <strong>{row.to ? `Libre · ${fmtDur((row.to - Math.max(row.from, now)) / 1000)}` : "Libre desde aquí"}</strong>
+                                    <small>{adsReady ? "Se cubre con publicidad institucional" : "La señal mostrará la pantalla de espera"}</small>
+                                </span>
+                                <button type="button" className="sp-btn is-ghost" onClick={() => openDrawer(gapStartValue(row.from))}><SIcon name="plus" />Programar aquí</button>
+                            </li>
+                        ))}
+                    </ul>
+                </section>)}
             </div>}
-            {activePanel === "events" && <section id="schedule-events" className="studio-panel schedule-list" aria-labelledby="schedule-events-title">
-                <div className="studio-panel-heading">
-                    <div>
-                        <p className="studio-eyebrow">TU CARTELERA</p>
-                        <h2 id="schedule-events-title">Emisiones programadas</h2>
-                        <a className="studio-text-link" href={action}>
-                            Actualizar estado ↻
-                        </a>
-                    </div>
-                    <span className="schedule-count">
-                        {pagination.total} emisiones
-                    </span>
-                </div>
-                {eventRows.length ? (
-                    eventRows.map((event) => (
-                        <div className="schedule-event" key={event.id}>
-                            <div className="schedule-date">
-                                <strong>{event.day}</strong>
-                                <span>{event.month}</span>
-                            </div>
-                            <div className="studio-event-info">
-                                <h3>{event.title}</h3>
-                                <p>
-                                    {event.time} · {event.minutes} min ·
-                                    Pregrabado
-                                </p>
-                                {event.estimatedStart && (
-                                    <small>
-                                        Inicio estimado:{" "}
-                                        {new Date(
-                                            event.estimatedStart,
-                                        ).toLocaleString("es-EC")}
-                                    </small>
-                                )}
-                            </div>
-                            {event.optimizedBytes && (
-                                <small>
-                                    {(event.optimizedBytes / 1048576).toFixed(
-                                        1,
-                                    )}{" "}
-                                    MB optimizado
-                                    {event.sourceBytes
-                                        ? ` · Original ${(event.sourceBytes / 1048576).toFixed(1)} MB`
-                                        : ""}
-                                </small>
-                            )}
-                            {event.error && <p role="status">{event.error}</p>}
+
+            {tab === "events" && <section id="schedule-events" className="sp-all" aria-labelledby="schedule-events-title">
+                <h2 id="schedule-events-title" className="ct-sr">Todos los videos programados</h2>
+                {eventRows.length ? <ul className="sp-list">
+                    {eventRows.map((event) => <li className={`sp-row schedule-event ${event.state === "failed" ? "is-bad" : ""}`} key={event.id}>
+                        <span className="sp-row__time"><strong>{event.day}/{event.month.slice(0, 2)}</strong><small>{event.time}</small></span>
+                        <Thumb image={event.image} />
+                        <span className="sp-row__text">
+                            <strong>{event.title}</strong>
+                            <small>{[event.category, `${event.minutes} min`, event.estimatedStart ? `sale ${new Date(event.estimatedStart).toLocaleString("es-EC", { timeZone: timezone, dateStyle: "short", timeStyle: "short" })}` : null].filter(Boolean).join(" · ")}</small>
                             <ConversionProgress status={event.state} percent={event.progress} />
-                            {event.state === "failed" && (
-                                <Action url={event.retryUrl}>Reintentar</Action>
-                            )}
-                            <span className="schedule-pill">
-                                {stateLabels[event.state]}
-                            </span>
-                            <a className="studio-text-link" href={event.url}>
-                                Abrir sala ↗
-                            </a>
-                        </div>
-                    ))
-                ) : (
-                    <div className="schedule-empty">
-                        <span>
-                            <Icon name="clock" size={26} />
+                            {event.error && <small className="sp-bad">{event.error}</small>}
                         </span>
-                        <h3>Tu próxima emisión empieza aquí</h3>
-                        <p>
-                            Sube tu primer video y reserva un momento para
-                            conectar con la comunidad.
-                        </p>
-                    </div>
-                )}
-                {pagination.last > 1 && (
-                    <nav
-                        className="schedule-pagination"
-                        aria-label="Páginas de emisiones"
-                    >
-                        {pagination.previous && (
-                            <a href={pagination.previous}>← Anterior</a>
-                        )}
-                        <span>
-                            Página {pagination.current} de {pagination.last}
+                        <span className="sp-row__state"><span className={`sp-badge is-${event.state}`}>{stateLabels[event.state]}</span></span>
+                        <span className="sp-row__actions">
+                            {event.state === "failed" && <Action url={event.retryUrl} className="studio-icon-action" ariaLabel={`Reintentar ${event.title}`} tooltip="Reintentar"><SIcon name="retry" /></Action>}
+                            <a className="studio-icon-action" href={event.url} target="_blank" rel="noopener" aria-label={`Ver la sala de ${event.title}`}><SIcon name="eye" /><span className="studio-action-tooltip" role="tooltip">Ver sala</span></a>
+                            {event.adminUrl && <a className="studio-icon-action" href={event.adminUrl} aria-label={`Detalles de ${event.title}`}><SIcon name="gear" /><span className="studio-action-tooltip" role="tooltip">Detalles</span></a>}
+                            {event.deleteUrl && <Action url={event.deleteUrl} method="DELETE" className="studio-icon-action is-danger" ariaLabel={`Eliminar ${event.title}`} tooltip="Eliminar" confirm={`¿Eliminar «${event.title}»? Se quitará de la parrilla y del catálogo.`}><SIcon name="trash" /></Action>}
                         </span>
-                        {pagination.next && (
-                            <a href={pagination.next}>Siguiente →</a>
-                        )}
-                    </nav>
-                )}
+                    </li>)}
+                </ul> : <div className="sp-empty"><SIcon name="calendar" /><h3>Aún no hay videos programados</h3><p>Sube el primero y elige cuándo sale al aire.</p><button type="button" className="sp-btn is-primary" onClick={() => openDrawer()}><SIcon name="plus" />Programar video</button></div>}
+                {pagination.last > 1 && <nav className="schedule-pagination" aria-label="Páginas de emisiones">
+                    {pagination.previous && <a href={pagination.previous}>← Anterior</a>}<span>Página {pagination.current} de {pagination.last}</span>{pagination.next && <a href={pagination.next}>Siguiente →</a>}
+                </nav>}
             </section>}
-            {activePanel === "ads" && <InstitutionalAds action={adAction} csrf={csrf} ads={adRows} old={old} uploadLimits={uploadLimits} />}
+
+            {tab === "ads" && <InstitutionalAds action={adAction} csrf={csrf} ads={adRows} old={old} uploadLimits={uploadLimits} />}
+
+            <ProgramDrawer open={drawer} onClose={() => setDrawer(false)} action={action} csrf={csrf} categories={categories} faculties={faculties} careers={careers} timezone={timezone}
+                uploadLimits={uploadLimits} old={old} start={start} setStart={setStart} endsAt={summary.endsAt} />
         </div>
     );
 }

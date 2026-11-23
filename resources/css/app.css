@@ -13,5 +13,6 @@
 @import "./watch-layout.css";
 @import "./catalog-layout.css";
 @import "./auth-modern.css";
+@import "./admin-panel.css";
 /* Subtítulos legibles sobre cualquier imagen (WCAG 1.2.2). */
 .uebtv-video::cue { background:rgba(0,0,0,.78); color:#fff; font-size:1.05em; line-height:1.35; }

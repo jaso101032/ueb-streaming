@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Token, Feedback, Action, Field, useShell } from "./shared";
+import { Token, Feedback, Action, Field, useShell, askConfirm, PageHeader } from "./shared";
 const AuthIcon = ({ name }) => {
     const paths = {
         mail: <><rect x="3" y="5" width="18" height="14" rx="2.5" /><path d="m4 7 8 6 8-6" /></>,
@@ -204,14 +204,8 @@ export default function Auth({ mode, action, name, email, token, forgotUrl }) {
 export function Profile(p) {
     const [deleting, setDeleting] = useState(false);
     return (
-        <div className="studio-page">
-            <div className="studio-heading">
-                <div>
-                    <p className="studio-eyebrow">MI CUENTA</p>
-                    <h1>Tu espacio personal.</h1>
-                    <p>Actualiza tu información y protege tu acceso.</p>
-                </div>
-            </div>
+        <div className="studio-page pg">
+            <PageHeader eyebrow="Mi cuenta" title="Mi perfil" description="Actualiza tus datos y tu contraseña." />
             <Feedback />
             <div className="react-profile-grid">
                 <section className="studio-panel react-panel">
@@ -301,13 +295,14 @@ export function Profile(p) {
                             className="react-form"
                             action={p.deleteUrl}
                             method="POST"
-                            onSubmit={(e) => {
-                                if (
-                                    !window.confirm(
-                                        "¿Eliminar tu cuenta permanentemente?",
-                                    )
-                                )
-                                    e.preventDefault();
+                            onSubmit={async (e) => {
+                                const form = e.currentTarget;
+                                if (form.dataset.confirmed) return;
+                                e.preventDefault();
+                                if (await askConfirm("¿Eliminar tu cuenta permanentemente?")) {
+                                    form.dataset.confirmed = "1";
+                                    form.requestSubmit();
+                                }
                             }}
                         >
                             <Token method="DELETE" />

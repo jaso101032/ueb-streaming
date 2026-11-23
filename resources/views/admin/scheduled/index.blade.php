@@ -16,6 +16,8 @@
                 'deleteUrl' => route('admin.ads.destroy', $ad),
             ])->values(),
             'timezone' => config('app.timezone'), 'categories' => $categories->map->only(['id', 'nombre'])->values(),
+            'faculties' => \App\Models\Facultad::orderBy('nombre')->get(['id', 'nombre']),
+            'careers' => \App\Models\Carrera::orderBy('nombre')->get(['id', 'nombre', 'facultad_id']),
             'old' => session()->getOldInput(), 'errors' => $errors->all(), 'success' => session('success'),
             'events' => $events->map(fn ($event) => [
                 'id' => $event->id, 'title' => $event->titulo,
@@ -27,7 +29,21 @@
                 'error' => $event->scheduledVideo->processing_error,
                 'retryUrl' => route('admin.scheduled.retry', $event),
                 'sourceBytes' => $event->scheduledVideo->source_bytes, 'optimizedBytes' => $event->scheduledVideo->optimized_bytes, 'url' => route('eventos.show', $event),
+                'image' => $event->miniatura ? asset('storage/'.$event->miniatura) : null, 'category' => $event->categoria?->nombre,
+                'adminUrl' => route('admin.eventos.show', $event), 'deleteUrl' => route('admin.eventos.destroy', $event),
             ])->values(),
+            // Agenda del canal: lo que está al aire y lo que viene, en orden.
+            'agenda' => collect($timeline)->filter(fn ($i) => in_array($i['state'], ['playing', 'paused', 'upcoming'], true))
+                ->sortBy('starts_at')->values()->map(fn ($i) => [
+                    'id' => $i['event']->id, 'title' => $i['event']->titulo, 'state' => $i['state'],
+                    'startsAt' => $i['starts_at'], 'endsAt' => $i['ends_at'], 'duration' => $i['duration'],
+                    'category' => $i['event']->categoria?->nombre,
+                    'image' => $i['event']->miniatura ? asset('storage/'.$i['event']->miniatura) : null,
+                    'url' => route('eventos.show', $i['event']), 'adminUrl' => route('admin.eventos.show', $i['event']),
+                    'deleteUrl' => route('admin.eventos.destroy', $i['event']),
+                ]),
+            'now' => now()->toIso8601String(),
+            'adsReady' => $ads->where('is_active', true)->where('processing_status', 'ready')->count(),
             'pagination' => ['total' => $events->total(), 'current' => $events->currentPage(), 'last' => $events->lastPage(),
                 'previous' => $events->previousPageUrl(), 'next' => $events->nextPageUrl()],
         ];

@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Request;
+
 use App\Http\Requests\EventoRequest;
 use App\Models\Carrera;
 use App\Models\Categoria;
@@ -16,12 +18,25 @@ use Throwable;
 
 class EventoController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $eventos = Evento::with(['facultad', 'carrera', 'categoria', 'organizador', 'transmision', 'scheduledVideo'])
-            ->latest()->paginate(10);
+        $filters = $request->validate([
+            'q' => ['nullable', 'string', 'max:120'],
+            'estado' => ['nullable', 'in:en_vivo,programado,finalizado,cancelado'],
+        ]);
+        $search = trim($filters['q'] ?? '');
+        $base = Evento::query()->when($search !== '', function ($query) use ($search) {
+            $term = str_replace(['!', '%', '_'], ['!!', '!%', '!_'], mb_strtolower($search));
+            $query->whereRaw("LOWER(titulo) LIKE ? ESCAPE '!'", ['%'.$term.'%']);
+        });
+        // Conteos por estado (con la búsqueda aplicada) para las pestañas.
+        $counts = ['todos' => (clone $base)->count()] + (clone $base)->selectRaw('estado, COUNT(*) as total')
+            ->groupBy('estado')->pluck('total', 'estado')->map(fn ($n) => (int) $n)->all();
+        $eventos = $base->with(['facultad', 'carrera', 'categoria', 'organizador', 'transmision', 'scheduledVideo'])
+            ->when($filters['estado'] ?? null, fn ($query, $estado) => $query->where('estado', $estado))
+            ->latest()->paginate(10)->withQueryString();
 
-        return view('admin.eventos.index', compact('eventos'));
+        return view('admin.eventos.index', ['eventos' => $eventos, 'filters' => $filters, 'counts' => $counts]);
     }
 
     private function formData(Evento $evento): array
@@ -166,12 +181,19 @@ class EventoController extends Controller
         return $path;
     }
 
-    public function destroy(Evento $evento)
+    public function destroy(Evento $evento, \App\Services\StorageCleanup $cleanup)
     {
         \Illuminate\Support\Facades\Gate::authorize('delete-event');
-        $evento->delete();
-        Audit::record('evento.eliminado', $evento);
+        // Eliminar es borrar todo: el evento, su video y sus archivos.
+        if ($reason = $cleanup->inUse($evento)) {
+            return back(303)->withErrors(['evento' => $reason]);
+        }
+        $bytes = $cleanup->eventBytes($evento);
+        $cleanup->purgeEvent($evento);
+        \App\Support\StorageUsage::flush();
 
-        return redirect()->route('admin.eventos.index')->with('success', 'Evento eliminado correctamente.');
+        return redirect()->route('admin.eventos.index')->with('success', $bytes > 0
+            ? 'Evento eliminado con su video y archivos. Se liberaron '.\App\Services\StorageCleanup::human($bytes).'.'
+            : 'Evento eliminado.');
     }
 }

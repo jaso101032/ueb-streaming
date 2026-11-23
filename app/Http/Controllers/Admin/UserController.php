@@ -68,7 +68,7 @@ class UserController extends Controller
             'permissions.*' => ['string', Rule::in(User::operatorActions())],
             'permissions_present' => ['sometimes', 'boolean'],
             'chat_restricted' => ['sometimes', 'boolean'],
-            'password' => ['required', 'confirmed', Password::min(8)->letters()->mixedCase()->numbers()->symbols()],
+            'password' => ['required', 'confirmed', Password::defaults()],
         ]);
 
         $user = User::create([
@@ -95,7 +95,7 @@ class UserController extends Controller
             'permissions.*' => ['string', Rule::in(User::operatorActions())],
             'permissions_present' => ['sometimes', 'boolean'],
             'chat_restricted' => ['sometimes', 'boolean'],
-            'password' => ['nullable', 'confirmed', Password::min(8)->letters()->mixedCase()->numbers()->symbols()],
+            'password' => ['nullable', 'confirmed', Password::defaults()],
         ]);
 
         if ($usuario->is(auth()->user()) && $data['role'] !== 'admin') {

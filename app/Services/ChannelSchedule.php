@@ -17,7 +17,8 @@ class ChannelSchedule
         $cursor = 0;
         $items = [];
         $now = now()->timestamp;
-        $events = Evento::withTrashed()->whereHas('scheduledVideo')->with('scheduledVideo')
+        // Los videos solo para el catálogo no forman parte de la señal.
+        $events = Evento::withTrashed()->whereHas('scheduledVideo', fn ($q) => $q->where('on_channel', true))->with('scheduledVideo')
             ->orderBy('fecha_inicio')->orderBy('id')->get();
         foreach ($events as $event) {
             if ($event->scheduledVideo->processing_status !== 'ready') continue;
@@ -60,6 +61,8 @@ class ChannelSchedule
     public function playback(ScheduledVideo $video): array
     {
         if ($video->processing_status !== 'ready') return ['state' => $video->processing_status === 'failed' ? 'failed' : 'processing', 'position' => 0, 'duration' => $video->duration, 'server_time' => now()->toIso8601String()];
+        // Video del catálogo: disponible a demanda en cuanto está listo.
+        if ($video->isCatalogOnly()) return ['state' => 'ended', 'position' => 0, 'duration' => $video->duration, 'server_time' => now()->toIso8601String()];
         $item = $this->timeline()[$video->evento_id] ?? ['state' => 'cancelled', 'position' => 0, 'duration' => $video->duration, 'server_time' => now()->toIso8601String()];
         unset($item['event']);
 
