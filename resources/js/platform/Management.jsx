@@ -110,7 +110,7 @@ const RECORDING_STATE = {
     failed: ["No se pudo preparar la grabación", "bad"],
 };
 const PUBLICATION = {
-    pendiente: ["Pendiente de aprobación", "warn", "El público todavía no puede verla."],
+    pendiente: ["Pendiente de aprobación", "warn", "El público todavía no puede verla. Para publicarla se necesita una autorización de difusión vigente."],
     aprobada: ["Publicada", "ok", "La comunidad puede verla en el catálogo."],
     retirada: ["Retirada", "bad", "El público ya no puede verla, ni con enlace directo."],
 };
@@ -177,6 +177,44 @@ function MediaPreview({ event: e }) {
 }
 
 /** Quién puede ver la grabación y los botones para cambiarlo. */
+
+const AUTHORIZATION = {
+    vigente: ["Autorización vigente", "ok", "El evento se muestra según su visibilidad."],
+    futura: ["Autorización con fecha futura", "warn", "Solo el personal lo ve hasta esa fecha."],
+    vencida: ["Autorización vencida", "bad", "Solo el personal lo ve. Registra una autorización vigente."],
+    sin_registrar: ["Sin autorización de difusión", "bad", "Solo el personal lo ve: ni el directo ni el video se muestran al público."],
+};
+
+/** Autorización de difusión: sin ella, nada del evento se muestra al público. */
+function AuthorizationCard({ event: e }) {
+    const shell = useShell();
+    const a = e.broadcastAuthorization;
+    if (!a) return null;
+    const [label, tone, help] = AUTHORIZATION[a.status] || AUTHORIZATION.sin_registrar;
+    return (
+        <section className="vd-card vd-side-card vd-auth" aria-labelledby="vd-auth-title">
+            <h2 id="vd-auth-title" className="vd-eyebrow">Autorización de difusión</h2>
+            <p className={`vd-pub is-${tone}`} role="status"><i aria-hidden="true" /><span><strong>{label}</strong><small>{help}</small></span></p>
+            <form method="POST" action={a.updateUrl} className="vd-auth__form">
+                <input type="hidden" name="_token" value={shell.csrf} />
+                <input type="hidden" name="_method" value="PUT" />
+                <label>Responsable que autoriza<input name="autorizacion_responsable" required maxLength="255" defaultValue={a.responsable || ""} placeholder="Nombre y cargo" /></label>
+                <label>Documento de autorización<input name="autorizacion_referencia" required maxLength="255" defaultValue={a.referencia || ""} placeholder="Oficio, resolución o acta" /></label>
+                <label>Alcance<input name="autorizacion_alcance" maxLength="500" defaultValue={a.alcance || ""} placeholder="Directo, grabación, imagen y voz de participantes…" /></label>
+                <div className="vd-auth__dates">
+                    <label>Fecha<input type="date" name="autorizacion_fecha" required defaultValue={a.fecha || ""} /></label>
+                    <label>Vigente hasta<input type="date" name="autorizacion_vigencia" defaultValue={a.vigencia || ""} /></label>
+                </div>
+                <p className="vd-help">La licencia de uso no reemplaza esta autorización: la licencia indica cómo se puede reutilizar el video; la autorización, que se puede difundir.</p>
+                <div className="vd-row-actions">
+                    <button className="pg-btn is-primary" type="submit">Guardar autorización</button>
+                    {a.revokeUrl && <Action url={a.revokeUrl} method="DELETE" className="pg-btn is-danger" confirm="¿Revocar la autorización? El evento dejará de mostrarse al público de inmediato.">Revocar</Action>}
+                </div>
+            </form>
+        </section>
+    );
+}
+
 function PublicationCard({ event: e }) {
     if (!e.publication || e.recordingStatus !== "ready") return null;
     const [label, tone, help] = PUBLICATION[e.publication.status] || [e.publication.status, "muted", ""];
@@ -285,6 +323,7 @@ export function EventDetail({ event: e, videoEdit = null }) {
                     </article>
                 </div>
                 <aside className="vd-side" aria-label="Gestión del video">
+                    <AuthorizationCard event={e} />
                     <PublicationCard event={e} />
                     <FileCard event={e} />
                     {e.subtitles && (

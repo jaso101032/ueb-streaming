@@ -81,9 +81,10 @@ class RecordingProcessor
             // pending marker lets the worker retry cleanup after a crash or a
             // temporary filesystem error without re-encoding the video.
             $metadata['rawCleanupPending'] = true;
-            // By default the recording is published automatically. Events marked
-            // for editorial review wait until an administrator approves them.
-            $review = (bool) $claimed->evento?->requiere_aprobacion;
+            // The recording is published automatically only when the event has a
+            // valid broadcast authorization and no editorial review is required;
+            // otherwise it waits for an administrator.
+            $review = (bool) $claimed->evento?->requiere_aprobacion || ! $claimed->evento?->hasValidAuthorization();
             $claimed->update(['recording_status' => 'ready', 'recording_file' => $filename,
                 'recording_metadata' => $metadata, 'publicacion' => $review ? 'pendiente' : 'aprobada',
                 'publicacion_revisada_por' => null, 'publicacion_revisada_en' => null,

@@ -811,3 +811,12 @@ html body .vd .subtitle-form__actions :is(.studio-button, .studio-button-soft):h
 .sp-pair select:disabled { opacity:.6; cursor:not-allowed; }
 .sp-hint--tight { margin-top:-4px; }
 @media (max-width:640px) { .sp-pair { grid-template-columns:minmax(0, 1fr); } }
+
+/* Autorización de difusión en el detalle del evento */
+.vd-auth { justify-items:stretch; }
+.vd-auth__form { display:grid; gap:10px; width:100%; }
+.vd-auth__form label { display:grid; gap:4px; color:var(--pg-muted); font-size:12.5px; font-weight:700; }
+.vd-auth__form input { width:100%; min-height:40px; padding:8px 12px; border:1px solid var(--pg-border); border-radius:10px; background:var(--pg-surface); color:var(--pg-text); font:inherit; font-size:14px; font-weight:500; box-sizing:border-box; }
+.vd-auth__form input:focus-visible { outline:3px solid var(--pg-accent); outline-offset:1px; }
+.vd-auth__dates { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+@media (max-width: 420px) { .vd-auth__dates { grid-template-columns:1fr; } }

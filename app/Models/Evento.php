@@ -43,6 +43,10 @@ class Evento extends Model
         'requiere_aprobacion',
         'licencia',
         'autorizacion_referencia',
+        'autorizacion_responsable',
+        'autorizacion_alcance',
+        'autorizacion_fecha',
+        'autorizacion_vigencia',
         'url_transmision',
         'video_url',
         'duracion_minutos',
@@ -57,6 +61,8 @@ class Evento extends Model
         'fecha_fin' => 'datetime',
         'chat_enabled' => 'boolean',
         'requiere_aprobacion' => 'boolean',
+        'autorizacion_fecha' => 'date',
+        'autorizacion_vigencia' => 'date',
     ];
 
     /**
@@ -76,9 +82,47 @@ class Evento extends Model
 
     public const VISIBILITIES = ['publico' => 'Público', 'interno' => 'Interno (con sesión)', 'restringido' => 'Restringido (personal UEBTV)'];
 
+    /**
+     * Autorización de difusión vigente: tiene responsable, documento de
+     * referencia y fecha de emisión ya cumplida, y no ha vencido. La licencia
+     * de uso no la sustituye: autoriza la reutilización, no la difusión.
+     */
+    public function hasValidAuthorization(): bool
+    {
+        $today = now()->startOfDay();
+
+        return filled($this->autorizacion_responsable) && filled($this->autorizacion_referencia)
+            && $this->autorizacion_fecha !== null && $this->autorizacion_fecha->lte($today)
+            && ($this->autorizacion_vigencia === null || $this->autorizacion_vigencia->gte($today));
+    }
+
+    /** Estado legible de la autorización para el panel. */
+    public function authorizationStatus(): string
+    {
+        if ($this->hasValidAuthorization()) return 'vigente';
+        if (filled($this->autorizacion_responsable) && filled($this->autorizacion_referencia) && $this->autorizacion_fecha) {
+            return $this->autorizacion_fecha->isFuture() ? 'futura' : 'vencida';
+        }
+
+        return 'sin_registrar';
+    }
+
+    public function scopeAuthorized($query)
+    {
+        $today = now()->toDateString();
+
+        return $query->whereNotNull($query->qualifyColumn('autorizacion_responsable'))->where($query->qualifyColumn('autorizacion_responsable'), '!=', '')
+            ->whereNotNull($query->qualifyColumn('autorizacion_referencia'))->where($query->qualifyColumn('autorizacion_referencia'), '!=', '')
+            ->whereDate($query->qualifyColumn('autorizacion_fecha'), '<=', $today)
+            ->where(fn ($q) => $q->whereNull($query->qualifyColumn('autorizacion_vigencia'))->orWhereDate($query->qualifyColumn('autorizacion_vigencia'), '>=', $today));
+    }
+
     /** Indica si la persona puede ver este evento según su clasificación. */
     public function isVisibleTo(?User $user): bool
     {
+        // Sin autorización de difusión vigente, solo lo ve el personal.
+        if (! in_array($user?->role, ['admin', 'operador'], true) && ! $this->hasValidAuthorization()) return false;
+
         // Un video del catálogo que aún se prepara solo lo ve el equipo.
         if (! in_array($user?->role, ['admin', 'operador'], true) && $this->scheduledVideo?->isCatalogOnly()
             && $this->scheduledVideo->processing_status !== 'ready') return false;
@@ -94,7 +138,7 @@ class Evento extends Model
     {
         if (in_array($user?->role, ['admin', 'operador'], true)) return $query;
 
-        return $query->whereIn($query->qualifyColumn('visibilidad'), $user ? ['publico', 'interno'] : ['publico'])
+        return $query->authorized()->whereIn($query->qualifyColumn('visibilidad'), $user ? ['publico', 'interno'] : ['publico'])
             // Los videos del catálogo aparecen cuando terminan de prepararse.
             ->whereDoesntHave('scheduledVideo', fn ($q) => $q->where('on_channel', false)->where('processing_status', '!=', 'ready'));
     }

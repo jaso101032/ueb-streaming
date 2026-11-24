@@ -62,6 +62,9 @@ class RecordingController extends Controller
     /** Editorial approval: a technically ready recording becomes visible to its audience. */
     public function approve(Request $request, Evento $evento)
     {
+        if (! $evento->hasValidAuthorization()) {
+            return back(303)->withErrors(['publicacion' => 'Registra una autorización de difusión vigente (responsable, documento y fecha) antes de publicar la grabación.']);
+        }
         $previous = $this->review($request, $evento, 'aprobada');
         if ($previous === 'pendiente') {
             try { app(AudienceAnnouncements::class)->publish($evento, 'video'); }

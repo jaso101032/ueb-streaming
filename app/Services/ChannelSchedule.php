@@ -22,6 +22,8 @@ class ChannelSchedule
             ->orderBy('fecha_inicio')->orderBy('id')->get();
         foreach ($events as $event) {
             if ($event->scheduledVideo->processing_status !== 'ready') continue;
+            // Sin autorización de difusión vigente no sale al aire.
+            if (! $event->trashed() && $event->estado !== 'cancelado' && ! $event->hasValidAuthorization()) continue;
             $unavailable = $event->trashed() || $event->estado === 'cancelado';
             // Historical slots retain their place: deleting archives must not rewind today's channel.
             $start = max($cursor, $event->fecha_inicio->timestamp, $event->scheduledVideo->ready_at?->timestamp ?? 0);
@@ -74,7 +76,7 @@ class ChannelSchedule
         return Transmision::with('evento')->where('activo', true)->whereNull('finalizado_en')
             ->where('last_signal_at', '>', now()->subSeconds(ChannelClock::SIGNAL_TTL))
             // The 24/7 channel is public: internal or restricted events never air on it.
-            ->whereHas('evento', fn ($q) => $q->where('estado', 'en_vivo')->where('visibilidad', 'publico')->whereDoesntHave('scheduledVideo'))
+            ->whereHas('evento', fn ($q) => $q->where('estado', 'en_vivo')->where('visibilidad', 'publico')->authorized()->whereDoesntHave('scheduledVideo'))
             ->orderBy('iniciado_en')->orderBy('id')->first();
     }
 

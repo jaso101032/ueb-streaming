@@ -12,6 +12,9 @@ use Tests\TestCase;
 /** O-10: licencia de uso y referencia de autorización de cada evento. */
 class UsageLicenseTest extends TestCase
 {
+    // Revisa la licencia de uso; la autorización de difusión se prueba en PublicationAuthorizationTest.
+    protected bool $authorizeEvents = false;
+
     use RefreshDatabase;
 
     private User $admin;
@@ -64,6 +67,8 @@ class UsageLicenseTest extends TestCase
         $this->assertSame('Oficio 123-FACAGEI-2026', $event->fresh()->autorizacion_referencia);
 
         $this->get(route('admin.eventos.show', $event))->assertOk()->assertSee('Oficio 123-FACAGEI-2026', false);
+        // El público lo ve solo con una autorización de difusión vigente.
+        $event->update(['autorizacion_responsable' => 'Decanato FACAGEI', 'autorizacion_fecha' => now()->toDateString()]);
         auth()->logout();
         $this->get(route('eventos.show', $event))->assertOk()
             ->assertSee('Uso institucional · Todos los derechos reservados', false)
