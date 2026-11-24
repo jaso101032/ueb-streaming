@@ -18,6 +18,13 @@ if (config('database.default') !== 'sqlite' || ! str_contains(config('database.c
 }
 $admin = User::firstOrCreate(['email' => 'admin@ui.test'], ['name' => 'Javier Administrador', 'email' => 'admin@ui.test', 'password' => 'Browser123!', 'role' => 'admin']);
 User::firstOrCreate(['email' => 'student@ui.test'], ['name' => 'Estudiante Regular', 'email' => 'student@ui.test', 'password' => 'Browser123!', 'role' => 'estudiante']);
+// Eventos de prueba con autorización de difusión vigente (sin ella, el público no los ve).
+Evento::creating(function (Evento $e) {
+    if (array_key_exists('autorizacion_fecha', $e->getAttributes())) return;
+    $e->autorizacion_responsable ??= 'Rectorado';
+    $e->autorizacion_referencia ??= 'Oficio de prueba';
+    $e->autorizacion_fecha = now()->subDay()->toDateString();
+});
 $category = Categoria::create(['nombre' => 'Académico', 'slug' => 'academico']);
 $faculty = Facultad::create(['nombre' => 'Ingeniería', 'slug' => 'ingenieria']);
 Carrera::create(['nombre' => 'Software', 'slug' => 'software', 'facultad_id' => $faculty->id]);

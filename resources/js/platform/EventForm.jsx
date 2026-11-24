@@ -300,7 +300,8 @@ export default function EventForm({
                                     <label id="requiere_aprobacion_titulo">Publicación de la grabación</label>
                                     <input type="hidden" name="requiere_aprobacion" value="0" />
                                     <label className="uebtv-event-chat-check" htmlFor="requiere_aprobacion"><input id="requiere_aprobacion" type="checkbox" name="requiere_aprobacion" value="1" defaultChecked={Boolean(Number(v.requiere_aprobacion)) || v.requiere_aprobacion === true} /> Revisar la grabación antes de publicarla</label>
-                                    <small>Si no la marcas, la grabación se publica automáticamente al terminar. Un administrador siempre puede retirarla.</small>
+                                    <small>Si no la marcas, la grabación se publica automáticamente al terminar, siempre que el evento tenga una autorización de difusión vigente. Un administrador siempre puede retirarla.</small>
+                                    <small className="uebtv-auth-note"><strong>Autorización de difusión:</strong> después de guardar, el administrador la registra en el detalle del evento (responsable, documento, alcance, fecha y vigencia). Sin ella, el directo y la grabación solo los ve el personal.</small>
                                 </div>
                                 <Field
                                     wide

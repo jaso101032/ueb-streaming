@@ -63,6 +63,10 @@ class ReactPage
             if (auth()->user()?->role === 'admin') {
                 $ready = (bool) $recording?->recordingPath();
                 $data['usage'] = ['license' => Evento::LICENSES[$e->licencia ?? 'institucional']['name'] ?? $e->licencia, 'authorization' => $e->autorizacion_referencia];
+                $data['broadcastAuthorization'] = ['status' => $e->authorizationStatus(), 'responsable' => $e->autorizacion_responsable,
+                    'referencia' => $e->autorizacion_referencia, 'alcance' => $e->autorizacion_alcance,
+                    'fecha' => $e->autorizacion_fecha?->format('Y-m-d'), 'vigencia' => $e->autorizacion_vigencia?->format('Y-m-d'),
+                    'updateUrl' => route('admin.authorization.update', $e), 'revokeUrl' => $e->autorizacion_fecha ? route('admin.authorization.destroy', $e) : null];
                 $data['publication'] = $recording ? ['status' => $recording->publicacion,
                     'reviewedBy' => $recording->revisor?->name, 'reviewedAt' => $recording->publicacion_revisada_en?->format('d/m/Y · H:i'),
                     'approveUrl' => $ready && $recording->publicacion !== 'aprobada' ? route('admin.recording.approve', $e) : null,

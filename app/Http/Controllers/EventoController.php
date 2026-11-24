@@ -89,7 +89,7 @@ class EventoController extends Controller
             throw $exception;
         }
 
-        Audit::record('evento.creado', $evento, ['visibilidad' => $evento->visibilidad, 'licencia' => $evento->licencia, 'autorizacion' => $evento->autorizacion_referencia]);
+        Audit::record('evento.creado', $evento, ['visibilidad' => $evento->visibilidad, 'licencia' => $evento->licencia, 'autorizacion' => $evento->autorizacion_referencia, 'autorizacion_vigente' => $evento->hasValidAuthorization()]);
 
         // Quien puede emitir va directo a "Emitir con OBS", donde están la dirección
         // del servidor y la clave del evento recién creado.

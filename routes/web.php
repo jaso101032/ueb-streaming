@@ -102,6 +102,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::delete('/eventos/{evento}', [EventoController::class, 'destroy'])
         ->middleware('can:delete-event')->name('eventos.destroy');
     Route::get('/eventos/{evento}/grabacion/descargar', [RecordingController::class, 'download'])->name('recording.download');
+    Route::put('/eventos/{evento}/autorizacion', [\App\Http\Controllers\Admin\PublicationAuthorizationController::class, 'update'])->middleware('throttle:20,1')->name('authorization.update');
+    Route::delete('/eventos/{evento}/autorizacion', [\App\Http\Controllers\Admin\PublicationAuthorizationController::class, 'destroy'])->middleware('throttle:20,1')->name('authorization.destroy');
     Route::post('/eventos/{evento}/grabacion/aprobar', [RecordingController::class, 'approve'])->middleware('throttle:20,1')->name('recording.approve');
     Route::post('/eventos/{evento}/grabacion/retirar', [RecordingController::class, 'withdraw'])->middleware('throttle:20,1')->name('recording.withdraw');
     Route::get('/auditoria', [\App\Http\Controllers\Admin\AuditLogController::class, 'index'])->name('audit.index');

@@ -137,7 +137,14 @@ class StorageCleanup
 
         // Primero la base de datos (todo o nada); después los archivos.
         DB::transaction(function () use ($event, $video, $title, $bytes) {
-            Audit::record('evento.eliminado', $event, ['titulo' => $title, 'liberado' => self::human($bytes)]);
+            Audit::record('evento.eliminado', $event, ['titulo' => $title, 'liberado' => self::human($bytes),
+                // Huellas de lo que se borra: permiten verificar después qué archivos existían.
+                'huellas' => array_filter([
+                    'grabacion_original' => $event->transmision?->recording_metadata['rawSha256'] ?? null,
+                    'grabacion_mp4' => $event->transmision?->recording_metadata['mp4Sha256'] ?? null,
+                    'video_original' => $video?->source_sha256,
+                    'video_publicado' => $video?->output_sha256,
+                ])]);
             if ($video) {
                 // La franja ya emitida conserva su lugar: el registro se queda
                 // (eliminado) sin archivos.
